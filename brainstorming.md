@@ -8,19 +8,28 @@ Table of Contents
   - [Basic arithmetic](#basic-arithmetic)
   - [Function calls](#function-calls)
   - [Control flow](#control-flow)
-  - [`ref`](#ref)
-  - [Structs](#structs)
-  - [Objects](#objects)
+  - [`ref`, `in`, and `out` (for structs)](#ref-in-and-out-for-structs)
+  - [Structs (and static objects)](#structs-and-static-objects)
+  - [Static arrays of compile-time constant size](#static-arrays-of-compile-time-constant-size)
+  - [Non-static non-Minecraft objects](#non-static-non-minecraft-objects)
+  - [Minecraft objects](#minecraft-objects)
+  - [Throw](#throw)
 
 Notes to keep in mind
 ======
 * Minecraft function names must be `[a-z0-9/._-]`.
 * `execute as <selector> run function <function>` calls `function` once for each matched `selector`. This massively increases the number of executed commands, but is likely still faster than not being able to use `@s` everywhere.
 * No recursion. Storing the locals of a method `Namespace.Class.Function.local` is easy enough as `namespace#class#function#local`, but breaks when adding recursion. For brevity I omit the `namespace#class#` in the examples below, except where relevant.
-* Minecraft's fractional stuff is stupid as NBT-read/writes have that "multiply" factor and scoreboard supports only ints. I'm 50/50 on whether to introduce a `mcfloat` struct to represent "this is a value `* 10^n` or `* 2^n`" for fixed `n` not configurable, or reimplement floating point operations manually entirely. See also [this](https://www.cs.uaf.edu/courses/cs441/notes/floating-point-circuits/).
-* Supported keywords: `bool` `break` `case` `class` `const` `continue` `do` `else` `enum` `false` `float` `for` `foreach`(?) `goto` `if` `in` `int` `namespace` `new` `null` `operator` `out` `private` `public` `ref` `return` `static` `string` `struct` `switch` `this` `true` `void` `while`. In other words, basic control flow and single classes without fancy inheritance. Also, `in`, `out`, and `ref`.
+* Minecraft's fractional stuff is stupid as NBT-read/writes have that "multiply" factor and scoreboard supports only ints. I'm 50/50 on whether to introduce a `mcfloat` struct to represent "this is a value `* 10^n` or `* 2^n`" for fixed `n` not configurable, or reimplement floating point operations manually entirely. See also [this](https://www.cs.uaf.edu/courses/cs441/notes/floating-point-circuits/). Fixed point with 2 or 3 or compile-time-configurable-amount-of decimal digits may be the way to go as that "multiply" factor needs to know the exponent. This can be done easily with compile time, and less easily with 16 copies of whatever NBT writes we do.
+* Supported keywords: `bool` `break` `case` `class` `const` `continue` `do` `else` `enum` `false` `float` `for` `foreach`(?) `goto` `if` `in` `int` `namespace` `new` `null` `operator` `out` `private` `public` `ref` `return` `static` `string` `struct` `switch` `this` `throw` `true` `void` `while`. In other words, basic control flow and single classes without fancy inheritance. Also, `in`, `out`, and `ref`. (TODO: `enum` `float` `foreach` `string`)
 * Custom items/mobs in the higher level framework later will use pre-defined allowed inheritance/interfaces -- wanna make a custom item? Implement `IItem`. Wanna make a zombie into a custom mob? Inherit `Zombie`.
 * Don't know how minecraft handles it, but it can't hurt to allow an option to minimise the variables. Also we're using only one scoreboard -- `dummy _` -- because that suffices.
+* Forgot this was a thing, but try to circumvent NBT as much as possible (by e.g. predicates). Any NBT modification uses the expensive process `save entity -> load from disk -> modify -> save to disk -> load entity`. By using tree search, we can do arrays in $\mathcal O(\log n)$ time *without* NBT modifications.
+* For custom items: store properties in stored enchantments? That is checkable in predicates without NBT, does not give enchantment glow, and is unusable on non-enchanted-books. While unfortunately you cannot define custom enchantments ids (minecraft pls), you can use all existing ones, giving quite a lot of possible data to store without needing NBT.
+* As per [this post](https://old.reddit.com/r/MinecraftCommands/comments/nw90u4/does_using_predicates_in_place_of_complicated/h18lr5u/), minecraft's selectors are short-circuited. Some are costly. The order from least to most costly is `type (regular) < gamemode < team < type (negated) < tag < name < scores < advancements < nbt`. These are checked in left-to-right order in the selector. Before that, though, comes `level` `x_rotation` `y_rotation` `distance` `x/y/z` `dx/dy/dz` `sort` `limit`.
+* Keep track of the worst-case number of commands as metadata in the AST. Give a warning if this exceeds the 100k(/second) treshold.
+* Strings are *not* necessarily compile-time constants! You can [save and load for later](https://old.reddit.com/r/MinecraftCommands/comments/g61sc3/how_does_execute_store_result_storage_work_and/fo8ap1w/) their content. (It is also really versatile -- `/tellraw @s {"nbt":"Attributes[0].Base","entity":"@e"}` prints a number for each entity with spaces between.)
+* [This post](https://old.reddit.com/r/MinecraftCommands/comments/kjy674/are_predicates_more_efficient_than_nbt_selectors/) shows that predicates are preferable over target selectors (in the nbt case, at least).
 
 Basic ideas for transformation rules
 ======
@@ -304,7 +313,7 @@ if (a <= 19) {
 }
 ```
 
-`ref`
+`ref`, `in`, and `out` (for structs)
 ------
 This is pretty simple. Consider the following code.
 ```csharp
@@ -322,7 +331,9 @@ static void Swap(ref int a, ref int b) {
 ```
 Where the code, without the refs, would normally use `Swap#a` and `Swap#b`, here we keep using `Test#x` and `Test#y` instead within `Swap`.
 
-Structs
+The other two (`in` and `out`) are just `ref` with some checks. The compiler should liberally add the `in` modifier where possible.
+
+Structs (and static objects)
 ------
 So far everything's been just ints, but things can be better than this. Consider the following snippet.
 ```csharp
@@ -350,10 +361,26 @@ static void Test() {
 scoreboard players set Test#vector#x _ 3
 scoreboard players set Test#vector#y _ 4
 ```
-This generalizes naturally to also structs containing structs. To now use the `LengthSquared()`, we call it (as a static method) with its struct data as argument.
+This generalizes naturally to also structs containing structs. To now use the `LengthSquared()`, we call it (as a static method) with its struct as argument.
 ```csharp
 int LengthSquared() {
     return x*x + y*y;
+}
+// Somewhere else
+static void Test() {
+    int2 vector;
+    int a = vector.LengthSquared();
+}
+```
+⇓
+```csharp
+static int LengthSquared(int2 instance) {
+    return instance.x*instance.x + instance.y*instance.y;
+}
+// Somewhere else
+static void Test() {
+    int2 vector;
+    int a = int2.LengthSquared(vector);
 }
 ```
 ⇓
@@ -361,9 +388,115 @@ int LengthSquared() {
 static int LengthSquared(int x, int y) {
     return x*x + y*y;
 }
+// Somewhere else
+static void Test() {
+    int2 vector;
+    int a = int2.LengthSquared(vector.x, vector.y);
+}
 ```
-This approach can also be used for any place where the struct is used as argument.
+This approach can also be used for any other place where the struct is used as argument. Static objects can be approached the same way as they don't need a heap to be allocated on during runtime.
 
-Objects
+Static arrays of compile-time constant size
 ------
-Dunno
+The consensus for arrays seems to be to do something with [NBT arrays](https://www.minecraftforum.net/forums/minecraft-java-edition/redstone-discussion-and/commands-command-blocks-and/2961135-1-14-creating-and-using-custom-nbt-arrays-with). However, this gives $\mathcal O(n)$ access time (with NBT, and NBT is slow). Instead, use the $\mathcal O(\log n)$ option of binary search for random accesses:
+```csharp
+someArray[i] = 42;
+```
+⇓
+```csharp
+switch(i) {
+    case 0: someArray[0] = 42; break;
+    case 1: someArray[1] = 42; break;
+    case 2: someArray[2] = 42; break;
+    // etc.
+    case N: someArray[N] = 42; break;
+}
+```
+Note that both the setter and getter result in `2N` files being generated. Depending on how datapack functions are parsed and ran, this may have impact on general performance.
+
+To store static arrays, use the format `variable#index` as if it were a regular variable, or, if the type is larger than int, `variable#index#fragment`. For instance:
+```csharp
+static int[] numbers = new int[3] {2,4,8};
+```
+⇓
+```mcfunction
+scoreboard players set numbers#0 _ 2
+scoreboard players set numbers#1 _ 4
+scoreboard players set numbers#2 _ 8
+```
+
+```csharp
+static int2[] numbers = new int2[3] { new int2(2,4), new int2(3,9), new int2(5,25) };
+```
+⇓
+```mcfunction
+scoreboard players set numbers#0#0 _ 2
+scoreboard players set numbers#0#1 _ 4
+scoreboard players set numbers#1#0 _ 3
+scoreboard players set numbers#1#1 _ 9
+scoreboard players set numbers#2#0 _ 5
+scoreboard players set numbers#2#1 _ 25
+```
+
+Non-static non-Minecraft objects
+------
+Objects are stored on the heap, and there is no way around this -- so we introduce a static heap array. After this things are natural -- references are simply the index in that array, fields and properties are simply offsets within that array, and it takes up `sizeof(object)/4` space. However, as getting things from arrays is $\mathcal O(\log n)$, whenever doing modifications, get the value, mess with it, and then set the updated value only once we're done instead of modifying them directly.
+
+As such, this involves the `4HEAPSIZE` files. To keep this at least somewhat managable, limit the heap to like 2kb or something like that. You're working with an at best ~100khz processor, so this should be plenty.
+
+We do not use fragments as described in the [Static arrays](#static-arrays) section -- this would imply copying over perhaps a *lot* of data (the size of the largest possible object) even for small offsets, which would be bad for small objects. However, in turn this approach is bad for large objects by a factor of $\mathcal O(\log$ `heap size`$)$.
+
+```csharp
+public class ReferenceInt2 {
+    public int x;
+    public int y;
+    public ReferenceInt2 RecursionJustForFun;
+}
+// Later
+public void Test() {
+    ReferenceInt2 vector = new ReferenceInt2();
+    vector.x = 3;
+    vector = new ReferenceInt2();
+}
+```
+⇓
+```csharp
+public void Test() {
+    int vectorReference = Allocate(2);
+    Heap[vectorReference] = 0;
+    Heap[vectorReference + 1] = 0;
+    Heap[vectorReference + 2] = NULL;
+    Heap[vectorReference] = 3;
+    SomethingWithReferenceCounting(vectorReference);
+    vectorReference = Allocate(2);
+    Heap[vectorReference] = 0;
+    Heap[vectorReference + 1] = 0;
+    Heap[vectorReference + 2] = NULL;
+}
+// Somewhere else -- basically have to reimplement the heap entirely with just globals. Fun.
+public static int[] Heap = new int[512];
+public static int NULL = -1;
+public static int Allocate(int size); // (Size in int-units, not byte-units)
+public static int GC(); // Or DefragHeap() or something.
+public static int SomethingWithReferenceCounting(int ref);
+```
+Checking null is simple: simply check whether the reference is `-1`. Allocate may return `NULL` if it cannot find any space.
+
+Reference counting is simple enough if we forbid cyclic references. Otherwise we might need to use weak references. However, note that cyclic references are mainly useful in recursion contexts, which we already forbade, so this might be the way to go.
+
+Minecraft objects
+------
+Directly link writing to NBT, probably. Reading (mainly for booleans but also when there are few options) can maybe be simplified with predicates. Custom item data is easy as that gets serialized with the entity. Custom entity data can be done with markers and passengers, or with the offhand's stored enchantments tag. For instance, the following passes.
+```mcfunction
+# Set:
+data modify entity @e[type=!player,limit=1] HandItems[1] set value {id:"minecraft:stone",Count:1b,tag:{StoredEnchantments:[{lvl:2,id:"backtick:doei"},{lvl:1,id:"backtick:hoi"}]}}
+# Test:
+execute if entity @e[nbt={HandItems:[{},{tag:{StoredEnchantments:[{id:"backtick:doei",lvl:2}]}}]}] run say Passed!
+```
+If the entity has no offhand items, simply give it something with CustomModeldata scale 0, and drop chance 0. If the entity changes offhand items, store this data in storage before the change and load it after the change.
+
+For booleans, Tags are preferable as NBT is slow as mentioned numerous times.
+
+Throw
+------
+Simply print to chat, run a eternal loop from there on out, and prevent further execution. No try/catch/finally support as we don't have stack frames lol.
