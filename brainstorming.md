@@ -14,22 +14,32 @@ Table of Contents
   - [Non-static non-Minecraft objects](#non-static-non-minecraft-objects)
   - [Minecraft objects](#minecraft-objects)
   - [Throw](#throw)
+  - [Floats](#floats)
+  - [Strings](#strings)
+  - [Literal `.mcfunction`](#literal-mcfunction)
+- [Basic ideas for interacting with the game](#basic-ideas-for-interacting-with-the-game)
+- [Basic ideas for the higher-level setup](#basic-ideas-for-the-higher-level-setup)
 
 Notes to keep in mind
 ======
 * Minecraft function names must be `[a-z0-9/._-]`.
 * `execute as <selector> run function <function>` calls `function` once for each matched `selector`. This massively increases the number of executed commands, but is likely still faster than not being able to use `@s` everywhere.
 * No recursion. Storing the locals of a method `Namespace.Class.Function.local` is easy enough as `namespace#class#function#local`, but breaks when adding recursion. For brevity I omit the `namespace#class#` in the examples below, except where relevant.
-* Minecraft's fractional stuff is stupid as NBT-read/writes have that "multiply" factor and scoreboard supports only ints. I'm 50/50 on whether to introduce a `mcfloat` struct to represent "this is a value `* 10^n` or `* 2^n`" for fixed `n` not configurable, or reimplement floating point operations manually entirely. See also [this](https://www.cs.uaf.edu/courses/cs441/notes/floating-point-circuits/). Fixed point with 2 or 3 or compile-time-configurable-amount-of decimal digits may be the way to go as that "multiply" factor needs to know the exponent. This can be done easily with compile time, and less easily with 16 copies of whatever NBT writes we do.
-* Supported keywords: `bool` `break` `case` `class` `const` `continue` `do` `else` `enum` `false` `float` `for` `foreach`(?) `goto` `if` `in` `int` `namespace` `new` `null` `operator` `out` `private` `public` `ref` `return` `static` `string` `struct` `switch` `this` `throw` `true` `void` `while`. In other words, basic control flow and single classes without fancy inheritance. Also, `in`, `out`, and `ref`. (TODO: `enum` `float` `foreach` `string`)
-* Custom items/mobs in the higher level framework later will use pre-defined allowed inheritance/interfaces -- wanna make a custom item? Implement `IItem`. Wanna make a zombie into a custom mob? Inherit `Zombie`.
+* Supported keywords: `bool` `break` `case` `class` `const` `continue` `do` `else` `enum` `false` `float` `for` `foreach` `goto` `if` `in` `int` `namespace` `new` `null` `operator` `out` `private` `public` `ref` `return` `static` `string` `struct` `switch` `this` `throw` `true` `void` `while`. In other words, basic control flow and single classes without fancy inheritance. Also, `in`, `out`, and `ref`.
 * Don't know how minecraft handles it, but it can't hurt to allow an option to minimise the variables. Also we're using only one scoreboard -- `dummy _` -- because that suffices.
-* Forgot this was a thing, but try to circumvent NBT as much as possible (by e.g. predicates). Any NBT modification uses the expensive process `save entity -> load from disk -> modify -> save to disk -> load entity`. By using tree search, we can do arrays in $\mathcal O(\log n)$ time *without* NBT modifications.
-* For custom items: store properties in stored enchantments? That is checkable in predicates without NBT, does not give enchantment glow, and is unusable on non-enchanted-books. While unfortunately you cannot define custom enchantments ids (minecraft pls), you can use all existing ones, giving quite a lot of possible data to store without needing NBT.
-* As per [this post](https://old.reddit.com/r/MinecraftCommands/comments/nw90u4/does_using_predicates_in_place_of_complicated/h18lr5u/), minecraft's selectors are short-circuited. Some are costly. The order from least to most costly is `type (regular) < gamemode < team < type (negated) < tag < name < scores < advancements < nbt`. These are checked in left-to-right order in the selector. Before that, though, comes `level` `x_rotation` `y_rotation` `distance` `x/y/z` `dx/dy/dz` `sort` `limit`.
-* Keep track of the worst-case number of commands as metadata in the AST. Give a warning if this exceeds the 100k(/second) treshold.
+* Forgot this was a thing, but try to circumvent NBT as much as possible (by e.g. predicates/advancements). Any NBT modification uses the expensive process `save entity -> load from disk -> modify -> save to disk -> load entity`. By using tree search, we can do arrays in $\mathcal O(\log n)$ time *without* NBT modifications.
+* For custom items: store properties in stored enchantments? That is checkable in predicates/ without NBT, does not give enchantment glow, and is unusable on non-enchanted-books. While unfortunately you cannot define custom enchantments ids (minecraft pls), you can use all existing ones, giving quite a lot of possible data to store without needing NBT.
+* As per [this post](https://old.reddit.com/r/MinecraftCommands/comments/nw90u4/does_using_predicates_in_place_of_complicated/h18lr5u/), minecraft's selectors are short-circuited. Some are costly. ~~The order from least to most costly is `type (regular) < gamemode < team < type (negated) < tag < name < scores < advancements < nbt`. These are checked in left-to-right order in the selector. Before that, though, comes `level` `x_rotation` `y_rotation` `distance` `x/y/z` `dx/dy/dz` `sort` `limit`.~~ See [that sub's wiki](https://old.reddit.com/r/MinecraftCommands/wiki/optimising#wiki_optimize_selectors).
+* `/execute` also short-circuits fyi. This is less relevant though as `if score` and (arguably) `if block` are like the only cheap options.
+* Entity tags are *fast*, supposedly at least.
+* Keep track of the worst-case number of commands as metadata in the AST per method. Output a table per method/custom item/mob and give a warning if this exceeds the 100k(/second) treshold.
 * Strings are *not* necessarily compile-time constants! You can [save and load for later](https://old.reddit.com/r/MinecraftCommands/comments/g61sc3/how_does_execute_store_result_storage_work_and/fo8ap1w/) their content. (It is also really versatile -- `/tellraw @s {"nbt":"Attributes[0].Base","entity":"@e"}` prints a number for each entity with spaces between.)
-* [This post](https://old.reddit.com/r/MinecraftCommands/comments/kjy674/are_predicates_more_efficient_than_nbt_selectors/) shows that predicates are preferable over target selectors (in the nbt case, at least).
+* [This post](https://old.reddit.com/r/MinecraftCommands/comments/kjy674/are_predicates_more_efficient_than_nbt_selectors/) shows that predicates are preferable over target selectors (in the nbt case, at least). Don't know the impact of advancements.
+* If NBT is used multiple times, yoink it into a scoreboard and then use it. (In particular: the high level items when determining which item is relevant in the monster switch, unless I'm doing advancement-item-detection.)
+* Reading different NBT tags from a single entity: copying from storage and reading it there is supposedly better.
+* Rightclick detection: `minecraft.used:minecraft:carrot_on_a_stick`/`..:warped_fungus_on_a_stick`. Latter is nicer because who's interested in striders anyway.
+* Perhaps do held item detection/etc via the tick advancement with checking the held item via its "stored enchantment" id?
+* *Held* rightclick-items are very easy to detect with eyes of ender in worlds without fortresses. Maybe also in worlds with fortresses a single click?
 
 Basic ideas for transformation rules
 ======
@@ -51,6 +61,17 @@ scoreboard players set Test#a _ 3
 scoreboard players set Test#b _ 7
 scoreboard players operation Test#c _ = Test#a _
 scoreboard players operation Test#c _ *= Test#a _
+scoreboard players operation Test#c _ += Test#b _
+scoreboard players operation Test#c _ += #CONSTS#2 _
+```
+
+Note we get one free assignment in the form of `execute store result <score> _ run scoreboard players operation ...`. This would turn the above into a shorter snippet:
+```mcfunction
+# (File test.mcfunction)
+scoreboard players set Test#a _ 3
+scoreboard players set Test#b _ 7
+# We're not using the result of `a` anywhere else anyway.
+execute store result Test#c _ run scoreboard players operation Test#a _ *= Test#a _
 scoreboard players operation Test#c _ += Test#b _
 scoreboard players operation Test#c _ += #CONSTS#2 _
 ```
@@ -93,7 +114,7 @@ static int Calculate(int a) {
 ```
 ⇓
 ```mcfunction
-# (File say.mcfunction)
+# (File test.mcfunction)
 scoreboard players set Test#a _ 3
 scoreboard players operation Calculate#a _ = Test#a _
 function namespace:internal/calculate
@@ -173,6 +194,8 @@ if (!a > 0) {
 }
 ```
 
+This next one is done by Roslyn automatically, hooray!
+With this one, also check whether it can be turned into a switch statement if the same thing is being compared at least 4 times as then the binary tree kicks in and improves performance.
 ```csharp
 if (a > 0) {
     // Stuff
@@ -331,7 +354,7 @@ static void Swap(ref int a, ref int b) {
 ```
 Where the code, without the refs, would normally use `Swap#a` and `Swap#b`, here we keep using `Test#x` and `Test#y` instead within `Swap`.
 
-The other two (`in` and `out`) are just `ref` with some checks. The compiler should liberally add the `in` modifier where possible.
+The other two (`in` and `out`) are just `ref` with some checks. The compiler should liberally add the `in` modifier where possible. This turns out to be [trivial](https://docs.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis.dataflowanalysis.writteninside?view=roslyn-dotnet-4.2.0) as Roslyn does data-flow analysis for us.
 
 Structs (and static objects)
 ------
@@ -412,7 +435,7 @@ switch(i) {
     case N: someArray[N] = 42; break;
 }
 ```
-Note that both the setter and getter result in `2N` files being generated. Depending on how datapack functions are parsed and ran, this may have impact on general performance.
+Note that both the setter and getter result in `2N` files being generated. ~~Depending on how datapack functions are parsed and ran, this may have impact on general performance.~~ This seems not to be the case.
 
 To store static arrays, use the format `variable#index` as if it were a regular variable, or, if the type is larger than int, `variable#index#fragment`. For instance:
 ```csharp
@@ -500,3 +523,44 @@ For booleans, Tags are preferable as NBT is slow as mentioned numerous times.
 Throw
 ------
 Simply print to chat, run a eternal loop from there on out, and prevent further execution. No try/catch/finally support as we don't have stack frames lol.
+
+Floats
+------
+*All* float properties and members need a `[Fixed(int)]` attribute to say how to handle this float as a *fixed*-point number: the int specifies the index of the point *in decimal* for simplicity. Zero means "this is actually an int", one means "precision up to `x.1`", etc.
+
+With this, implementing all floating point operations is simple. Arithmetic on `[Fixed(n)]` and `[Fixed(m)]` results in a `[Fixed(min{n,m})]`. This allows easy fixed-to-integer conversion (and vice versa) and works well with the `multiply` of reading/writing NBT.
+
+Strings
+------
+Minecraft's strings allow for selectors (and pretty array printing), and selectors' scoreboard values, which gives a *ton* of option to customise strings. I don't know how far I'm willing to go, but I should support basic string interpolation like the following.
+```csharp
+static void Say(int i) {
+    SomeMethodToPrintStuff($"A value of {i}.");
+}
+```
+⇓
+```mcfunction
+tellraw @a ["A value of ",{"score":{"name":"Say#i","objective":"_"}},"."]
+```
+Interpolating compile time constants should of course also result in constant strings without score values. This'd be neat for lang files.
+
+Literal `.mcfunction`
+------
+To be future-proof to some extent, allow arbitrary mcfunction commands to be used without any checks. Commands without any interpolation are easy. Using variables less so.
+```csharp
+int i = 3;
+MCFunction($"scoreboard players operation MyPlayer MyScore += {i}"); // We have access to `something#i`.
+MCFunction($"scoreboard players operation MyPlayer MyScore += {i} _"); // Support both "obvious" options.
+MCFunction($"kill @a[limit={i}]"); // This requires generating branches or recursion. How much is doable?
+MCFunction("function namespace:function"); // We can no longer rename this function.
+// Etc
+```
+How much trouble am I willing to go through for this?
+
+Basic ideas for interacting with the game
+======
+The basic things we need are reading/writing from entities (including inventories) and some way to interact with blocks (also including inventories). Minecraft is very selector centered, so an `IEnumerable Selector` is an obvious way to do all `@X`s. As most selectors are of a given entity, we can even force that during compile time (with something like `ZombieSelector : Selector`).
+
+Basic ideas for the higher-level setup
+======
+At least wanna have support for custom items and mobs. Both will probably have ticking functions that run at some `[Interval(float)]`, and of course the constructor. These will probably be called in some way similar to `execute as @a if predicate Blah run function blah` and `execute as @e[tag=Blah] run function blah`. We don't want all processing to happen on the same tick but instead spread it out. As such, if for instance all ticking functions have `[Interval(0.2f)]`, call the first type on ticks $1 \mod 5$, the second $2 \mod 5$, etc. It might also be smart to make custom items by default player-only, and then have `[ForEntity<T1,...>]`, `[ForEntityAll]` attributes to allow different entities to use those items. Note, those items will realistically only be weapons and hold effects, so using Tags might be sufficient.
