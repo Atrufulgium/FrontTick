@@ -18,6 +18,12 @@ Table of Contents
   - [Strings](#strings)
   - [Literal `.mcfunction`](#literal-mcfunction)
 - [Basic ideas for interacting with the game](#basic-ideas-for-interacting-with-the-game)
+  - [Location](#location)
+  - [Blocks](#blocks)
+  - [Block/Non-player entity inventories](#blocknon-player-entity-inventories)
+  - [Entities (excluding the player)](#entities-excluding-the-player)
+  - [The player](#the-player)
+  - [World](#world)
 - [Basic ideas for the higher-level setup](#basic-ideas-for-the-higher-level-setup)
 
 Notes to keep in mind
@@ -559,7 +565,59 @@ How much trouble am I willing to go through for this?
 
 Basic ideas for interacting with the game
 ======
-The basic things we need are reading/writing from entities (including inventories) and some way to interact with blocks (also including inventories). Minecraft is very selector centered, so an `IEnumerable Selector` is an obvious way to do all `@X`s. As most selectors are of a given entity, we can even force that during compile time (with something like `ZombieSelector : Selector`).
+The basic things we need are reading/writing from entities (including inventories) and some way to interact with blocks (also including inventories). Minecraft is very selector centered, so an `IEnumerable Selector` is an obvious way to do all `@X`s. As most selectors are of a given entity, we can even force that during compile time (with something like `ZombieSelector : Selector`). We can also fake *some* player-related events with advancements.
+
+Location
+------
+This represents a spot in the world that can be manipulated. You can ask the block here, the biome here, the entities here (via selector), etc. It is a simple tuple of an `int3` and a `World`, where the world may be the current world.
+
+Blocks
+------
+The basic way to get/set blocks is via static `Block GetBlockAt(Location location)`/`bool SetBlockAt(Block block, Location location)` call. Note that any block-related operation may fail due to that section of the world not being loaded. The compiled code will not actually work with stored blocks but extract just the parts you need. The blocks may implement:
+* `IConnected6` for blocks that connect to neighbours. Provides four of methods `bool GetConnectsNorth()` for the cardinal directions.
+* `IConnected6` for blocks the above but also vertically.
+* `IDoubleBlock` for blocks that are part of pairs of blocks, such as beds, doors, and double flowers. Provides `Axis GetDoubleDirection()` and `Half GetHalf()`.
+* `IDragger` for blocks that push entities in some direction. Provides `float3 GetDragAmount()`.
+* `IFacing2` for blocks that can point in the `x` and `z`-direction without caring about which way in that direction. Provides `Facing GetFacing()` and `bool SetFacing(Facing)` methods.
+* `IFacing3` for blocks that can point in the `x`, `y`, and `z`-direction without caring about which way in that direction. Same methods as above.
+* `IFacing4` for blocks that can face the four cardinal directions. Same methods as above.
+* `IFacing4Down` for the same as above but also down.
+* `IFacing4Up` for the same as above but up instead.
+* `IFacing6` for blocks that can face all six directions. Same methods as above.
+* `IFacing16` for blocks that can face in sixteen subdivided cardinal directions. Same methods as above.
+* `ILight` for blocks emitting light. Provides `int GetLightEmittance()`. (Only light blocks have a `bool SetLightEmittance(int)`.)
+* `ILiquid` for liquid blocks. Provides `int GetLevel()` and `bool SetLevel(int)` for how high the liquid is, and `bool GetFlowingDownward()` and `bool SetFlowingDownward()` for whether this liquid only flows down instead of to the sides also.
+* `IOrientable` for blocks that differ depending on being on the floor, wall, or ceiling. Provides `Orientation GetOrientation()`.
+* `IPowered` for blocks powered by redstone. Provides `bool IsPowered()`.
+* `IProgressable` for blocks with some sort of progression (think crops/beehive/candles/sea pickles). Provides `int GetMaximumLevel()`, `bool IncrementLevel()`, and `bool ResetLevel()`.
+* `IProgressableSub` for progression that depends on further progression (e.g. saplings' age depending on stages).
+* `ISlab` for halfblocks. Provides `SlabType GetSlabType()` and `bool SetSlabType()`.
+* `ISnowy` for blocks that can get a snowy top texture. Provides `bool IsSnowy()`.
+* `IVisuallyUsable` for blocks that are in some sense visually obviously in use. Includes beds, candle cakes, furnaces, etc. Provides `bool IsUsed()`.
+* `IWaterloggable` for blocks that can hold water. Provides `bool HasWater()` and `bool SetWater()`.
+(Or something like that. Perhaps this going overboard for "planning" lol.)
+
+Further methods all blocks have (based on vanilla block tags):
+* `virtual bool IsPassable()` detemines whether entities can move *fully* freely through this block. Doors should override this.
+* All vanilla blocktags via `bool Is[BlockTag]()`. If the type is known, this reduces to a constant, if not, this reduces to a `if block ~ ~ ~ matches #tag`. If even the location is now known, we need to teleport markers and then check.
+
+Too unimportant to put in a general interface: bamboo leaves' `leaves`; barrels' `open`; beds' `occupied` and `part`; dripleaves' `tilt`; brewing stands' `has_bottle_X`; campfires' `signal_fire`; (trapped) chest's `type`; command blocks' `conditional`; daylight detector's `inverted`; doors' `half`, `hinge`; fence gates' `in_wall`; jigsaw's `orientation`; kelp's `age` is weird and not like usual crops; leaves' `distance` and `persistent`; lecterns' `has_book`; noteblocks' `instrument` and `note`; pistons in general are weird; pointed dripstone's `thickness` and `vertical_direction`; weighted pressure plates' and redstone's `power`; (all) rails' `shape`; comparators' `mode`; repeaters' `locked`; scaffolding's `bottom` and `distance`; sculk catalyst's `bloom`; sculk sensors' `power` and `sculk_sensor_phase`; sculk shriekers' `can_summon` and `shrieking`; signs' `lit`; stairs' `shape`; structure blocks' `mode`; targets' `power`; TNT's `unstable`; trapdoors' `half`; tripwire's `attached` and `disarmed`; tripwire hooks' `attached`.
+
+Block/Non-player entity inventories
+------
+Pain. With the item format, properties and members will have a `[NBT(String)]` tag specifying where this data can be found. (It is the full path including the key.) Attributing non-vanilla properties with this is also supported because minecraft just serializes that. Some things will have a custom implementation; predicates are more efficient but only sometimes possible when reading, and `/item` or is only sometimes possible when writing.
+
+Entities (excluding the player)
+------
+This will have a *bunch* of inheritance to follow the listed NBT on the wiki. Again, properties and members will have a `[NBT(string)]` tag specifying where in the entity NBT this is found (including the key). Attributing non-vanilla properties with this is *not* supported as that data gets lost. The most realistic option is working with Tags for bools and small integer ranges.
+
+The player
+------
+The player needs to be handled separatly as their nbt cannot be written to. Some things can easily be worked around (inventory with `/item` and `/data` in storage), some things are limited (health boosts are positive multiples of four), and some things are impossible (you cannot get a survival player creative flight).
+
+World
+------
+Things like weather and gamerules/difficulty/time (which are actually wider than worlds but eh). Also seems like a sensible place to detect biomes and net light levels at specific locations. The `/forceload` stuff is also nice to add here, but as that is asynchronous I don't know how useful it'll actually be for loading unloaded chunks. Also, put the seed getter here. Also, the world spawn setter/getter. This is also a sensible place for worldborders. Furthermore, totally-not-copying from bukkit, other things that may make sense here: create explosions/dropped items/entities/particles/sounds in general.
 
 Basic ideas for the higher-level setup
 ======
