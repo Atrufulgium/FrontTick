@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32526.322
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Compiler", "Compiler\Compiler.csproj", "{3F74B079-52E2-462E-91ED-EA53D583B489}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MCMirror", "MCMirror\MCMirror.csproj", "{833A5DAF-D7CE-47F5-9446-8642021633CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerTests", "CompilerTests\CompilerTests.csproj", "{DE3C13F0-AC01-4510-AF97-5D367BAA8696}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3F74B079-52E2-462E-91ED-EA53D583B489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F74B079-52E2-462E-91ED-EA53D583B489}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F74B079-52E2-462E-91ED-EA53D583B489}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F74B079-52E2-462E-91ED-EA53D583B489}.Release|Any CPU.Build.0 = Release|Any CPU
+		{833A5DAF-D7CE-47F5-9446-8642021633CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{833A5DAF-D7CE-47F5-9446-8642021633CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{833A5DAF-D7CE-47F5-9446-8642021633CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{833A5DAF-D7CE-47F5-9446-8642021633CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE3C13F0-AC01-4510-AF97-5D367BAA8696}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE3C13F0-AC01-4510-AF97-5D367BAA8696}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE3C13F0-AC01-4510-AF97-5D367BAA8696}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE3C13F0-AC01-4510-AF97-5D367BAA8696}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AB28EC6C-36E4-4752-9CA2-8CF915B87930}
+	EndGlobalSection
+EndGlobal
