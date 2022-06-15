@@ -16,19 +16,15 @@ namespace MCMirror {
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public class MCFunctionAttribute : Attribute {
+        public readonly string name;
+        public MCFunctionAttribute() {
+            name = null;
+        }
         /// <summary>
-        /// <para>
-        /// If present, this string specifies (excluding namespace) the name of
-        /// this function in the datapack, i.e., it will be called as
-        /// <code>
-        /// /function namespace:name
-        /// </code>
-        /// (with the namespace specified during compile-time).
-        /// </para>
-        /// <para>
-        /// If absent, the function name will simply be <c>class.method</c>.
-        /// </para>
+        /// Specify the custom name, nonempty using [a-z0-9/._-]-characters only.
         /// </summary>
-        public string name;
+        public MCFunctionAttribute(string name) {
+            this.name = name;
+        }
     }
 }
