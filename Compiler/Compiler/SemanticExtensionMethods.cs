@@ -2,41 +2,40 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
-    // TODO: Split this up lol.
-    internal static class ExtensionMethods {
-
-        public static bool ChildTokensContain(this SyntaxNode node, SyntaxKind token)
-            => (from t in node.ChildTokens() where t.IsKind(token) select t).Any();
+    /// <summary>
+    /// Extension methods needing a semantic model. All of these extension
+    /// methods are attached to <see cref="SemanticModel"/>.
+    /// </summary>
+    public static class SemanticExtensionMethods {
 
         /// <summary>
         /// If this declaration has an attribute of a certain type, this method
         /// returns true, and puts the first it finds in <c>outAttribute</c>.
         /// Otherwise, this returns false.
         /// </summary>
+        /// <param name="semantics">
+        /// The semantics context.
+        /// </param>
         /// <param name="node">
         /// The node to search for an attached attribute.
         /// </param>
         /// <param name="attributeType">
         /// The type of the attribute to search for.
         /// </param>
-        /// <param name="semantics">
-        /// The semantics context.
-        /// </param>
         /// <param name="outAttribute">
         /// Where the attribute gets put if it gets found.
         /// </param>
         /// <remarks>
         /// This is the syntactic version of
-        /// <see cref="TryGetSemanticAttributeOfType(MemberDeclarationSyntax, Type, SemanticModel, out AttributeData)"/>.
+        /// <see cref="TryGetSemanticAttributeOfType(SemanticModel, MemberDeclarationSyntax, Type, out AttributeData)"/>.
         /// </remarks>
         public static bool TryGetAttributeOfType(
-            this MemberDeclarationSyntax node,
+            this SemanticModel semantics,
+            MemberDeclarationSyntax node,
             Type attributeType,
-            SemanticModel semantics,
             out AttributeSyntax outAttribute
         ) {
             // MemberDeclarationSyntax is super to both all ways to declare
@@ -65,26 +64,26 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// returns true, and puts the first it finds in <c>outAttribute</c>.
         /// Otherwise, this returns false.
         /// </summary>
+        /// <param name="semantics">
+        /// The semantics context.
+        /// </param>
         /// <param name="node">
         /// The node to search for an attached attribute.
         /// </param>
         /// <param name="attributeType">
         /// The type of the attribute to search for.
         /// </param>
-        /// <param name="semantics">
-        /// The semantics context.
-        /// </param>
         /// <param name="outAttribute">
         /// Where the attribute gets put if it gets found.
         /// </param>
         /// <remarks>
         /// This is the semantic version of
-        /// <see cref="TryGetAttributeOfType(MemberDeclarationSyntax, Type, SemanticModel, out AttributeSyntax)"/>.
+        /// <see cref="TryGetAttributeOfType(SemanticModel, MemberDeclarationSyntax, Type, out AttributeSyntax)"/>.
         /// </remarks>
         public static bool TryGetSemanticAttributeOfType(
-            this MemberDeclarationSyntax node,
+            this SemanticModel semantics,
+            MemberDeclarationSyntax node,
             Type attributeType,
-            SemanticModel semantics,
             out AttributeData outAttribute
         ) {
             var nodeModel = semantics.GetDeclaredSymbol(node);
@@ -101,6 +100,9 @@ namespace Atrufulgium.FrontTick.Compiler {
             return false;
         }
 
+        /// <summary>
+        /// Return the full name (namespace.class.method) of a method.
+        /// </summary>
         public static string GetFullyQualifiedMethodName(this SemanticModel semantics, MethodDeclarationSyntax method) {
             var methodModel = semantics.GetDeclaredSymbol(method);
             var containingType = methodModel.ContainingType;
@@ -108,21 +110,6 @@ namespace Atrufulgium.FrontTick.Compiler {
             string containingName = containingType.ToString();
             return $"{containingName}.{methodName}";
         }
-
-        /// <summary>
-        /// The property <see cref="MethodDeclarationSyntax.Arity"/> is used to
-        /// get the number of generic type parameters (resulting in 0 for non-
-        /// generic methods). This method gives the *actual* arity: the number
-        /// of arguments of a method.
-        /// </summary>
-        /// <remarks>
-        /// Note that this method is dumb -- all arguments count as 1 argument,
-        /// including optional arguments and <c>params</c> arguments.
-        /// </remarks>
-        // This unconventional name instead of something like "GetArgumentCount"
-        // to make it appear *right below* `Arity` in all autocompletes.
-        public static int ArityOfArguments(this MethodDeclarationSyntax node)
-            => node.ParameterList.Parameters.Count;
 
         // Note to self for future: https://stackoverflow.com/a/33966036
         // For when I also want to maybe take into account generics here.

@@ -90,7 +90,7 @@ public class Test {
     [MCFunction]
     public void TestMethod() { }
 }
-", new[] { "FT0001" });
+", "FT0001");
 
         [TestMethod]
         public void WrongMCFunctionTagTest2()
@@ -100,7 +100,7 @@ public class Test {
     [MCFunction]
     public static int TestMethod() { return 3; }
 }
-", new[] { "FT0001" });
+", "FT0001");
 
         [TestMethod]
         public void WrongMCFunctionTagTest3()
@@ -110,7 +110,7 @@ public class Test {
     [MCFunction]
     public static void TestMethod(int i) { i += 3; }
 }
-", new[] { "FT0001" });
+", "FT0001");
 
         [TestMethod]
         public void WrongMCFunctionTagTest4()
@@ -120,7 +120,7 @@ public class Test {
     [MCFunction(""Do Some Test!"")]
     public static void TestMethod() { }
 }
-", new[] { "FT0002" });
+", "FT0002");
 
         [TestMethod]
         public void WrongMCFunctionTagTest5()
@@ -130,7 +130,7 @@ public class Test {
     [MCFunction("""")]
     public static void TestMethod() { }
 }
-", new[] { "FT0002" });
+", "FT0002");
 
     }
 }

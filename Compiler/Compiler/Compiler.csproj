@@ -20,7 +20,4 @@
   <ItemGroup>
     <ProjectReference Include="..\MCMirror\MCMirror.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Rewriters\" />
-  </ItemGroup>
 </Project>

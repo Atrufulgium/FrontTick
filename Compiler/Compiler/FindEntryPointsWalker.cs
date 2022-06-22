@@ -5,34 +5,34 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Atrufulgium.FrontTick.Compiler.Walkers {
+namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
     /// This walker collects all MCFunction-tagged methods in this syntax tree
     /// and at the same time checks whether they all satisfy the
     /// <c>static void(void)</c> signature and whether their optional name
     /// is legal.
     /// </summary>
-    internal class MCFunctionWalker : CSharpSyntaxWalker {
+    internal class FindEntryPointsWalker : CSharpSyntaxWalker {
 
         public HashSet<EntryPoint> foundMethods;
         public List<Diagnostic> customDiagnostics;
 
         SemanticModel semantics;
 
-        public MCFunctionWalker(SemanticModel semantics) {
+        public FindEntryPointsWalker(SemanticModel semantics) {
             this.semantics = semantics;
             foundMethods = new HashSet<EntryPoint>();
             customDiagnostics = new List<Diagnostic>();
         }
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
-            if (method.TryGetSemanticAttributeOfType(typeof(MCFunctionAttribute), semantics, out var attrib)) {
+            if (semantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out var attrib)) {
                 // Check whether the signature is correct.
                 bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
                 bool voidIn = method.ArityOfArguments() == 0;
                 bool voidOut = method.ReturnType.ChildTokensContain(SyntaxKind.VoidKeyword);
                 if (hasStatic && voidIn && voidOut) {
-                    foundMethods.Add(new EntryPoint(new SyntaxSemanticsPair(semantics), method));
+                    foundMethods.Add(new EntryPoint(semantics, method));
                 } else {
                     customDiagnostics.Add(Diagnostic.Create(
                         DiagnosticRules.MCFunctionAttributeIncorrect,

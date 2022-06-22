@@ -2,13 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Atrufulgium.FrontTick.Compiler {
+namespace Atrufulgium.FrontTick.Compiler.Collections {
     /// <summary>
     /// Represents a stack that cannot have more than one copy of any element
     /// according to the comparer. This is computationally efficiently achieved
     /// by using both a stack and a hash set.
     /// </summary>
-    internal class StackWithoutDuplicates<T> : ICollection, IEnumerable<T>, IReadOnlyCollection<T> {
+    public class StackWithoutDuplicates<T> : ICollection, IEnumerable<T>, IReadOnlyCollection<T> {
 
         Stack<T> stack;
         HashSet<T> hashset;
@@ -57,9 +57,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public int EnsureCapacity(int newCapacity) {
             int newStackCapacity = stack.EnsureCapacity(newCapacity);
             int newHashsetCapacity = hashset.EnsureCapacity(newCapacity);
-            if (newStackCapacity < newHashsetCapacity)
-                return newStackCapacity;
-            return newHashsetCapacity;
+            return Math.Min(newStackCapacity, newHashsetCapacity);
         }
 
         public void Push(T item) => Add(item);

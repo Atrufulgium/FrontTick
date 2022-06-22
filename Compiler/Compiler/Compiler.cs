@@ -1,57 +1,122 @@
-﻿using Atrufulgium.FrontTick.Compiler.Walkers;
-using MCMirror;
+﻿using Atrufulgium.FrontTick.Compiler.Collections;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
+    /// <summary>
+    /// <para>
+    /// A compiler for turning a bunch of c# files into a Minecraft datapack. 
+    /// </para>
+    /// <para>
+    /// A typical compilation process looks as follows:
+    /// <list type="number">
+    /// <item><description>
+    /// Create a new <see cref="Compiler"/> instance, optionally specifying
+    /// which minecraft-datapack namespace it will live in, and what other
+    /// assemblies to reference.
+    /// </description></item>
+    /// <item><description>
+    /// If you want any advanced functionality, set what compilation phases
+    /// you want via <see cref="SetCompilationPhases(IEnumerable{IFullVisitor})"/>.
+    /// If you don't, the output will be basic and unoptimised. There are various
+    /// default presets, found in the <see cref="CompilationPhases"/> class.
+    /// </description></item>
+    /// <item><description>
+    /// Check whether compilation succeeded with <see cref="CompilationSucceeded"/>
+    /// (or its opposite, <see cref="CompilationFailed"/>). If it succeeded,
+    /// you can use the resulting <see cref="CompiledDatapack"/> for instance
+    /// via <see cref="Datapack.WriteToFilesystem(string)"/>. Otherwise, check
+    /// the problems with <see cref="ErrorDiagnostics"/>. In either case, the
+    /// warnings <see cref="WarningDiagnostics"/> may be of interest.
+    /// </description></item>
+    /// </list>
+    /// </para>
+    /// <para>
+    /// Whether succeeding or failing, each instance is valid for only one
+    /// compilation.
+    /// </para>
+    /// </summary>
     public class Compiler {
 
         public Datapack CompiledDatapack => new Datapack(finishedCompilation);
+
         public bool CompilationSucceeded => ErrorDiagnostics.Count == 0;
+        public bool CompilationFailed => !CompilationSucceeded;
+
         public ReadOnlyCollection<Diagnostic> ErrorDiagnostics { get; private set; }
         public ReadOnlyCollection<Diagnostic> WarningDiagnostics { get; private set; }
-        List<Diagnostic> errorDiagnostics;
-        List<Diagnostic> warningDiagnostics;
+        List<Diagnostic> errorDiagnostics = new();
+        List<Diagnostic> warningDiagnostics = new();
+
+        bool hasCompiled = false;
 
         /// <summary>
-        /// All trees we are considering, sementically meaningful.
+        /// All method entry points we are compiling. These are both
+        /// [MCFunction]-tagged methods and their dependencies.
         /// </summary>
-        List<SyntaxSemanticsPair> trees;
-        /// <summary>
-        /// All method entry points we have yet to compile. Items higher in the
-        /// stack should not depend on items lower in the stack.
-        /// </summary>
-        StackWithoutDuplicates<EntryPoint> entryPoints;
+        internal HashSet<EntryPoint> entryPoints = new();
         /// <summary>
         /// All work that is done so far.
         /// </summary>
-        List<DatapackFile> finishedCompilation;
-
-        string manespace;
+        internal List<DatapackFile> finishedCompilation = new();
+        /// <summary>
+        /// All applied transformations on the syntax tree so far.
+        /// </summary>
+        internal SetByType appliedWalkers = new();
+        /// <summary>
+        /// The mcfunction namespace.
+        /// </summary>
+        internal readonly string manespace;
+        /// <summary>
+        /// All transformations that we will have applied to the syntax tree.
+        /// </summary>
+        private IFullVisitor[] compilationPhases;
+        /// <summary>
+        /// All references this compilation will use.
+        /// </summary>
+        HashSet<MetadataReference> references;
 
         /// <summary>
-        /// A list of types whose assemblies to automatically include in any
-        /// compilation. The actual listed types don't matter, just their
-        /// namespace.
+        /// Create a new compiler instance. This instance gets compilation
+        /// phases set to the minimum bare-bones to get a working result. For
+        /// better results (including optimisation), also use
+        /// <see cref="SetCompilationPhases(IEnumerable{IFullVisitor})"/>.
         /// </summary>
-        Type[] autoIncludeAssemblyTypes = new[] {
-            typeof(MCMirror.MCFunctionAttribute),
-            typeof(System.Object)
-        };
-
-        public Compiler() {
-            errorDiagnostics = new();
-            warningDiagnostics = new();
+        /// <param name="manespace">
+        /// The datapack namespace to put all functions into.
+        /// </param>
+        /// <param name="references">
+        /// A list of assembly references that the files in this compilation
+        /// depend on. The <c>System</c> and <c>MCMirror</c> references are
+        /// automatically included.
+        /// </param>
+        public Compiler(
+            string manespace = "compiled",
+            ICollection<MetadataReference> references = null
+        ) {
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
-            entryPoints = new();
-            finishedCompilation = new();
+
+            this.manespace = manespace;
+            this.references = ReferenceManager.GetReferences(references);
+
+            SetCompilationPhases(CompilationPhases.BasicCompilationPhases(this));
         }
+
+        /// <summary>
+        /// Sets the various compilation phases for this compiler.
+        /// </summary>
+        /// <param name="compilationPhases">
+        /// All the phases that make up this compiler. This include basic
+        /// things like doing the "turning it into a datapack", but also the
+        /// optimisations and such.
+        /// </param>
+        public void SetCompilationPhases(IEnumerable<IFullVisitor> compilationPhases)
+            => this.compilationPhases = compilationPhases.ToArray();
 
         /// <summary>
         /// <para>
@@ -67,34 +132,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <param name="sources">
         /// A list of valid c# files that may reference eachother's contents.
         /// </param>
-        /// <param name="manespace">
-        /// The datapack namespace to put all functions into.
-        /// </param>
-        /// <param name="references">
-        /// A list of assembly references that the files in this compilation
-        /// depend on. The <c>System</c> and <c>MCMirror</c> references are
-        /// automatically included.
-        /// </param>
         public bool Compile(
-            ICollection<string> sources,
-            string manespace = "compiled",
-            ICollection<MetadataReference> references = null
+            ICollection<string> sources
         ) {
-            this.manespace = manespace;
-            // Automatically include the basic references we need.
-            if (references == null)
-                references = new List<MetadataReference>();
-
-            // There's a few assemblies that need to be manually added that
-            // won't work with the typeof hack.
-            foreach (var reference in GetHardMetadataReferences())
-                references.Add(reference);
-
-            // The long list of possible types' assemblies
-            foreach (var assemblyType in autoIncludeAssemblyTypes) {
-                var assembly = MetadataReference.CreateFromFile(assemblyType.Assembly.Location);
-                references.Add(assembly);
-            }
+            if (hasCompiled)
+                throw new InvalidOperationException("This instance has already compiled once. To recompile, use a new Compiler instance.");
+            hasCompiled = true;
 
             var syntaxTrees = new List<SyntaxTree>(sources.Count);
             foreach(string source in sources) {
@@ -107,49 +150,37 @@ namespace Atrufulgium.FrontTick.Compiler {
                 references: references
             );
 
-            trees = (from syntaxTree in syntaxTrees
-                select new SyntaxSemanticsPair(syntaxTree, compilation)
-                ).ToList();
+            var models = from syntaxTree in syntaxTrees
+                        select compilation.GetSemanticModel(syntaxTree);
 
             // Check if vanilla c# went perfectly fine.
-            foreach(var tree in trees)
-                AppendDiagnostics(tree.semantics.GetDiagnostics());
-
-            if (!CompilationSucceeded)
+            foreach(var model in models)
+                AppendDiagnostics(model.GetDiagnostics());
+            if (CompilationFailed)
                 return false;
 
             // Find the basic entrypoints of compilation. We will later find
             // more stuff that we need, but that is ultimately referenced from
             // these methods.
 
-            foreach(var tree in trees) {
-                var mcFunctionWalker = new MCFunctionWalker(tree.semantics);
-                mcFunctionWalker.Visit(tree.syntax.GetCompilationUnitRoot());
+            foreach(var model in models) {
+                var mcFunctionWalker = new FindEntryPointsWalker(model);
+                mcFunctionWalker.Visit(model.SyntaxTree.GetCompilationUnitRoot());
                 AppendDiagnostics(mcFunctionWalker.customDiagnostics);
 
-                entryPoints.AddRange(mcFunctionWalker.foundMethods);
+                entryPoints.UnionWith(mcFunctionWalker.foundMethods);
             }
-
-            if (!CompilationSucceeded)
+            if (CompilationFailed)
                 return false;
 
-            // Compile every individual method.
-
-            while (entryPoints.Count > 0) {
-                if (CompileMethod(entryPoints.Peek()))
-                    entryPoints.Pop();
-
-                if (!CompilationSucceeded)
+            // Do the actually interesting compilation.
+            foreach(var phase in compilationPhases) {
+                phase.FullVisit();
+                AppendDiagnostics(phase.CustomDiagnostics);
+                if (CompilationFailed)
                     return false;
+                appliedWalkers.AddByMostDerived(phase);
             }
-
-            // TODO: Keep a stack of to-compile methods, starting with entry
-            // points [MCFunction]s. When working through them and encountering
-            // any uncompiled method, ditch all work and start compiling that.
-            // Alternatively, do the above during validations.
-            // In any case, don't be a dumbass and manage duplicates.
-
-            // TODO: Far future when rewriting the tree: https://stackoverflow.com/a/12168782
 
             return true;
         }
@@ -159,39 +190,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// The single source valid c# source file to compile. 
         /// </param>
         public bool Compile(
-            string source,
-            string manespace = "compiled",
-            ICollection<MetadataReference> references = null
-        ) => Compile(new[] { source }, manespace, references);
-
-        /// <summary>
-        /// Compiles a single method. Returns whether it succeeded (which is
-        /// only allowed if it does not add further entry points to
-        /// <see cref="entryPoints"/>).
-        /// </summary>
-        bool CompileMethod(EntryPoint entry) {
-            string path = GetMCFunctionName(entry);
-            DatapackFile finishedFile = new DatapackFile(path, manespace);
-
-            // The important stuff
-
-            finishedCompilation.Add(finishedFile);
-            return true;
-        }
-
-        internal string GetMCFunctionName(EntryPoint entry) {
-            string path;
-            var semantics = entry.tree.semantics;
-            if (entry.method.TryGetSemanticAttributeOfType(typeof(MCFunctionAttribute), entry.tree.semantics, out var attrib)) {
-                if (attrib.ConstructorArguments.Length == 0)
-                    path = semantics.GetFullyQualifiedMethodName(entry.method);
-                else
-                    path = (string)attrib.ConstructorArguments[0].Value;
-            } else {
-                path = "internal/" + semantics.GetTypeInfo(entry.method).ToString();
-            }
-            return DatapackFile.NormalizeFunctionName(path);
-        }
+            string source
+        ) => Compile(new[] { source });
 
         /// <summary>
         /// Sorts and appends all diagnostics in the IEnumerable into the
@@ -205,24 +205,6 @@ namespace Atrufulgium.FrontTick.Compiler {
                 else if (diagnostic.Severity == DiagnosticSeverity.Error)
                     errorDiagnostics.Add(diagnostic);
             }
-        }
-
-        /// <summary>
-        /// A few assemblies are annoying and need to manually be added.
-        /// </summary>
-        static List<MetadataReference> GetHardMetadataReferences() {
-            // See https://stackoverflow.com/a/39049422
-            var assemblyLocation = typeof(object).Assembly.Location;
-            var coreDir = System.IO.Directory.GetParent(assemblyLocation);
-
-            List<MetadataReference> returnList = new();
-            foreach(var a in new[] { /*"mscorlib",*/ "netstandard", "System.Runtime" }) {
-                returnList.Add(MetadataReference.CreateFromFile(
-                    $"{coreDir.FullName}{System.IO.Path.DirectorySeparatorChar}{a}.dll"
-                    )
-                );
-            }
-            return returnList;
         }
     }
 }
