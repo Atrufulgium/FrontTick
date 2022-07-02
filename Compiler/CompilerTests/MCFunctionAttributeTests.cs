@@ -13,7 +13,7 @@ public class Test {
     [MCFunction]
     public static void TestMethod() { }
 }
-", "# (File compiled:test.testmethod.mcfunction)");
+", "# (File compiled:test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void MCFunctionTagTest2()
@@ -22,7 +22,7 @@ public class Test {
     [MCMirror.MCFunction]
     public static void TestMethod() { }
 }
-", "# (File compiled:test.testmethod.mcfunction)");
+", "# (File compiled:test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void MCFunctionTagTest3()
@@ -46,12 +46,16 @@ public class InAnotherFile {
 }
 " },
 @"# (File compiled:anothertest.yetanothertestmethod.mcfunction)
+# (Empty)
 
 # (File compiled:inanotherfile.anotherfiletestmethod.mcfunction)
+# (Empty)
 
 # (File compiled:test.anothertestmethod.mcfunction)
+# (Empty)
 
 # (File compiled:test.testmethod.mcfunction)
+# (Empty)
 ");
 
         [TestMethod]
@@ -62,7 +66,7 @@ public class Test {
     [MCFunction(""do-test"")]
     public static void TestMethod() { }
 }
-", "# (File compiled:do-test.mcfunction)");
+", "# (File compiled:do-test.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void NoMCFunctionTagTest1()
@@ -70,7 +74,7 @@ public class Test {
 public class Test {
     public static void TestMethod() { }
 }
-", "# (File compiled:internal/test.testmethod.mcfunction)");
+", "# (File compiled:internal/test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void NoMCFunctionTagTest2()
@@ -80,7 +84,7 @@ public class Test {
     [NBT(""This is a different, non-MCFunction attribute."")]
     public static void TestMethod() { }
 }
-", "# (File compiled:internal/test.testmethod.mcfunction)");
+", "# (File compiled:internal/test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void WrongMCFunctionTagTest1()

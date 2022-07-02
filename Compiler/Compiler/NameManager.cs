@@ -84,27 +84,37 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Get a registered method's mcfunction name, including namespace. If
         /// this is not found, it instead returns <tt>#UNKNOWN:#UNKNOWN</tt>.
         /// </summary>
+        /// <param name="scopeSuffix">
+        /// What to attach to the MCFunction name
+        /// </param>
         public MCFunctionName GetMethodName(
             SemanticModel semantics,
             MethodDeclarationSyntax method,
-            ICustomDiagnosable diagnosticsOutput
+            ICustomDiagnosable diagnosticsOutput,
+            string scopeSuffix = ""
         ) {
             string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput);
+            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
         }
 
         /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax)"/>
         public MCFunctionName GetMethodName(
             SemanticModel semantics,
             InvocationExpressionSyntax method,
-            ICustomDiagnosable diagnosticsOutput
+            ICustomDiagnosable diagnosticsOutput,
+            string scopeSuffix = ""
         ) {
             string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput);
+            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
         }
 
         /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax)"/>
-        private MCFunctionName GetMethodName(string fullyQualifiedName, SyntaxNode method, ICustomDiagnosable diagnosticsOutput) {
+        private MCFunctionName GetMethodName(
+            string fullyQualifiedName,
+            SyntaxNode method,
+            ICustomDiagnosable diagnosticsOutput,
+            string scopeSuffix = ""
+        ) {
             if (!methodNames.TryGetValue(fullyQualifiedName, out MCFunctionName name)) {
                 diagnosticsOutput.AddCustomDiagnostic(
                     DiagnosticRules.MCFunctionMethodNameNotRegistered,
@@ -112,6 +122,11 @@ namespace Atrufulgium.FrontTick.Compiler {
                     fullyQualifiedName
                 );
                 return new MCFunctionName("#UNKNOWN:#UNKNOWN");
+            }
+            if (scopeSuffix != "") {
+                if (NormalizeFunctionName(scopeSuffix) != scopeSuffix)
+                    throw new ArgumentException("The scope should also satisfy datapack naming rules.");
+                return new MCFunctionName(name + scopeSuffix);
             }
             return name;
         }

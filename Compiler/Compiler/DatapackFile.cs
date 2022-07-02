@@ -44,7 +44,10 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// # etc...
         /// </code>
         /// </summary>
-        public override string ToString()
-            => $"# (File {Path}.mcfunction)\n{GetContent()}";
+        public override string ToString() {
+            if (code.Count > 0)
+                return $"# (File {Path}.mcfunction)\n{GetContent()}";
+            return $"# (File {Path}.mcfunction)\n# (Empty)";
+        }
     }
 }

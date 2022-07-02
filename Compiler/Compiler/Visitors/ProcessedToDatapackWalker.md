@@ -1,4 +1,8 @@
-﻿This compilation stage expects very specifically formatted code, which is the job of the previous stages. The only supported statements are the following in the left column; the rest raise errors. (So e.g. while loops, etc. at this point!) This stage does the following transformations.
+﻿This compilation stage expects very specifically formatted code, which is the job of the previous stages. The only supported statements are the following in the `Before` column; the rest raise errors. (So e.g. while loops, etc. at this point!) This stage does the following transformations.
+
+This phase only does few optimisations, namely:
+* Turn `execute ... run execute ...` into `execute ... ...` without the extra `run execute`.
+* Single-line branches do not branch into a separate file.
 
 <table>
 <tr>
@@ -129,12 +133,12 @@ This means we can do the write-work exactly as the arbitrary assignment case.
 </td>
 </tr>
 <tr>
-<td> ❌ </td>
+<td> ✅ </td>
 <td>
 
-Branching with simple args:
+Branching neq 0:
 ```csharp
-if (condition) {
+if (identifier != 0) {
     // Code1 - one op
 } else {
     // Code2 - many ops

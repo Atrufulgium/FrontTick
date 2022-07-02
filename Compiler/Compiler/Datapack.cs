@@ -35,6 +35,6 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </code>
         /// </summary>
         public override string ToString()
-            => string.Join("\n", files);
+            => string.Join("\n\n", files);
     }
 }
