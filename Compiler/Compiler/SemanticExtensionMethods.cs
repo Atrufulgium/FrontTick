@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
-using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -98,17 +97,6 @@ namespace Atrufulgium.FrontTick.Compiler {
 
             outAttribute = null;
             return false;
-        }
-
-        /// <summary>
-        /// Return the full name (namespace.class.method) of a method.
-        /// </summary>
-        public static string GetFullyQualifiedMethodName(this SemanticModel semantics, MethodDeclarationSyntax method) {
-            var methodModel = semantics.GetDeclaredSymbol(method);
-            var containingType = methodModel.ContainingType;
-            string methodName = methodModel.Name;
-            string containingName = containingType.ToString();
-            return $"{containingName}.{methodName}";
         }
 
         // Note to self for future: https://stackoverflow.com/a/33966036

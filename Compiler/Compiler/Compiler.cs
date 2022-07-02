@@ -58,19 +58,19 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// All method entry points we are compiling. These are both
         /// [MCFunction]-tagged methods and their dependencies.
         /// </summary>
-        internal HashSet<EntryPoint> entryPoints = new();
+        internal readonly HashSet<EntryPoint> entryPoints = new();
         /// <summary>
         /// All work that is done so far.
         /// </summary>
-        internal List<DatapackFile> finishedCompilation = new();
+        internal readonly List<DatapackFile> finishedCompilation = new();
         /// <summary>
         /// All applied transformations on the syntax tree so far.
         /// </summary>
-        internal SetByType appliedWalkers = new();
+        internal readonly SetByType appliedWalkers = new();
         /// <summary>
-        /// The mcfunction namespace.
+        /// Handling all method names and easy (local) name conversions.
         /// </summary>
-        internal readonly string manespace;
+        internal readonly NameManager nameManager;
         /// <summary>
         /// All transformations that we will have applied to the syntax tree.
         /// </summary>
@@ -78,7 +78,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// All references this compilation will use.
         /// </summary>
-        HashSet<MetadataReference> references;
+        private readonly HashSet<MetadataReference> references;
 
         /// <summary>
         /// Create a new compiler instance. This instance gets compilation
@@ -101,10 +101,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
 
-            this.manespace = manespace;
+            nameManager = new(manespace);
             this.references = ReferenceManager.GetReferences(references);
 
-            SetCompilationPhases(CompilationPhases.BasicCompilationPhases(this));
+            SetCompilationPhases(CompilationPhases.BasicCompilationPhases);
         }
 
         /// <summary>
@@ -115,8 +115,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// things like doing the "turning it into a datapack", but also the
         /// optimisations and such.
         /// </param>
-        public void SetCompilationPhases(IEnumerable<IFullVisitor> compilationPhases)
-            => this.compilationPhases = compilationPhases.ToArray();
+        public void SetCompilationPhases(IEnumerable<IFullVisitor> compilationPhases) {
+            foreach (var phase in compilationPhases) {
+                phase.SetCompiler(this);
+            }
+            this.compilationPhases = compilationPhases.ToArray();
+        }
 
         /// <summary>
         /// <para>
@@ -164,9 +168,9 @@ namespace Atrufulgium.FrontTick.Compiler {
             // these methods.
 
             foreach(var model in models) {
-                var mcFunctionWalker = new FindEntryPointsWalker(model);
+                var mcFunctionWalker = new FindEntryPointsWalker(model, nameManager);
                 mcFunctionWalker.Visit(model.SyntaxTree.GetCompilationUnitRoot());
-                AppendDiagnostics(mcFunctionWalker.customDiagnostics);
+                AppendDiagnostics(mcFunctionWalker.CustomDiagnostics);
 
                 entryPoints.UnionWith(mcFunctionWalker.foundMethods);
             }
@@ -175,7 +179,17 @@ namespace Atrufulgium.FrontTick.Compiler {
 
             // Do the actually interesting compilation.
             foreach(var phase in compilationPhases) {
-                phase.FullVisit();
+                // The exception is a very uncommon path that by definition can
+                // only be walked once per compilation. It's the neatest way to
+                // message so far across the entire callstack.
+                try {
+                    phase.FullVisit();
+                } catch (StopCompilingImmediatelyException) {
+                    // We're guaranteed to have diagnostics by
+                    /// <see cref="StopCompilingImmediatelyException.Create(ICustomDiagnosable, DiagnosticDescriptor, Location, object[])"/>
+                    // so CompilationFailed is guaranteed to be true.
+                    // So nothing to do here.
+                }
                 AppendDiagnostics(phase.CustomDiagnostics);
                 if (CompilationFailed)
                     return false;

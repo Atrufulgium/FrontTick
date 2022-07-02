@@ -13,7 +13,7 @@ public class Test {
     [MCFunction]
     public static void TestMethod() { }
 }
-", "# (File compiled:test.testmethod.mcfunction)\n");
+", "# (File compiled:test.testmethod.mcfunction)");
 
         [TestMethod]
         public void MCFunctionTagTest2()
@@ -22,7 +22,7 @@ public class Test {
     [MCMirror.MCFunction]
     public static void TestMethod() { }
 }
-", "# (File compiled:test.testmethod.mcfunction)\n");
+", "# (File compiled:test.testmethod.mcfunction)");
 
         [TestMethod]
         public void MCFunctionTagTest3()
@@ -62,7 +62,7 @@ public class Test {
     [MCFunction(""do-test"")]
     public static void TestMethod() { }
 }
-", "# (File compiled:do-test.mcfunction)\n");
+", "# (File compiled:do-test.mcfunction)");
 
         [TestMethod]
         public void NoMCFunctionTagTest1()
@@ -70,7 +70,7 @@ public class Test {
 public class Test {
     public static void TestMethod() { }
 }
-", "");
+", "# (File compiled:internal/test.testmethod.mcfunction)");
 
         [TestMethod]
         public void NoMCFunctionTagTest2()
@@ -80,7 +80,7 @@ public class Test {
     [NBT(""This is a different, non-MCFunction attribute."")]
     public static void TestMethod() { }
 }
-", "");
+", "# (File compiled:internal/test.testmethod.mcfunction)");
 
         [TestMethod]
         public void WrongMCFunctionTagTest1()
@@ -131,6 +131,32 @@ public class Test {
     public static void TestMethod() { }
 }
 ", "FT0002");
+
+        [TestMethod]
+        public void WrongMCFunctionTagTest6()
+            => TestCompilationFails(@"
+using MCMirror;
+public class Test {
+    [MCFunction(""lorem-ipsum"")]
+    public static void TestMethod() { }
+
+    [MCFunction(""lorem-ipsum"")]
+    public static void TestMethod2() { }
+}
+", "FT0003");
+
+        [TestMethod]
+        public void WrongMCFunctionTagTest7()
+            => TestCompilationFails(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() { }
+
+    [MCFunction]
+    public static void tESTmETHOD() { }
+}
+", "FT0003");
 
     }
 }

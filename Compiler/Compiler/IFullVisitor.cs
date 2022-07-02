@@ -1,5 +1,4 @@
-﻿using Atrufulgium.FrontTick.Compiler.FullRewriters;
-using Atrufulgium.FrontTick.Compiler.FullWalkers;
+﻿using Atrufulgium.FrontTick.Compiler.Visitors;
 using Microsoft.CodeAnalysis;
 using System.Collections.ObjectModel;
 
@@ -13,12 +12,26 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// Don't implement this manually anywhere else. I'm assuming the
     /// implementors being *just* those two classes and their inheritors.
     /// </remarks>
-    public interface IFullVisitor {
+    public interface IFullVisitor : ICustomDiagnosable {
+        /// <summary>
+        /// Before doing anything, the compiler should be set with this method
+        /// for any setup work.
+        /// </summary>
+        public void SetCompiler(Compiler c);
+
         /// <summary>
         /// Visit all trees this compiler cares about.
         /// </summary>
         public void FullVisit();
 
+        /// <summary>
+        /// Whether this visitor only reads, or does both reading and writing
+        /// operations.
+        /// </summary>
+        public bool ReadOnly { get; }
+    }
+
+    public interface ICustomDiagnosable {
         /// <summary>
         /// <para>
         /// All custom diagnostics encountered during compilation, in
@@ -30,11 +43,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </para>
         /// </summary>
         public ReadOnlyCollection<Diagnostic> CustomDiagnostics { get; }
-
         /// <summary>
-        /// Whether this visitor only reads, or does both reading and writing
-        /// operations.
+        /// This should just shortcut adding a diagnostic via Diagnostic.Create
         /// </summary>
-        public bool ReadOnly { get; }
+        public void AddCustomDiagnostic(DiagnosticDescriptor descriptor, Location location, params object[] messageArgs);
+    }
+
+    public static class CustomDiagnosableExtensions {
+        public static void AddCustomDiagnostic(
+            this ICustomDiagnosable diagnosticsOutput,
+            DiagnosticDescriptor descriptor,
+            SyntaxNode node,
+            params object[] messageArgs)
+            => diagnosticsOutput.AddCustomDiagnostic(descriptor, node.GetLocation(), messageArgs);
     }
 }

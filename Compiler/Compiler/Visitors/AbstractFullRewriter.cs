@@ -5,7 +5,12 @@ using System.Collections.ObjectModel;
 
 // TODO: Far future when rewriting the tree: https://stackoverflow.com/a/12168782
 
-namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
+namespace Atrufulgium.FrontTick.Compiler.Visitors {
+    // Big note to self: On any Visit[X]() methods, if you don't call
+    // base.Visit[X](), you just won't walk child methods; if you call it
+    // before doing anything, you go deep -> shallow; if you call it after
+    // doing everything, you go shallow -> deep.
+    // The latter only makes sense if you don't rewrite.
     /// <summary>
     /// <para>
     /// Represents a rewriter writing not just over all internal nodes of a
@@ -18,32 +23,46 @@ namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
     /// the dependencies are satisfied is only discovered during runtime.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// In order not to get any confusion with any other source generators, not
+    /// get clashes with existing names, and allow literal name translation
+    /// support to MCFunction, all non-method identifiers introduced by these
+    /// methods should be prefixed with a '#'.
+    /// (c.f. vanilla c# prefixing &lt;&gt; with e.g. generated yield classes.)
+    /// </remarks>
     public abstract class AbstractFullRewriter : CSharpSyntaxRewriter, IFullVisitor {
 
         public ReadOnlyCollection<Diagnostic> CustomDiagnostics => new(customDiagnostics);
         List<Diagnostic> customDiagnostics = new();
+        protected NameManager nameManager;
 
         public bool ReadOnly => false;
+        public void AddCustomDiagnostic(DiagnosticDescriptor descriptor, Location location, params object[] messageArgs)
+            => customDiagnostics.Add(Diagnostic.Create(descriptor, location, messageArgs));
 
-        /// <inheritdoc cref="FullWalkers.AbstractFullWalker.CurrentEntryPoint"/>
+        /// <inheritdoc cref="AbstractFullWalker.CurrentEntryPoint"/>
         internal EntryPoint CurrentEntryPoint { get; private set; }
+        /// <inheritdoc cref="AbstractFullWalker.CurrentSemantics"/>
+        internal SemanticModel CurrentSemantics { get; private set; }
 
         internal Compiler compiler;
 
-        public AbstractFullRewriter(Compiler compiler) {
+        public virtual void SetCompiler(Compiler compiler) {
             this.compiler = compiler;
+            nameManager = compiler.nameManager;
         }
 
         public void FullVisit() {
             foreach (var entry in compiler.entryPoints) {
                 CurrentEntryPoint = entry;
+                CurrentSemantics = entry.semantics;
                 Aborted = false;
                 Visit(entry.method);
             }
         }
 
         protected bool Aborted { get; private set; }
-        /// <inheritdoc cref="FullWalkers.AbstractFullWalker.Abort"/>
+        /// <inheritdoc cref="AbstractFullWalker.Abort"/>
         protected void Abort() {
             Aborted = true;
         }
@@ -56,7 +75,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
 
         public TDep1 Dependency1 { get; private set; }
 
-        public AbstractFullRewriter(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency1 = compiler.appliedWalkers.Get<TDep1>();
         }
     }
@@ -69,7 +89,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
 
         public TDep2 Dependency2 { get; private set; }
 
-        public AbstractFullRewriter(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency2 = compiler.appliedWalkers.Get<TDep2>();
         }
     }
@@ -83,7 +104,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
 
         public TDep3 Dependency3 { get; private set; }
 
-        public AbstractFullRewriter(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency3 = compiler.appliedWalkers.Get<TDep3>();
         }
     }
@@ -99,7 +121,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullRewriters {
 
         public TDep4 Dependency4 { get; private set; }
 
-        public AbstractFullRewriter(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency4 = compiler.appliedWalkers.Get<TDep4>();
         }
     }

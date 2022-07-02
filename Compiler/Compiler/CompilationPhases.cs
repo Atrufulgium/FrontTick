@@ -1,5 +1,4 @@
-﻿using Atrufulgium.FrontTick.Compiler.FullRewriters;
-using Atrufulgium.FrontTick.Compiler.FullWalkers;
+﻿using Atrufulgium.FrontTick.Compiler.Visitors;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -12,16 +11,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// If fed to <see cref="Compiler.SetCompilationPhases(IEnumerable{IFullVisitor})"/>,
         /// this compiler will do the bare-bones minimum. This is the default.
         /// </summary>
-        public static IFullVisitor[] BasicCompilationPhases(Compiler c) => new IFullVisitor[] {
-                new ProcessedToDatapackWalker(c)
+        public static IFullVisitor[] BasicCompilationPhases => new IFullVisitor[] {
+                new ArithmeticFlattenRewriter(),
+                new ProcessedToDatapackWalker()
             };
 
         /// <summary>
         /// If fed to <see cref="Compiler.SetCompilationPhases(IEnumerable{IFullVisitor})"/>,
         /// this will do as much as it can.
         /// </summary>
-        public static IFullVisitor[] OptimisedCompilationPhases(Compiler c) => new IFullVisitor[] {
-                new ProcessedToDatapackWalker(c)
+        public static IFullVisitor[] OptimisedCompilationPhases => new IFullVisitor[] {
+                new ArithmeticFlattenRewriter(),
+                new ProcessedToDatapackWalker()
             };
     }
 }

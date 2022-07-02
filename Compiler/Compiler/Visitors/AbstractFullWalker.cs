@@ -3,7 +3,11 @@ using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
-namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
+namespace Atrufulgium.FrontTick.Compiler.Visitors {
+    // Big note to self: On any Visit[X]() methods, if you don't call
+    // base.Visit[X](), you just won't walk child methods; if you call it
+    // before doing anything, you go deep -> shallow; if you call it after
+    // doing everything, you go shallow -> deep.
     /// <summary>
     /// <para>
     /// Represents a walker walking not just over all internal nodes of a
@@ -20,24 +24,34 @@ namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
 
         public ReadOnlyCollection<Diagnostic> CustomDiagnostics => new(customDiagnostics);
         List<Diagnostic> customDiagnostics = new();
+        protected NameManager nameManager;
 
         public bool ReadOnly => true;
+        public void AddCustomDiagnostic(DiagnosticDescriptor descriptor, Location location, params object[] messageArgs)
+            => customDiagnostics.Add(Diagnostic.Create(descriptor, location, messageArgs));
 
         /// <summary>
         /// When using <see cref="FullVisit"/>, all data relevant to the
         /// current entry point.
         /// </summary>
         internal EntryPoint CurrentEntryPoint { get; private set; }
+        /// <summary>
+        /// When using <see cref="FullVisit"/>, the current entry point's
+        /// semantic model.
+        /// </summary>
+        internal SemanticModel CurrentSemantics { get; private set; }
 
         internal Compiler compiler;
 
-        public AbstractFullWalker(Compiler compiler) {
+        public virtual void SetCompiler(Compiler compiler) {
             this.compiler = compiler;
+            nameManager = compiler.nameManager;
         }
 
         public void FullVisit() {
             foreach (var entry in compiler.entryPoints) {
                 CurrentEntryPoint = entry;
+                CurrentSemantics = entry.semantics;
                 Aborted = false;
                 Visit(entry.method);
             }
@@ -65,7 +79,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
 
         public TDep1 Dependency1 { get; private set; }
 
-        public AbstractFullWalker(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency1 = compiler.appliedWalkers.Get<TDep1>();
         }
     }
@@ -78,7 +93,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
 
         public TDep2 Dependency2 { get; private set; }
 
-        public AbstractFullWalker(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency2 = compiler.appliedWalkers.Get<TDep2>();
         }
     }
@@ -92,7 +108,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
 
         public TDep3 Dependency3 { get; private set; }
 
-        public AbstractFullWalker(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency3 = compiler.appliedWalkers.Get<TDep3>();
         }
     }
@@ -108,7 +125,8 @@ namespace Atrufulgium.FrontTick.Compiler.FullWalkers {
 
         public TDep4 Dependency4 { get; private set; }
 
-        public AbstractFullWalker(Compiler compiler) : base(compiler) {
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
             Dependency4 = compiler.appliedWalkers.Get<TDep4>();
         }
     }

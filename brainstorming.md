@@ -46,6 +46,7 @@ Notes to keep in mind
 * Rightclick detection: `minecraft.used:minecraft:carrot_on_a_stick`/`..:warped_fungus_on_a_stick`. Latter is nicer because who's interested in striders anyway.
 * Perhaps do held item detection/etc via the tick advancement with checking the held item via its "stored enchantment" id?
 * *Held* rightclick-items are very easy to detect with eyes of ender in worlds without fortresses. Maybe also in worlds with fortresses a single click?
+* Short-circuiting boolean conditions how? Just chaining `execute if ...` and `execute unless ...`?
 
 Basic ideas for transformation rules
 ======
