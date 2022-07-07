@@ -18,6 +18,7 @@ Table of Contents
   - [Strings](#strings)
   - [Literal `.mcfunction`](#literal-mcfunction)
 - [Basic ideas for interacting with the game](#basic-ideas-for-interacting-with-the-game)
+  - [Selectors](#selectors)
   - [Location](#location)
   - [Blocks](#blocks)
   - [Block/Non-player entity inventories](#blocknon-player-entity-inventories)
@@ -566,7 +567,40 @@ How much trouble am I willing to go through for this?
 
 Basic ideas for interacting with the game
 ======
-The basic things we need are reading/writing from entities (including inventories) and some way to interact with blocks (also including inventories). Minecraft is very selector centered, so an `IEnumerable Selector` is an obvious way to do all `@X`s. As most selectors are of a given entity, we can even force that during compile time (with something like `ZombieSelector : Selector`). We can also fake *some* player-related events with advancements.
+The basic things we need are reading/writing from entities (including inventories) and some way to interact with blocks (also including inventories). We can also fake *some* player-related events with advancements.
+
+Selectors
+------
+Minecraft is very selector-heavy, so it makes sense to revolve some effort around that. First of all, note that the obvious option of allowing
+```csharp
+int GetRandom(Selector selector) {
+    foreach(var entity in selector)
+        return Random(0,10);
+}
+```
+is pretty ill-defined. Do we fork the execution into many, involving a bunch of expensive copying so that the stack is the same for all? Do we *not* fork into many, just getting the first result and disregarding the rest? Whatever we do, it's not exactly clear from reading the code, so I don't like this.
+
+I feel like a better option would be to have a `[SelectorCallable]` tag on `void Method(Selector s, ...)` methods, which then *only* can be called by something like `Selector.ForEach(Delegate method)`. Inside such methods, only allow whatever read access the context wants, but only retain write access to method locals and entity data. This way, execution seems well-defined. (Void so it can't be chained into anything weird; I *could* return vanilla's result of "how many selectors or 0", but that turns into a headache in edge cases such as `return`.) Perhaps also allow for syntax sugar for extracting
+```csharp
+// In some method
+foreach(var entity in selector) {
+    // Bunch'a code
+}
+```
+⇓
+```csharp
+// In some method
+selector.ForEach(GeneratedMethod);
+
+//Somewhere else
+[SelectorCallable]
+void GeneratedMethod(Selector s) {
+    // Bunch'a code
+}
+```
+with maybe some added arguments for read method locals. Throw errors if it isn't possible to extract it legally. This does suffer from the non-clarity above so perhaps require a compilation argument to allow this? (Well, it'll be a compile phase, so not that hard to allow customisation.)
+
+As most selectors are of a given entity, we can even force that during compile time (with something like `ZombieSelector : Selector`).
 
 Location
 ------
