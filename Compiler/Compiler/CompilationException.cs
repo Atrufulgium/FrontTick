@@ -30,5 +30,15 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] Calls' arguments must consist of identifiers or literals.");
         public static CompilationException ToDatapackMethodCallsMustBeStatic
             => new("[To Datapack] Calls may only target static methods.");
+        public static CompilationException ToDatapackReturnBranchMustBeReturnStatement
+            => new("[To Datapack] Encountered a non-return statement in branching if-else tree featuring a return statement. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
+        public static CompilationException ToDatapackReturnElseMustAlsoHaveReturnIf
+            => new("[To Datapack] Encountered a return-statement in an else block, without a return statement in the corresponding if-block. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
+        public static CompilationException ToDatapackReturnIfMustAlsoHaveReturnElse
+            => new("[To Datapack] Encountered a return-statement in an if block, without a return statement in the corresponding else-block. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
+        public static CompilationException ToDatapackReturnNoNonReturnAfterReturn
+            => new("[To Datapack] (Conditional) returns must be the final statements in a method. No functionality allowed after that.");
+        public static CompilationException ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls
+            => new("[To Datapack] \"return RET\"'s RET must be a literal, identifier, or method call.");
     }
 }

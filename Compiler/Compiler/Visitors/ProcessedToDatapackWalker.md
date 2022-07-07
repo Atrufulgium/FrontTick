@@ -162,19 +162,6 @@ execute if score Context#condition _ matches 0 run function namespace:context-el
 <td> ❌ </td>
 <td>
 
-Switches
-
-</td>
-<td>
-
-Oh no. See the brainstorm, but this one's *spicy*. Note that Roslyn does said spice for non-contiguous ranges already so I *may* be able to hack around it. Perhaps just multiply all cases by two?
-
-</td>
-</tr>
-<tr>
-<td> ❌ </td>
-<td>
-
 Goto labels:
 ```csharp
 Label:
@@ -211,45 +198,58 @@ function namespace:method-label1
 `if (..) goto ..` does *not* prevent execution from the part after the branch finishes. <br/>
 The obvious solution consists of checking in all scopes between this and the target whether we `goto`'d via a flag. This explodes (especially in switches etc), but I can't think of anything better.
 
+Do note that the implementation of this needs to *also* deal with code splitting into a bazillion executors due to selectors being able to suddenly fork a ton. I don't even *know* what it is supposed to mean for e.g. a single branch of execution splitting into many and then returning different values.
+
 </td>
 </tr>
 <tr>
-<td> ❌ </td>
+<td> ✅ </td>
 <td>
 
 Branch-independent return:
 ```csharp
 // (Method root scope)
 return value;
+// (No non-returns)
 ```
 
 </td>
 <td>
 
-Simply assign to the special `#RET` (or for larger types `#RET#0`, `#RET#1`, etc.).
+Simply assign to the special `#RET` (or for larger types `#RET#0`, `#RET#1`, etc.), the same way as integer-scoreboard assignment.
+
+We can ignore any assignment and handle just the call if it is of the form `return Value();` because otherwise we'd get `#RET _ = #RET _`.
 
 </td>
 </tr>
 
 <tr>
-<td> ❌ </td>
+<td> ✅ </td>
 <td>
 
 Branch-dependent return:
 ```csharp
 // (Method root scope)
-if (condition)
-    return value;
-// (More returns)
-// (No non-returns)
+// A if-else tree where *every* if has an else.
+// Every branch must be a return.
+// Example:
+if (i1 != 0) {
+    if (i2 != 0) {
+        return i2;
+    } else {
+        return i1;
+    }
+} else {
+    return i1;
+}
 ```
-(1) With `return` the *only* statement in the branch. <br/>
-(2) No other code non-`return`ing code after.
 
 </td>
 <td>
 
 Simply have a conditional assignment to `#RET`. No need to quit the function because there is no code after this anyway. (This state should be achieved with `goto`s.)
+
+By forcing this format, we compile into disjoint branches that each return something, without having any other behaviour that might affect stuff if we run everything anyway.
 
 </td>
 </tr>

@@ -35,7 +35,7 @@ public class Test {
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongDeclarationTest1()
+        public void DeclarationTestWrong1()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -48,7 +48,7 @@ public class Test {
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongDeclarationTest2()
+        public void DeclarationTestWrong2()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -61,7 +61,7 @@ public class Test {
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongDeclarationTest3()
+        public void DeclarationTestWrong3()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -136,7 +136,7 @@ scoreboard players operation #compiled:test.testmethod#i _ %= #compiled:test.tes
         // TODO: Support and test for negative integer literals.
 
         [TestMethod]
-        public void WrongAssignmentTest1()
+        public void AssignmentTestWrong1()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -151,7 +151,7 @@ public class Test {
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongAssignmentTest2()
+        public void AssignmentTestWrong2()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -171,7 +171,27 @@ public class Test {
         /// <see cref="MCFunctionAttributeTests"/>
         // so here is just testing the remaining diagnostics and exceptions.
         [TestMethod]
-        public void WrongCallTest1()
+        public void TestCall1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        CalledMethod();
+    }
+
+    public static void CalledMethod() { }
+}
+", @"
+# (File compiled:internal/test.calledmethod.mcfunction)
+# (Empty)
+
+# (File compiled:test.testmethod.mcfunction)
+function compiled:internal/test.calledmethod
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void CallTestWrong1()
             => TestCompilationThrows(@"
 using MCMirror;
 public class Test {
@@ -186,7 +206,7 @@ public class Test {
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongCallTest2()
+        public void CallTestWrong2()
             => TestCompilationFails(@"
 using MCMirror;
 public class Test {
@@ -413,7 +433,7 @@ execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compi
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void WrongBranchingTest1()
+        public void BranchingTestWrong1()
             => TestCompilationThrows(@"
 using MCMirror;
 internal class Test {
@@ -428,7 +448,7 @@ internal class Test {
 ", CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero);
 
         [TestMethod]
-        public void WrongBranchingTest2()
+        public void BranchingTestWrong2()
             => TestCompilationThrows(@"
 using MCMirror;
 internal class Test {
@@ -445,5 +465,204 @@ internal class Test {
 ", CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero);
         #endregion
 
+        #region root return tests
+        [TestMethod]
+        public void TestReturn1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        return 3;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #RET _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturn2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 3;
+        return i;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#i _ 3
+scoreboard players operation #RET _ = #compiled:internal/test.testmethod#i _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturn3()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        return TestMethod2();
+    }
+    static int TestMethod2() {
+        return 3;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+function compiled:internal/test.testmethod2
+
+# (File compiled:internal/test.testmethod2.mcfunction)
+scoreboard players set #RET _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturn4()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i,j;
+        i = 0;
+        j = 0;
+        if (i != 0)
+            if (j != 0)
+                return 1;
+            else
+                return 2;
+        else
+            return 3;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#i _ 0
+scoreboard players set #compiled:internal/test.testmethod#j _ 0
+execute unless score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-0-if-branch
+execute if score #compiled:internal/test.testmethod#i _ matches 0 run scoreboard players set #RET _ 3
+
+# (File compiled:internal/test.testmethod-0-if-branch.mcfunction)
+execute unless score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 1
+execute if score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 2
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong1()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        return 3;
+        int i;
+    }
+}
+", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong2()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        return 2 + 2;
+    }
+}
+", CompilationException.ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong3()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 0;
+        if (i != 0)
+            return 3;
+        return 4;
+    }
+}
+", CompilationException.ToDatapackReturnIfMustAlsoHaveReturnElse,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong4()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 0;
+        if (i != 0) {
+            i = 3;
+            return i;
+        } else {
+            return 4;
+        }
+    }
+}
+", CompilationException.ToDatapackReturnBranchMustBeReturnStatement,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong5()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 0;
+        if (i != 0) {
+            return i;
+            i = 3;
+        } else {
+            return 4;
+        }
+    }
+}
+", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong6()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 0;
+        if (i != 0) {
+            return i;
+        } else {
+            i = 3;
+        }
+        return i;
+    }
+}
+", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnWrong7()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+        int i;
+        i = 0;
+        if (i != 0) {
+            i = 3;
+        } else {
+            return i;
+        }
+        return i;
+    }
+}
+", CompilationException.ToDatapackReturnElseMustAlsoHaveReturnIf,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        #endregion
     }
 }
