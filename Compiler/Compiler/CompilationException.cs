@@ -26,6 +26,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] Declarations may not be initializers.");
         public static CompilationException ToDatapackDeclarationsMustBeInMethodRootScope
             => new("[To Datapack] Declarations must be in the method's root scope.");
+        public static CompilationException ToDatapackLiteralsIntegerOnly
+            => new("[To Datapack] Literals may only be integers at this stage.");
         public static CompilationException ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals
             => new("[To Datapack] Calls' arguments must consist of identifiers or literals.");
         public static CompilationException ToDatapackMethodCallsMustBeStatic
@@ -40,5 +42,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] (Conditional) returns must be the final statements in a method. No functionality allowed after that.");
         public static CompilationException ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls
             => new("[To Datapack] \"return RET\"'s RET must be a literal, identifier, or method call.");
+        public static CompilationException ToDatapackUnsupportedUnary
+            => new("[To Datapack] The only supported unary operations are \"+literal\" and \"-literal\".");
     }
 }

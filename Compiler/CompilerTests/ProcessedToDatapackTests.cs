@@ -132,8 +132,47 @@ scoreboard players operation #compiled:test.testmethod#i _ /= #compiled:test.tes
 scoreboard players operation #compiled:test.testmethod#i _ %= #compiled:test.testmethod#j _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
-        // TODO: Test for RHS method calls. This requires first implementing methods though.
-        // TODO: Support and test for negative integer literals.
+        // (This test also depends on "return" working properly.)
+        [TestMethod]
+        public void AssignmentTest3()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+        i = 3;
+        i -= GetThree();
+    }
+    public static int GetThree() { return 3; }
+}
+", @"
+# (File compiled:internal/test.getthree.mcfunction)
+scoreboard players set #RET _ 3
+
+# (File compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 3
+function compiled:internal/test.getthree
+scoreboard players operation #compiled:test.testmethod#i _ -= #RET _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void AssignmentTest4()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+        i = 3;
+        i += - + + - + - 3;
+    }
+}
+", @"
+# (File compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 3
+scoreboard players operation #compiled:test.testmethod#i _ += #CONST#-3 _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void AssignmentTestWrong1()
@@ -162,6 +201,48 @@ public class Test {
     }
 }
 ", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void AssignmentTestWrong3()
+            => TestCompilationThrows(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+        i = -(2 + 2);
+    }
+}
+", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void AssignmentTestWrong4()
+            => TestCompilationThrows(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+        i = ~3;
+    }
+}
+", CompilationException.ToDatapackUnsupportedUnary,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void AssignmentTestWrong5()
+            => TestCompilationThrows(@"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        float i;
+        i = 3.5f;
+    }
+}
+", CompilationException.ToDatapackLiteralsIntegerOnly,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 

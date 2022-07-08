@@ -125,35 +125,39 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // https://github.com/dotnet/roslyn/blob/main/src/Compilers/CSharp/Portable/Generated/CSharp.Generated.g4#L713
             if (expr is AssignmentExpressionSyntax assign
                 && assign.Left is IdentifierNameSyntax lhs) {
-                string l = LocalVarName(lhs.Identifier.Text), r;
-                var op = assign.OperatorToken.Text;
-                if (Array.IndexOf(new[] { "=", "+=", "-=", "*=", "/=", "%=" }, op) < 0)
-                    throw CompilationException.ToDatapackAssignmentOpsMustBeSimpleOrArithmetic;
-                bool isSetCommand = false;
-
-                // Partially copypasted into
-                /// <see cref="HandleReturn(ReturnStatementSyntax)"/>
-                if (assign.Right is LiteralExpressionSyntax rhsLit) {
-                    // (todo: -x is not a literal lol)
-                    isSetCommand = op == "=";
-                    r = int.Parse(rhsLit.Token.Text).ToString(); // yes very wasteful, bleh, TODO: better exception
-                    if (!isSetCommand)
-                        r = ConstName(r);
-                } else if (assign.Right is IdentifierNameSyntax rhsId) {
-                    r = LocalVarName(rhsId.Identifier.Text);
-                } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
-                    HandleInvocation(rhsCall);
-                    r = "#RET";
-                } else {
-                    throw CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls;
-                }
-                if (isSetCommand)
-                    AddCode($"scoreboard players set {l} _ {r}");
-                else
-                    AddCode($"scoreboard players operation {l} _ {op} {r} _");
+                string lhsName = LocalVarName(lhs.Identifier.Text);
+                HandleAssignment(assign, lhsName);
             } else if (expr is InvocationExpressionSyntax call) {
                 HandleInvocation(call);
             }
+        }
+
+        private void HandleAssignment(AssignmentExpressionSyntax assign, string lhsName) {
+            string rhsName;
+            var op = assign.OperatorToken.Text;
+            if (Array.IndexOf(new[] { "=", "+=", "-=", "*=", "/=", "%=" }, op) < 0)
+                throw CompilationException.ToDatapackAssignmentOpsMustBeSimpleOrArithmetic;
+            bool isSetCommand = false;
+
+            // Partially copypasted into
+            /// <see cref="HandleReturn(ReturnStatementSyntax)"/>
+            if (TryGetIntegerLiteral(assign.Right, out int literal)) {
+                isSetCommand = op == "=";
+                rhsName = literal.ToString();
+                if (!isSetCommand)
+                    rhsName = ConstName(rhsName);
+            } else if (assign.Right is IdentifierNameSyntax rhsId) {
+                rhsName = LocalVarName(rhsId.Identifier.Text);
+            } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
+                HandleInvocation(rhsCall);
+                rhsName = "#RET";
+            } else {
+                throw CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls;
+            }
+            if (isSetCommand)
+                AddCode($"scoreboard players set {lhsName} _ {rhsName}");
+            else
+                AddCode($"scoreboard players operation {lhsName} _ {op} {rhsName} _");
         }
 
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
@@ -168,8 +172,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (ifst.Condition is BinaryExpressionSyntax bin
                 && bin.Left is IdentifierNameSyntax id
                 && bin.OperatorToken.Text == "!="
-                && bin.Right is LiteralExpressionSyntax lit
-                && lit.Token.Text == "0") {
+                && TryGetIntegerLiteral(bin.Right, out int rhsValue)
+                && rhsValue == 0) {
                 conditionIdentifier = LocalVarName(id.Identifier.Text);
             } else {
                 throw CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero;
@@ -231,8 +235,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             foreach(var arg in call.ArgumentList.Arguments) {
                 string argName = LocalVarName($"arg{i}", methodName);
                 // Too copypastay of the statement case, this code's the sketch anyway
-                if (arg.Expression is LiteralExpressionSyntax lit) {
-                    AddCode($"scoreboard players set {argName} _ {int.Parse(lit.Token.Text)}");
+                if (TryGetIntegerLiteral(arg.Expression, out int literal)) {
+                    AddCode($"scoreboard players set {argName} _ {literal}");
                 } else if (arg.Expression is IdentifierNameSyntax id) {
                     AddCode($"scoreboard players operation {argName} _ = {LocalVarName(id.Identifier.Text)} _");
                 } else {
@@ -247,13 +251,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         private void HandleReturn(ReturnStatementSyntax ret) {
             encounteredReturn = true;
             // This is basically an assignment "#RET = [return content]".
-            // TODO: Currently basically copypasta from
-            /// <see cref="HandleExpression(ExpressionSyntax)"/>
+            // Currently basically copypasta from
+            /// <see cref="HandleAssignment(AssignmentExpressionSyntax, string)"/>
             // but should be refactored to be neater at some point.
             // OTOH, it's subtly different *enough* with the call case.
-            if (ret.Expression is LiteralExpressionSyntax lit) {
-                string value = int.Parse(lit.Token.Text).ToString();
-                AddCode($"scoreboard players set #RET _ {value}");
+            if (TryGetIntegerLiteral(ret.Expression, out int literal)) {
+                AddCode($"scoreboard players set #RET _ {literal}");
             } else if (ret.Expression is IdentifierNameSyntax id) {
                 string identifier = LocalVarName(id.Identifier.Text);
                 AddCode($"scoreboard players operation #RET _ = {identifier} _");
@@ -277,6 +280,43 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             MCFunctionName ret = nameManager.GetMethodName(CurrentSemantics, currentNode, this, $"-{branchCounter}-{identifier}");
             branchCounter++;
             return ret;
+        }
+
+        /// <summary>
+        /// Try to turn an expression that is supposed to represent a integer
+        /// literal into the actual number it represents.
+        /// Returns whether the ExpressionSyntax is of the correct type.
+        /// If so, it can either throw in unsupported syntaxes, or populate the
+        /// out variable with the actual value.
+        /// </summary>
+        private static bool TryGetIntegerLiteral(ExpressionSyntax expr, out int value) {
+            if (expr is PrefixUnaryExpressionSyntax unary) {
+                return TryGetIntegerLiteral(unary, out value);
+            } else if (expr is LiteralExpressionSyntax lit) {
+                value = GetIntegerLiteral(lit);
+                return true;
+            }
+            value = 0;
+            return false;
+        }
+        // Only call this from TryGetIntegerLiteral
+        private static bool TryGetIntegerLiteral(PrefixUnaryExpressionSyntax unary, out int value) {
+            if (!TryGetIntegerLiteral(unary.Operand, out value))
+                return false;
+
+            if (unary.Kind() == SyntaxKind.UnaryPlusExpression)
+                return true;
+            else if (unary.Kind() == SyntaxKind.UnaryMinusExpression) {
+                value = -value;
+                return true;
+            }
+            throw CompilationException.ToDatapackUnsupportedUnary;
+        }
+        // Only call this from TryGetIntegerLiteral
+        private static int GetIntegerLiteral(LiteralExpressionSyntax lit) {
+            if (!int.TryParse(lit.Token.Text, out int res))
+                throw CompilationException.ToDatapackLiteralsIntegerOnly;
+            return res;
         }
 
         /// <summary>
