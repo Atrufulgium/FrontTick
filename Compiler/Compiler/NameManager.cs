@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
@@ -19,6 +20,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// The mcfunction namespace all functions live in.
         /// </summary>
         public readonly string manespace;
+        /// <summary>
+        /// All constants encountered, which all need initialisation in the
+        /// datapack.
+        /// </summary>
+        public ReadOnlyCollection<int> Constants => new(constants);
+        readonly List<int> constants = new();
 
         public NameManager(string manespace) {
             this.manespace = manespace;
@@ -97,7 +104,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
         }
 
-        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax)"/>
+        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax, ICustomDiagnosable, string)"/>
         public MCFunctionName GetMethodName(
             SemanticModel semantics,
             InvocationExpressionSyntax method,
@@ -108,7 +115,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
         }
 
-        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax)"/>
+        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax, ICustomDiagnosable, string)"/>
         private MCFunctionName GetMethodName(
             string fullyQualifiedName,
             SyntaxNode method,
@@ -130,6 +137,75 @@ namespace Atrufulgium.FrontTick.Compiler {
             }
             return name;
         }
+
+        /// <summary>
+        /// <para>
+        /// Transform a c# variable to a .mcfunction variable name of the form
+        /// <tt>#fully_qualified_context#name</tt>, where the context can be
+        /// for instance the fully qualified class name if it is a field, or
+        /// a fully qualified method name if it is a local.
+        /// </para>
+        /// <para>
+        /// The exception to this are the method's arguments, which lose their
+        /// name and instead become <tt>#fully_qualified_method##arg0</tt>, etc.
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// For this method to work, the containing context method must have
+        /// been registered already.
+        /// </remarks>
+        public string GetVariableName(
+            SemanticModel semantics,
+            IdentifierNameSyntax identifier,
+            ICustomDiagnosable diagnosticsOutput
+        ) {
+            var symbolInfo = semantics.GetSymbolInfo(identifier).Symbol;
+            // This part is a bit ugly, but everything is just different enough
+            // to require a bunch of annoying branches. The copypasta of those
+            // two two lines is nicer than going through the effort to get it
+            // outside.
+            if (symbolInfo is IFieldSymbol fieldSymbol) {
+                string context = NormalizeFunctionName(fieldSymbol.ContainingType.ToString());
+                // *Want* to manually mirror the way MCFunctions look for some
+                // consistency. Note that the context is always datapack-valid,
+                // but the name after that can be anything.
+                return $"#{manespace}:{context}#{fieldSymbol.Name}";
+            } else if (symbolInfo is ILocalSymbol localSymbol) {
+                string fullyQualifiedName = GetFullyQualifiedMethodName((IMethodSymbol)localSymbol.ContainingSymbol);
+                MCFunctionName context = GetMethodName(fullyQualifiedName, identifier, diagnosticsOutput);
+                return $"#{context}#{localSymbol.Name}";
+            } else if (symbolInfo is IParameterSymbol paramSymbol) {
+                string fullyQualifiedName = GetFullyQualifiedMethodName((IMethodSymbol)paramSymbol.ContainingSymbol);
+                MCFunctionName context = GetMethodName(fullyQualifiedName, identifier, diagnosticsOutput);
+                return GetArgumentName(context, paramSymbol.Ordinal);
+            } else {
+                throw CompilationException.ToDatapackVariablesFieldLocalOrParams;
+            }
+        }
+
+        /// <summary>
+        /// Transform a c# constant to a .mcfunction variable name of the form
+        /// <tt>#CONST#value</tt>.
+        /// </summary>
+        /// <remarks>
+        /// Once compilation is complete, don't forget to add a file that
+        /// initializes all known constant values, found in
+        /// <see cref="Constants"/>.
+        /// </remarks>
+        public string GetConstName(int value) {
+            constants.Add(value);
+            return $"#CONST#{value}";
+        }
+
+        public string GetArgumentName(MCFunctionName mcfunctionname, int index) {
+            return $"#{mcfunctionname}##arg{index}";
+        }
+
+        /// <summary>
+        /// Gives the name of a unified return variable callees should store
+        /// their results in, and callers should read the result form.
+        /// </summary>
+        public static string GetRetName() => "#RET";
 
         /// <summary>
         /// This normalizes strings to the <c>[a-z0-9/._-]*</c> range normal
@@ -184,6 +260,9 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </summary>
     /// <remarks>
     /// Do not instantiate this class somewhere other than the NameManager.
+    /// Outside code will have to use
+    /// <see cref="NameManager.GetMethodName(SemanticModel, MethodDeclarationSyntax, ICustomDiagnosable, string)"/>
+    /// (or overloads) to obtain instances.
     /// </remarks>
     // Just "inherit" the string interfaces I can be bothered about.
     public class MCFunctionName : IEnumerable<char>, IEnumerable, IComparable, IEquatable<MCFunctionName>, ICloneable {

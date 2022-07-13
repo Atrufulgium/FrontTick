@@ -19,8 +19,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // Apologies for how interconnected all these methods are.
     public class ProcessedToDatapackWalker : AbstractFullWalker {
 
-        public SortedSet<int> constants = new();
-
         /// <summary>
         /// <para>
         /// The files worked on, in order of encountering. The top is the
@@ -34,10 +32,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         readonly Stack<DatapackFile> wipFiles = new();
         bool AtRootScope => wipFiles.Count == 1;
-        /// <summary>
-        /// The current method being compiled's name.
-        /// </summary>
-        string currentMethodName;
 
         MethodDeclarationSyntax currentNode;
         // Automatically incremented by
@@ -54,7 +48,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // here on out, as the code must abide a very specific structure.
             MCFunctionName path = nameManager.GetMethodName(CurrentSemantics, node, this);
             wipFiles.Push(new(path));
-            currentMethodName = path;
 
             HandleBlock(node.Body);
 
@@ -125,7 +118,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // https://github.com/dotnet/roslyn/blob/main/src/Compilers/CSharp/Portable/Generated/CSharp.Generated.g4#L713
             if (expr is AssignmentExpressionSyntax assign
                 && assign.Left is IdentifierNameSyntax lhs) {
-                string lhsName = LocalVarName(lhs.Identifier.Text);
+                string lhsName = nameManager.GetVariableName(CurrentSemantics, lhs, this);
                 HandleAssignment(assign, lhsName);
             } else if (expr is InvocationExpressionSyntax call) {
                 HandleInvocation(call);
@@ -145,12 +138,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 isSetCommand = op == "=";
                 rhsName = literal.ToString();
                 if (!isSetCommand)
-                    rhsName = ConstName(rhsName);
+                    rhsName = nameManager.GetConstName(literal);
             } else if (assign.Right is IdentifierNameSyntax rhsId) {
-                rhsName = LocalVarName(rhsId.Identifier.Text);
+                rhsName = nameManager.GetVariableName(CurrentSemantics, rhsId, this);
             } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
                 HandleInvocation(rhsCall);
-                rhsName = "#RET";
+                rhsName = NameManager.GetRetName();
             } else {
                 throw CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls;
             }
@@ -174,7 +167,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 && bin.OperatorToken.Text == "!="
                 && TryGetIntegerLiteral(bin.Right, out int rhsValue)
                 && rhsValue == 0) {
-                conditionIdentifier = LocalVarName(id.Identifier.Text);
+                conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
             } else {
                 throw CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero;
             }
@@ -229,16 +222,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (!method.IsStatic)
                 throw CompilationException.ToDatapackMethodCallsMustBeStatic;
 
-            string methodName = nameManager.GetMethodName(CurrentSemantics, call, this);
+            MCFunctionName methodName = nameManager.GetMethodName(CurrentSemantics, call, this);
             // TODO: Currently ignoring in,out,ref.
             int i = 0;
             foreach(var arg in call.ArgumentList.Arguments) {
-                string argName = LocalVarName($"arg{i}", methodName);
+                string argName = nameManager.GetArgumentName(methodName, i);
                 // Too copypastay of the statement case, this code's the sketch anyway
                 if (TryGetIntegerLiteral(arg.Expression, out int literal)) {
                     AddCode($"scoreboard players set {argName} _ {literal}");
                 } else if (arg.Expression is IdentifierNameSyntax id) {
-                    AddCode($"scoreboard players operation {argName} _ = {LocalVarName(id.Identifier.Text)} _");
+                    AddCode($"scoreboard players operation {argName} _ = {nameManager.GetVariableName(CurrentSemantics, id, this)} _");
                 } else {
                     throw CompilationException.ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals;
                 }
@@ -255,11 +248,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             /// <see cref="HandleAssignment(AssignmentExpressionSyntax, string)"/>
             // but should be refactored to be neater at some point.
             // OTOH, it's subtly different *enough* with the call case.
+            string RET = NameManager.GetRetName();
             if (TryGetIntegerLiteral(ret.Expression, out int literal)) {
-                AddCode($"scoreboard players set #RET _ {literal}");
+                AddCode($"scoreboard players set {RET} _ {literal}");
             } else if (ret.Expression is IdentifierNameSyntax id) {
-                string identifier = LocalVarName(id.Identifier.Text);
-                AddCode($"scoreboard players operation #RET _ = {identifier} _");
+                string identifier = nameManager.GetVariableName(CurrentSemantics, id, this);
+                AddCode($"scoreboard players operation {RET} _ = {identifier} _");
             } else if (ret.Expression is InvocationExpressionSyntax call) {
                 HandleInvocation(call);
                 // No need to assign `call`'s #RET result to our (the same)
@@ -329,13 +323,5 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </remarks>
         private void AddCode(string code)
             => wipFiles.Peek().code.Add(code.Replace(" run execute ", " "));
-
-        // Var names are to be yote to namemanager soontm
-        private string LocalVarName(string name) => "#" + currentMethodName + "#" + name;
-        private static string LocalVarName(string name, string fullyQualifiedMethodName) => $"#{fullyQualifiedMethodName}##{name}";
-        private string ConstName(string name) {
-            constants.Add(int.Parse(name));
-            return "#CONST#" + name;
-        }
     }
 }

@@ -546,7 +546,7 @@ internal class Test {
 ", CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero);
         #endregion
 
-        #region root return tests
+        #region return tests
         [TestMethod]
         public void TestReturn1()
             => TestCompilationSucceeds(@"
@@ -744,6 +744,84 @@ internal class Test {
 }
 ", CompilationException.ToDatapackReturnElseMustAlsoHaveReturnIf,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        #endregion
+
+        #region variable name tests
+        [TestMethod]
+        public void TestNames1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod(int i) {
+        return i;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0 _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestNames2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int nUmBeR;
+    static int TestMethod() {
+        return nUmBeR;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation #RET _ = #compiled:test#nUmBeR _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestNames3()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+namespace TestSpace {
+    internal class Test {
+        internal class InnerClass {
+            static int TestMethod() {
+                int nUmBeR;
+                nUmBeR = 3;
+                return nUmBeR;
+            }
+        }
+    }
+}
+", @"
+# (File compiled:internal/testspace.test.innerclass.testmethod.mcfunction)
+scoreboard players set #compiled:internal/testspace.test.innerclass.testmethod#nUmBeR _ 3
+scoreboard players operation #RET _ = #compiled:internal/testspace.test.innerclass.testmethod#nUmBeR _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestNames4()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static void TestMethod() {
+        int i;
+        i = 3;
+        TestMethod2(i);
+        TestMethod2(3);
+    }
+
+    static int TestMethod2(int number) { return 3; }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#i _ 3
+scoreboard players operation #compiled:internal/test.testmethod2##arg0 _ = #compiled:internal/test.testmethod#i _
+function compiled:internal/test.testmethod2
+scoreboard players set #compiled:internal/test.testmethod2##arg0 _ 3
+function compiled:internal/test.testmethod2
+
+# (File compiled:internal/test.testmethod2.mcfunction)
+scoreboard players set #RET _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
     }
 }
