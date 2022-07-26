@@ -17,7 +17,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // I "love" how this class is messy for the same reason every parser I've
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
-    public class ProcessedToDatapackWalker : AbstractFullWalker {
+    public class ProcessedToDatapackWalker : AbstractFullWalker<GotoLabelerWalker> {
 
         /// <summary>
         /// <para>

@@ -1,4 +1,5 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Collections;
+using Atrufulgium.FrontTick.Compiler.Visitors;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System;
@@ -116,10 +117,45 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// optimisations and such.
         /// </param>
         public void SetCompilationPhases(IEnumerable<IFullVisitor> compilationPhases) {
-            foreach (var phase in compilationPhases) {
-                phase.SetCompiler(this);
+            this.compilationPhases = ApplyDependencies(compilationPhases).ToArray();
+        }
+
+        /// <summary>
+        /// This method goes through each visitor (which MUST inherit either
+        /// <see cref="AbstractFullRewriter"/> or <see cref="AbstractFullWalker"/>
+        /// and variants!) and adds any missing dependencies to this compiler
+        /// process.
+        /// </summary>
+        IEnumerable<IFullVisitor> ApplyDependencies(IEnumerable<IFullVisitor> compilationPhases) {
+            var phasesList = compilationPhases.ToList();
+            var toHandle = new Queue<IFullVisitor>(phasesList);
+            while(toHandle.Count > 0) {
+                var visitor = toHandle.Dequeue();
+                Type baseType = visitor.GetType().BaseType;
+                foreach(Type dependency in baseType.GenericTypeArguments) {
+                    // We care mostly about type, so need to manually walk the list.
+                    // Good 'ol O(ew). Luckily these lists will never be too large
+                    // so I don't care about more sophisticated methods.
+                    // TODO: If multiple, remove duplicates?
+                    // TODO: If dependency exists after, show warning?
+                    int visitorIndex = -1;
+                    bool foundDependency = false;
+                    for (int i = 0; i < phasesList.Count; i++) {
+                        if (phasesList[i].GetType() == dependency) {
+                            foundDependency = true;
+                            break;
+                        }
+                        if (phasesList[i] == visitor)
+                            visitorIndex = i;
+                    }
+                    if (!foundDependency) {
+                        var newVisitor = (IFullVisitor)Activator.CreateInstance(dependency);
+                        toHandle.Enqueue(newVisitor);
+                        phasesList.Insert(visitorIndex, newVisitor);
+                    }
+                }
             }
-            this.compilationPhases = compilationPhases.ToArray();
+            return phasesList;
         }
 
         /// <summary>
@@ -183,6 +219,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                 // only be walked once per compilation. It's the neatest way to
                 // message so far across the entire callstack.
                 try {
+                    phase.SetCompiler(this);
                     phase.FullVisit();
                 } catch (StopCompilingImmediatelyException) {
                     // We're guaranteed to have diagnostics by

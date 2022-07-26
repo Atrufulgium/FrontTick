@@ -14,8 +14,8 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </remarks>
     public interface IFullVisitor : ICustomDiagnosable {
         /// <summary>
-        /// Before doing anything, the compiler should be set with this method
-        /// for any setup work.
+        /// Before doing anything with this instance, the compiler should be
+        /// set with this method for any setup work.
         /// </summary>
         public void SetCompiler(Compiler c);
 
