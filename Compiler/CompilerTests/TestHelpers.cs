@@ -25,7 +25,13 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             output = $"\n{output}\n";
             var actual = compiler.CompiledDatapack.ToString().Replace("\r\n", "\n").Trim();
             actual = $"\n{actual}\n";
-            Assert.AreEqual(output, actual);
+            try {
+                Assert.AreEqual(output, actual);
+            } catch (AssertFailedException e) {
+                Console.WriteLine("Resulting code in tree-form:");
+                Console.WriteLine(compiler.CompiledDatapack.ToTreeString());
+                throw e;
+            }
         }
 
         public static void TestCompilationFails(string source, string errorCode, IEnumerable<IFullVisitor>? compilationPhases = null)
@@ -47,6 +53,8 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             } catch (AssertFailedException e) {
                 Console.WriteLine("Compilation accidentally succeeded! Resulting code:");
                 Console.WriteLine(compiler.CompiledDatapack.ToString());
+                Console.WriteLine("\n\nResulting code in tree-form:");
+                Console.WriteLine(compiler.CompiledDatapack.ToTreeString());
                 throw e;
             }
 
@@ -77,6 +85,8 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             if (compiler.CompilationSucceeded) {
                 Console.WriteLine("Compilation accidentally succeeded! Resulting code:");
                 Console.WriteLine(compiler.CompiledDatapack.ToString());
+                Console.WriteLine("\n\nResulting code in tree-form:");
+                Console.WriteLine(compiler.CompiledDatapack.ToTreeString());
                 Assert.Fail($"Expected to throw exception of type {typeof(CompilationException)} but did not throw any exception at all!");
             } else {
                 Console.WriteLine("There were compilation errors:");

@@ -45,6 +45,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </code>
         /// </summary>
         public override string ToString() {
+            // Copypasta'd into
+            /// <see cref="Datapack.GetTreeFunctionAtDepth(DatapackFile, int)"/>
             if (code.Count > 0)
                 return $"# (File {Path}.mcfunction)\n{GetContent()}";
             return $"# (File {Path}.mcfunction)\n# (Empty)";
