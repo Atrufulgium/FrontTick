@@ -59,6 +59,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// All method entry points we are compiling. These are both
         /// [MCFunction]-tagged methods and their dependencies.
         /// </summary>
+        // TODO: Don't do this, instead start with a step that prunes all unused methods.
+        // After that, *all* methods are entrypoints, and the immutability of
+        // the tree is no problem any longer.
         internal readonly HashSet<EntryPoint> entryPoints = new();
         /// <summary>
         /// All work that is done so far.

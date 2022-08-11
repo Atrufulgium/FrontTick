@@ -39,11 +39,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // but needs manual resetting.
         int branchCounter;
         bool encounteredReturn;
+        Dictionary<int, MCFunctionName> gotoFunctionNames;
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
             currentNode = node;
             branchCounter = 0;
             encounteredReturn = false;
+            gotoFunctionNames = new();
             // Don't do the base-call as we're manually walking everything from
             // here on out, as the code must abide a very specific structure.
             MCFunctionName path = nameManager.GetMethodName(CurrentSemantics, node, this);
@@ -64,17 +66,21 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // In that case, throw.
             // (Exception: the root scope allows returns and non-returns.)
             bool encounteredReturnIllegalStatement = false;
+            bool encounteredGoto = false;
 
             foreach (var statement in block.Statements) {
-                HandleStatement(statement);
-
                 encounteredReturnIllegalStatement |= !(statement is ReturnStatementSyntax or IfStatementSyntax);
+                // Nothing may follow gotos.
+                if (encounteredGoto)
+                    throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
+                encounteredGoto |= statement is GotoStatementSyntax;
+
+                HandleStatement(statement);
             }
             if (!AtRootScope && encounteredReturn && encounteredReturnIllegalStatement)
                 throw CompilationException.ToDatapackReturnBranchMustBeReturnStatement;
         }
 
-        // no blocks are not statements no matter what you try and tell me.
         private void HandleStatement(StatementSyntax statement) {
             // Group all returns separately to be able to check for the
             // condition "returns must be at the end".
@@ -93,14 +99,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 HandleLocalDeclaration(decl);
             } else if (statement is ExpressionStatementSyntax expr) {
                 HandleExpression(expr.Expression);
+            } else if (statement is LabeledStatementSyntax label) {
+                HandleGotoLabel(label);
+            } else if (statement is GotoStatementSyntax got) {
+                HandleGoto(got);
             }
-        }
-
-        private void HandleBlockOrStatement(StatementSyntax statement) {
-            if (statement is BlockSyntax block)
-                HandleBlock(block);
-            else
-                HandleStatement(statement);
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
@@ -154,7 +157,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
-            MCFunctionName targetIfName = GetBranchPath("if-branch"), targetElseName = null;
+            // TODO: Implementing goto in here is kinda messy and really
+            // deserves its own pass. Nevertheless, for the time being, I'll
+            // put the spaghetti here.
+            // For how to transform, see the comments of:
+            /// <see cref="GotoLabelerWalker.AfterScopeRequiresFlag(BlockSyntax)"/>
+            /// <see cref="GotoLabelerWalker.AfterScopeRequiresFlagConsume(BlockSyntax, out IEnumerable{int})"/>
+            MCFunctionName targetIfName = GetBranchPath("if-branch"),
+                targetElseName = null,
+                gotoContinuation;
             string conditionIdentifier;
             bool hasElse = ifst.Else != null;
             if (hasElse)
@@ -177,8 +188,23 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // return branches.
             bool returnedBeforeBranch = encounteredReturn;
 
+            var parentBlock = ifst.Ancestors().OfType<BlockSyntax>().First();
+            bool requireFlag = Dependency1.AfterScopeRequiresFlag(parentBlock);
+            bool requireFlagConsume = Dependency1.AfterScopeRequiresFlagConsume(parentBlock, out var consumed);
+
             wipFiles.Push(new(targetIfName));
-            HandleBlockOrStatement(ifst.Statement);
+            if (ifst.Statement is BlockSyntax block)
+                HandleBlock(block);
+            else
+                throw CompilationException.ToDatapackBranchesMustBeBlocks;
+            // The above handling of blocks can introduce more wipFiles (via
+            // gotos and such).
+            // Every such file will be fully processed and done by the time we
+            // return here. As such, we need to pop until we're back at the if-
+            // block that brought us here in the first place.
+            while (wipFiles.Peek().Path != targetIfName)
+                compiler.finishedCompilation.Add(wipFiles.Pop());
+
             // Don't do the extra file if it's just one command.
             if (wipFiles.Peek().code.Count == 1) {
                 string command = wipFiles.Peek().code[0];
@@ -195,8 +221,17 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // Same as above, but for else.
                 // This stuff seems generalizable but if it remains these two
                 // I'm not gonna bother.
+                if (ifst.Else.Statement is not BlockSyntax elseBlock)
+                    throw CompilationException.ToDatapackBranchesMustBeBlocks;
+                requireFlag |= Dependency1.AfterScopeRequiresFlag(elseBlock);
+                requireFlagConsume |= Dependency1.AfterScopeRequiresFlagConsume(elseBlock, out var elseConsumed);
+                consumed = consumed.Union(elseConsumed);
+
                 wipFiles.Push(new(targetElseName));
-                HandleBlockOrStatement(ifst.Else.Statement);
+                HandleBlock(elseBlock);
+                while (wipFiles.Peek().Path != targetElseName)
+                    compiler.finishedCompilation.Add(wipFiles.Pop());
+
                 if (wipFiles.Peek().code.Count == 1) {
                     string command = wipFiles.Peek().code[0];
                     wipFiles.Pop();
@@ -215,6 +250,68 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // not an else-branch. This is illegal.
                 throw CompilationException.ToDatapackReturnIfMustAlsoHaveReturnElse;
             }
+
+            if (requireFlag || requireFlagConsume) {
+                gotoContinuation = GetBranchPath("goto-continuation");
+                bool continuationIsSimple = consumed.Count() == 1;
+                // If `requireFlag`, no matter `requireFlagConsume`, we add a
+                // "if (no flag set) { /* Rest of the code */ }".
+                // If `requireFlagConsume`, but not `requireFlag`, we add a
+                // "if (no current scope flag set) { /* Rest of the code */ }".
+                // If `requireFlagConsume`, in addition to the above we add
+                // "if (some current scope flag set) { reset flag; goto flag's label }".
+                // TODO: The intialisation requires #GOTOFLAG to be set to 0.
+                if (requireFlag)
+                    AddCode($"execute if score #GOTOFLAG _ matches 0 run function {gotoContinuation}");
+                else if (requireFlagConsume) {
+                    if (continuationIsSimple) {
+                        AddCode($"execute unless score #GOTOFLAG _ matches {consumed.First()} run function {gotoContinuation}");
+                    } else {
+                        foreach (int flag in consumed)
+                            AddCode($"execute if score #GOTOFLAG _ matches {flag} run scoreboard players set #FLAGFOUND _ 1");
+                        AddCode($"execute unless score #FLAGFOUND _ matches 1 run function {gotoContinuation}");
+                        AddCode($"scoreboard players set #FLAGFOUND _ 0");
+                    }
+                }
+                if (requireFlagConsume) {
+                    foreach (int flag in consumed) {
+                        // Go to a small intermediate function that resets the flag,
+                        // and then run the goto.
+                        var gotoBranch = GetBranchPath($"goto-{flag}");
+                        var gotoLabel = GetGotoFunctionName(flag);
+                        AddCode($"execute if score #GOTOFLAG _ matches {flag} run function {gotoBranch}");
+                        wipFiles.Push(new(gotoBranch));
+                        AddCode($"scoreboard players set #GOTOFLAG _ 0");
+                        AddCode($"function {gotoLabel}");
+                        compiler.finishedCompilation.Add(wipFiles.Pop());
+                    }
+                }
+                // Now put the original rest of the file after the continuation
+                wipFiles.Push(new(gotoContinuation));
+            }
+        }
+
+        private void HandleGoto(GotoStatementSyntax got) {
+            // Just set a flag and let the if-else tree handle the rest.
+            // However, if there is no if-else tree, (the goto is on the same
+            // level as the label,) immediately go.
+            var parentBlock = got.Ancestors().OfType<BlockSyntax>().First();
+            string name = ((IdentifierNameSyntax)got.Expression).Identifier.Text;
+            int id = Dependency1.LabelToInt(name);
+            if (Dependency1.ScopeContainsLabel(parentBlock, name)) {
+                var gotoLabel = GetGotoFunctionName(id);
+                AddCode($"function {gotoLabel}");
+            } else {
+                AddCode($"scoreboard players set #GOTOFLAG _ {id}");
+            }
+        }
+
+        private void HandleGotoLabel(LabeledStatementSyntax label) {
+            string name = label.Identifier.Text;
+            var gotoBranch = GetGotoFunctionName(Dependency1.LabelToInt(name));
+            AddCode($"function {gotoBranch}");
+            wipFiles.Push(new(gotoBranch));
+            HandleStatement(label.Statement);
         }
 
         private void HandleInvocation(InvocationExpressionSyntax call) {
@@ -274,6 +371,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             MCFunctionName ret = nameManager.GetMethodName(CurrentSemantics, currentNode, this, $"-{branchCounter}-{identifier}");
             branchCounter++;
             return ret;
+        }
+
+        private MCFunctionName GetGotoFunctionName(int got) {
+            if (gotoFunctionNames.TryGetValue(got, out MCFunctionName function))
+                return function;
+            function = GetBranchPath($"goto-label-{got}");
+            gotoFunctionNames.Add(got, function);
+            return function;
         }
 
         /// <summary>

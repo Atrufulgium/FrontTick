@@ -20,6 +20,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] Assignments must be one of \"=\", \"+=\", \"-=\", \"*=\", \"/=\", or \"%=\".");
         public static CompilationException ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls
             => new("[To Datapack] \"a ∘= RHS\"'s RHS must be a literal, identifier, or method call.");
+        public static CompilationException ToDatapackBranchesMustBeBlocks
+            => new("[To Datapack] The if- and else-branch of a conditional must be a block ({}) and not a single statement.");
+        public static CompilationException ToDatapackGotoMustBeLastBlockStatement
+            => new("[To Datapack] In every block, goto must be the last statement -- nothing may follow.");
         public static CompilationException ToDatapackIfConditionalMustBeIdentifierNotEqualToZero
             => new("[To Datapack] The conditional of a if-statement must be of the form `identifier != 0`.");
         public static CompilationException ToDatapackDeclarationsMayNotBeInitializers

@@ -1,8 +1,12 @@
-﻿This compilation stage expects very specifically formatted code, which is the job of the previous stages. The only supported statements are the following in the `Before` column; the rest raise errors. (So e.g. while loops, etc. at this point!) This stage does the following transformations.
+﻿This compilation stage expects very specifically formatted code, which is the job of the previous stages. The only supported statements are the following in the `Before` column; the rest raise errors. (So e.g. while loops, etc. at this point!) It's subtle in the examples, but note that any block needs to *actually be a block*.
 
 This phase only does few optimisations, namely:
 * Turn `execute ... run execute ...` into `execute ... ...` without the extra `run execute`.
 * Single-line branches do not branch into a separate file.
+
+TODO: The generated code also needs a few optimisations still. Namely:
+* Any mcfunction that is just a single `function ...` can be replaced at callsite with the called function;
+* Any mcfunction that is empty can be deleted and its callsite can be removed.
 
 <table>
 <tr>
