@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MCMirror;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <summary>
@@ -41,6 +42,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         bool encounteredReturn;
         Dictionary<int, MCFunctionName> gotoFunctionNames;
 
+        /// <summary>
+        /// All methods with a [MCTest(int)] attribute. To be collected to be
+        /// put into a minecraft function tag at a later stage.
+        /// </summary>
+        public List<MCFunctionName> testFunctions = new();
+
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
             currentNode = node;
             branchCounter = 0;
@@ -53,7 +60,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             HandleBlock(node.Body);
 
-            while (wipFiles.Count > 0)
+            // If this method is a test, we need to add some post processing to
+            // the mcfunction. As such, pop all but the last, do that
+            // processing, and then finish.
+            while (wipFiles.Count > 1)
+                compiler.finishedCompilation.Add(wipFiles.Pop());
+
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCTestAttribute), out var attrib))
+                HandleMCTestMethod(node, attrib);
+
+            if (wipFiles.Count == 1)
                 compiler.finishedCompilation.Add(wipFiles.Pop());
         }
 
@@ -383,6 +399,26 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (code.StartsWith('/'))
                 code = code[1..];
             AddCode(code);
+        }
+
+        private void HandleMCTestMethod(MethodDeclarationSyntax node, AttributeData attrib) {
+            // Check correctness
+            bool hasStatic = node.Modifiers.Any(SyntaxKind.StaticKeyword);
+            bool hasNoArguments = node.ArityOfArguments() == 0;
+            bool returnsInt = node.ReturnType.ChildTokensContain(SyntaxKind.IntKeyword);
+            if (!hasStatic || !hasNoArguments || !returnsInt) {
+                AddCustomDiagnostic(DiagnosticRules.MCTestAttributeIncorrect, node.GetLocation(), node.Identifier.Text);
+                return;
+            }
+
+            int expected = (int)attrib.ConstructorArguments[0].Value;
+            string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, node);
+            // As at this point, the actual method is done, it should have
+            // assigned to #RET already. We can just freely read that here.
+            AddCode($"execute if score #RET _ matches {expected} unless score #FAILSONLY _ matches 1 run tellraw @a [{{\"text\":\"Test \",\"color\":\"green\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_green\"}},{{\"text\":\" passed.\",\"color\":\"green\"}}]");
+            AddCode($"execute unless score #RET _ matches {expected} run tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\"}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expected}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]");
+
+            testFunctions.Add(nameManager.GetMethodName(CurrentSemantics, node, this));
         }
 
         /// <summary>

@@ -249,19 +249,19 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// Return the full name (namespace.class.method) of a method.
         /// </summary>
-        static string GetFullyQualifiedMethodName(SemanticModel semantics, MethodDeclarationSyntax method) {
+        public static string GetFullyQualifiedMethodName(SemanticModel semantics, MethodDeclarationSyntax method) {
             var methodModel = semantics.GetDeclaredSymbol(method);
             return GetFullyQualifiedMethodName(methodModel);
         }
 
         /// <inheritdoc cref="GetFullyQualifiedMethodName(SemanticModel, MethodDeclarationSyntax)"/>
-        static string GetFullyQualifiedMethodName(SemanticModel semantics, InvocationExpressionSyntax method) {
+        public static string GetFullyQualifiedMethodName(SemanticModel semantics, InvocationExpressionSyntax method) {
             var methodModel = (IMethodSymbol)semantics.GetSymbolInfo(method).Symbol;
             return GetFullyQualifiedMethodName(methodModel);
         }
 
         /// <inheritdoc cref="GetFullyQualifiedMethodName(SemanticModel, MethodDeclarationSyntax)"/>
-        static string GetFullyQualifiedMethodName(IMethodSymbol method) {
+        public static string GetFullyQualifiedMethodName(IMethodSymbol method) {
             var containingType = method.ContainingType;
             string methodName = method.Name;
             string containingName = containingType.ToString();

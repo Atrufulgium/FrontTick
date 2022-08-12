@@ -11,6 +11,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         // Keep them sorted alphabetically by path to keep the string output
         // consistent. Maybe it even helps with the filesystem output.
         public SortedSet<DatapackFile> files = new(Comparer<DatapackFile>.Create((a,b) => a.Path.CompareTo(b.Path)));
+        public List<MCFunctionName> testFunctions = new();
 
         private NameManager nameManager;
 
@@ -29,7 +30,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// The path to a datapack's directory, inside a minecraft world's
         /// datapack directory.
         /// </param>
-        public void WriteToFilesystem(string rootPath) {
+        public void WriteToFilesystem(string rootPath, string manespace) {
             char slash = Path.DirectorySeparatorChar;
             // TODO: Temp safeguard while I'm writing stuff still.
             if (!(rootPath.Contains(".minecraft") && rootPath.Contains("saves") && rootPath.Contains("datapacks")))
@@ -53,16 +54,29 @@ namespace Atrufulgium.FrontTick.Compiler {
             using (var load = File.CreateText($"{minecraftFunctionTagsDirectory}{slash}load.json")) {
                 load.Write($"{{\"values\":[\"{nameManager.SetupFileName}\"]}}");
             }
+            if (testFunctions.Count != 0) {
+                // Also put all test functions in their own tag.
+                string packFunctionTagsDirectory
+                    = $"{rootPath}{slash}data{slash}{manespace}{slash}tags{slash}functions";
+                Directory.CreateDirectory(packFunctionTagsDirectory);
+                using (var test = File.CreateText($"{packFunctionTagsDirectory}{slash}test.json")) {
+                    test.WriteLine("{\"values\":[");
+                    // No trailing commas :(
+                    test.WriteLine($"   \"{testFunctions[0]}\"");
+                    for (int i = 1; i < testFunctions.Count; i++)
+                        test.WriteLine($"  ,\"{testFunctions[i]}\"");
+                    test.WriteLine("]}");
+                }
+            }
 
             foreach (DatapackFile file in files) {
                 string[] parts = ((string)file.Path).Split(':');
-                string manespace = parts[0];
+                string fileManespace = parts[0];
                 string path = parts[1];
-                path = path.Replace('/', slash);
-                path = path.Replace(':', slash);
-                string folderPath = $"{rootPath}{slash}data{slash}{manespace}{slash}functions";
-                Directory.CreateDirectory(folderPath);
-                using (var function = File.CreateText($"{folderPath}{slash}{path}.mcfunction")) {
+                string fullPath = $"{rootPath}{slash}data{slash}{fileManespace}{slash}functions{slash}{path}.mcfunction";
+                // Now extract the directory from the filepath and create it.
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                using (var function = File.CreateText(fullPath)) {
                     function.Write(file.GetContent());
                 }
             }

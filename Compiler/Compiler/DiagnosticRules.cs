@@ -42,5 +42,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "Calling `Run(string)` requires a literal, non-interpolated string.",
                 messageFormat: "Calling `MCMirror.Internal.RawMCFunction.Run(string)` requires a literal, non-interpolated string. Even referencing a compile-time known constant string via identifier is not allowed."
             );
+
+        public static DiagnosticDescriptor MCTestAttributeIncorrect
+            => Create(
+                id: "FT0006",
+                title: "Methods attributed [MCTest(int)] must have signature static int(void).",
+                messageFormat: "Make sure that [MCTest(int)]-attributed '{0}' is static, returns an int, and has no arguments."
+            );
     }
 }

@@ -43,7 +43,9 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </summary>
     public class Compiler {
 
-        public Datapack CompiledDatapack => new Datapack(finishedCompilation, nameManager);
+        public Datapack CompiledDatapack => new(finishedCompilation, nameManager) {
+            testFunctions = appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions
+        };
 
         public bool CompilationSucceeded => ErrorDiagnostics.Count == 0;
         public bool CompilationFailed => !CompilationSucceeded;
@@ -245,6 +247,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             // returns -- it is always set when read.
             foreach (int i in nameManager.Constants.ToList())
                 setupFile.code.Add($"scoreboard players set {nameManager.GetConstName(i)} _ {i}");
+            // On my machine, I can get ~125k (fast) commands / tick.
+            // Then 2 seconds worth of commands seems like a reasonable limit,
+            // especially for just 1 tick.
+            setupFile.code.Add("gamerule maxCommandChainLength 5000000");
             finishedCompilation.Add(setupFile);
 
             return true;

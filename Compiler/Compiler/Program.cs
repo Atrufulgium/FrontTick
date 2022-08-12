@@ -113,7 +113,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                 string datapackPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 var slash = Path.DirectorySeparatorChar;
                 datapackPath += $"{slash}.minecraft{slash}saves{slash}{outputWorld}{slash}datapacks{slash}{manespace}";
-                datapack.WriteToFilesystem(datapackPath);
+                datapack.WriteToFilesystem(datapackPath, manespace);
             } catch (IOException e) {
                 Console.WriteLine("\n\n\nIO trouble ffs:\n");
                 Console.WriteLine(e);
