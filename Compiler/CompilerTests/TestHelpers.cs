@@ -23,8 +23,8 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             // a single newline before/after to make the test output readable.
             output = output.Replace("\r\n", "\n").Trim();
             output = $"\n{output}\n";
-            var actual = compiler.CompiledDatapack.ToString().Replace("\r\n", "\n").Trim();
-            actual = $"\n{actual}\n";
+            var actual = compiler.CompiledDatapack.ToString(skipInternal: true).Replace("\r\n", "\n");
+            actual = $"\n{actual.Trim()}\n";
             try {
                 Assert.AreEqual(output, actual);
             } catch (AssertFailedException e) {

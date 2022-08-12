@@ -80,12 +80,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // "wrong", we need to check (for simplicity once at the end) if
             // this block contains both a return(/branch) and a non-return.
             // In that case, throw.
-            // (Exception: the root scope allows returns and non-returns.)
+            // (Exception: the root scope allows returns and non-returns.
+            //  Also, take into account labels!)
             bool encounteredReturnIllegalStatement = false;
             bool encounteredGoto = false;
 
             foreach (var statement in block.Statements) {
-                encounteredReturnIllegalStatement |= !(statement is ReturnStatementSyntax or IfStatementSyntax);
+                var checkStatement = statement;
+                if (statement is LabeledStatementSyntax labeled)
+                    checkStatement = labeled.Statement;
+                encounteredReturnIllegalStatement |= !(checkStatement is ReturnStatementSyntax or IfStatementSyntax);
                 // Nothing may follow gotos.
                 if (encounteredGoto)
                     throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
@@ -105,6 +109,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 return;
             } else if (statement is IfStatementSyntax ifst) {
                 HandleIfElseGroup(ifst);
+                return;
+            } else if (statement is LabeledStatementSyntax labeledReturn
+                && labeledReturn.Statement is ReturnStatementSyntax or IfStatementSyntax) {
+                HandleGotoLabel(labeledReturn);
                 return;
             }
 

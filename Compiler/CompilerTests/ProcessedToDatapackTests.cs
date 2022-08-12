@@ -315,8 +315,9 @@ internal class Test {
     static void TestMethod() {
         int i;
         i = 0;
-        if (i != 0)
+        if (i != 0) {
             i = 1;
+        }
     }
 }
 ", @"
@@ -499,10 +500,13 @@ internal class Test {
         i = 0;
         j = 0;
         k = 0;
-        if (i != 0)
-            if (j != 0)
-                if (k != 0)
+        if (i != 0) {
+            if (j != 0) {
+                if (k != 0) {
                     i = 1;
+                }
+            }
+        }
     }
 }
 ", @"
@@ -607,13 +611,15 @@ internal class Test {
         int i,j;
         i = 0;
         j = 0;
-        if (i != 0)
-            if (j != 0)
+        if (i != 0) {
+            if (j != 0) {
                 return 1;
-            else
+            } else {
                 return 2;
-        else
+            }
+        } else {
             return 3;
+        }
     }
 }
 ", @"
@@ -626,6 +632,24 @@ execute if score #compiled:internal/test.testmethod#i _ matches 0 run scoreboard
 # (File compiled:internal/test.testmethod-0-if-branch.mcfunction)
 execute unless score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 1
 execute if score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 2
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestReturnLabeled()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod() {
+    label:
+        return 0;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+function compiled:internal/test.testmethod-0-goto-label-1
+
+# (File compiled:internal/test.testmethod-0-goto-label-1.mcfunction)
+scoreboard players set #RET _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -661,8 +685,9 @@ internal class Test {
     static int TestMethod() {
         int i;
         i = 0;
-        if (i != 0)
+        if (i != 0) {
             return 3;
+        }
         return 4;
     }
 }
