@@ -260,7 +260,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // "if (no current scope flag set) { /* Rest of the code */ }".
                 // If `requireFlagConsume`, in addition to the above we add
                 // "if (some current scope flag set) { reset flag; goto flag's label }".
-                // TODO: The intialisation requires #GOTOFLAG to be set to 0.
                 if (requireFlag)
                     AddCode($"execute if score #GOTOFLAG _ matches 0 run function {gotoContinuation}");
                 else if (requireFlagConsume) {
@@ -374,10 +373,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 AddCustomDiagnostic(DiagnosticRules.ToDatapackRunRawArgMustBeLiteral, call.GetLocation());
                 return;
             }
-            // `lit.Token.Text` returns the *full* string, including the ""
+            // `lit.Token.Text` returns the *full* string, as written in the IDE.
+            // This includes the surrounding [@$]"", escaped chars, etc.
+            // We need the actual value meant.
             // I currently don't allow other (@$) strings, so just assume "".
             string code = lit.Token.Text;
             code = code[1..(code.Length - 1)];
+            code = System.Text.RegularExpressions.Regex.Unescape(code);
             if (code.StartsWith('/'))
                 code = code[1..];
             AddCode(code);

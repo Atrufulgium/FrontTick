@@ -7,7 +7,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     public class DatapackFile {
         /// <summary>
         /// The relative location of this file, excluding the
-        /// <c>.mcfunction</c> suffix and namespace prefix.
+        /// <c>.mcfunction</c> suffix and including namespace prefix.
         /// </summary>
         public MCFunctionName Path { get; private set; }
         /// <summary>

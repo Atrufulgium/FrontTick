@@ -43,7 +43,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </summary>
     public class Compiler {
 
-        public Datapack CompiledDatapack => new Datapack(finishedCompilation);
+        public Datapack CompiledDatapack => new Datapack(finishedCompilation, nameManager);
 
         public bool CompilationSucceeded => ErrorDiagnostics.Count == 0;
         public bool CompilationFailed => !CompilationSucceeded;
@@ -235,6 +235,17 @@ namespace Atrufulgium.FrontTick.Compiler {
                     return false;
                 appliedWalkers.AddByMostDerived(phase);
             }
+
+            // Now add the setup file with constants and such
+            DatapackFile setupFile = new(nameManager.SetupFileName);
+            setupFile.code.Add("scoreboard objectives add _ dummy");
+            setupFile.code.Add("scoreboard players set #GOTOFLAG _ 0");
+            setupFile.code.Add("scoreboard players set #FLAGFOUND _ 0");
+            // Don't need to set #RET as it can only be used after a function
+            // returns -- it is always set when read.
+            foreach (int i in nameManager.Constants.ToList())
+                setupFile.code.Add($"scoreboard players set {nameManager.GetConstName(i)} _ {i}");
+            finishedCompilation.Add(setupFile);
 
             return true;
         }

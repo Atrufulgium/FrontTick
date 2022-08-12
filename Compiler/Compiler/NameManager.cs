@@ -28,6 +28,11 @@ namespace Atrufulgium.FrontTick.Compiler {
         public ReadOnlyCollection<int> Constants => new(constants);
         readonly List<int> constants = new();
 
+        /// <summary>
+        /// The file name to put internal datapack setup into.
+        /// </summary>
+        public MCFunctionName SetupFileName => new($"{manespace}-internal:--load--");
+
         public NameManager(string manespace) {
             this.manespace = manespace;
         }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -11,8 +12,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         // consistent. Maybe it even helps with the filesystem output.
         public SortedSet<DatapackFile> files = new(Comparer<DatapackFile>.Create((a,b) => a.Path.CompareTo(b.Path)));
 
-        public Datapack() { }
-        public Datapack(IEnumerable<DatapackFile> files) {
+        private NameManager nameManager;
+
+        public Datapack(NameManager nameManager) {
+            this.nameManager = nameManager;
+        }
+        public Datapack(IEnumerable<DatapackFile> files, NameManager nameManager) : this(nameManager) {
             foreach (var file in files)
                 this.files.Add(file);
         }
@@ -20,8 +25,48 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// Write this datapack's code to the specified folder.
         /// </summary>
+        /// <param name="rootPath">
+        /// The path to a datapack's directory, inside a minecraft world's
+        /// datapack directory.
+        /// </param>
         public void WriteToFilesystem(string rootPath) {
-            throw new NotImplementedException();
+            char slash = Path.DirectorySeparatorChar;
+            // TODO: Temp safeguard while I'm writing stuff still.
+            if (!(rootPath.Contains(".minecraft") && rootPath.Contains("saves") && rootPath.Contains("datapacks")))
+                throw new ArgumentException("The given path does not point to a minecraft world.");
+            if (Directory.Exists(rootPath))
+                Directory.Delete(rootPath, true);
+            Directory.CreateDirectory(rootPath);
+            using (var mcmeta = File.CreateText($"{rootPath}{slash}pack.mcmeta")) {
+                mcmeta.Write(@"{
+  ""pack"": {
+    ""pack_format"": 9,
+    ""description"": ""A datapack compiled by FrontTick.""
+  }
+}");
+            }
+            // Also do the internal load and tick functions into their respective tags.
+            // TODO: When needing tick functions, do them here.
+            string minecraftFunctionTagsDirectory
+                = $"{rootPath}{slash}data{slash}minecraft{slash}tags{slash}functions";
+            Directory.CreateDirectory(minecraftFunctionTagsDirectory);
+            using (var load = File.CreateText($"{minecraftFunctionTagsDirectory}{slash}load.json")) {
+                load.Write($"{{\"values\":[\"{nameManager.SetupFileName}\"]}}");
+            }
+
+            foreach (DatapackFile file in files) {
+                string[] parts = ((string)file.Path).Split(':');
+                string manespace = parts[0];
+                string path = parts[1];
+                path = path.Replace('/', slash);
+                path = path.Replace(':', slash);
+                string folderPath = $"{rootPath}{slash}data{slash}{manespace}{slash}functions";
+                Directory.CreateDirectory(folderPath);
+                using (var function = File.CreateText($"{folderPath}{slash}{path}.mcfunction")) {
+                    function.Write(file.GetContent());
+                }
+            }
+
         }
 
         /// <summary>

@@ -13,7 +13,7 @@ namespace Atrufulgium.FrontTick.Compiler {
 
             // If we call it on the full project, we get some useless files we ought to ignore.
             // Yes this is an unstable hack. Whatever.
-            string vsDebugDirectory = @"FrontTick\Compiler\MCMirror\obj\Debug".Replace('\\', Path.DirectorySeparatorChar);
+            string vsDebugDirectory = @"\obj\Debug\".Replace('\\', Path.DirectorySeparatorChar);
 
             for (int i = 0; i < files.Length; i++) {
                 if (files[i].Contains(vsDebugDirectory))
