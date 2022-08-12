@@ -35,5 +35,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "Could not find a function's corresponding MCFunction name.",
                 messageFormat: "Could not find the MCFunction name corresponding to '{0}'.\nThis always happens when calling compiled code (e.g. a method in System.*), but if this method is referenced in your own c# code, this is a bug on my side.\n(IL support *may* come later.)"
             );
+
+        public static DiagnosticDescriptor ToDatapackRunRawArgMustBeLiteral
+            => Create(
+                id: "FT0005",
+                title: "Calling `Run(string)` requires a literal, non-interpolated string.",
+                messageFormat: "Calling `MCMirror.Internal.RawMCFunction.Run(string)` requires a literal, non-interpolated string. Even referencing a compile-time known constant string via identifier is not allowed."
+            );
     }
 }

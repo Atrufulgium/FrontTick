@@ -1,4 +1,5 @@
 ﻿using MCMirror;
+using MCMirror.Internal;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -40,7 +41,16 @@ namespace Atrufulgium.FrontTick.Compiler {
         public bool RegisterMethodname(SemanticModel semantics, MethodDeclarationSyntax method, ICustomDiagnosable diagnosticsOutput) {
             string path;
             string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            if (semantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out var attrib)) {
+            // Before doing the normal path, check first if it's a custom compiled method.
+            // This is so hopelessly coupled with FindEntryPointsWalker.cs
+            if (semantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
+                // No error checking this branch whatsoever because really, I'm me.
+                string customName = (string)attrib.ConstructorArguments[0].Value;
+                methodNames.Add(fullyQualifiedName, new MCFunctionName(customName));
+                return true;
+            }
+
+            if (semantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
                 if (attrib.ConstructorArguments.Length == 0) {
                     path = fullyQualifiedName;
                     path = NormalizeFunctionName(path);

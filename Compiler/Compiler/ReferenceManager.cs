@@ -49,7 +49,6 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </summary>
         // Until the far future, this is all that's supported anyway.
         static readonly Type[] autoIncludeAssemblyTypes = new[] {
-            typeof(MCMirror.MCFunctionAttribute),
             typeof(System.Object)
         };
 #pragma warning restore IDE0001, IDE0049

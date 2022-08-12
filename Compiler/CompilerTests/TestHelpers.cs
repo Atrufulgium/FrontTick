@@ -10,7 +10,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             Compiler compiler = new();
             if (compilationPhases != null)
                 compiler.SetCompilationPhases(compilationPhases);
-            compiler.Compile(sources);
+            compiler.Compile(sources.Concat(GetMCMirrorCode()));
             try {
                 Assert.IsTrue(compiler.CompilationSucceeded);
             } catch (AssertFailedException e) {
@@ -47,7 +47,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             Compiler compiler = new();
             if (compilationPhases != null)
                 compiler.SetCompilationPhases(compilationPhases);
-            compiler.Compile(sources);
+            compiler.Compile(sources.Concat(GetMCMirrorCode()));
             try {
                 Assert.IsFalse(compiler.CompilationSucceeded, "Compilation succeeded instead of failing!");
             } catch (AssertFailedException e) {
@@ -62,7 +62,14 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             foreach (var error in compiler.ErrorDiagnostics)
                 observedErrors.Add(error.Id);
 
-            CollectionAssert.AreEquivalent(errorCodes, observedErrors);
+            try {
+                CollectionAssert.AreEquivalent(errorCodes, observedErrors);
+            } catch (AssertFailedException e) {
+                Console.WriteLine("There were different compilation errors than expected:");
+                foreach (var d in compiler.ErrorDiagnostics)
+                    Console.WriteLine(d);
+                throw e;
+            }
         }
 
         public static void TestCompilationThrows(string source, CompilationException exception, IEnumerable<IFullVisitor>? compilationPhases = null)
@@ -74,7 +81,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
                 compiler.SetCompilationPhases(compilationPhases);
 
             try {
-                compiler.Compile(sources);
+                compiler.Compile(sources.Concat(GetMCMirrorCode()));
             } catch (CompilationException e) {
                 Assert.AreEqual(exception.Message, e.Message, "Threw the wrong compilation exception!");
                 return;
@@ -94,6 +101,20 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
                     Console.WriteLine(d);
                 Assert.Fail("There were compilation errors, but no exceptions!");
             }
+        }
+
+        static IEnumerable<string>? mcMirror = null;
+        private static IEnumerable<string> GetMCMirrorCode() {
+            if (mcMirror != null)
+                return mcMirror;
+
+            string path = Environment.CurrentDirectory;
+            string target = $"FrontTick{Path.DirectorySeparatorChar}Compiler";
+            while (!path.EndsWith(target))
+                path = Directory.GetParent(path)!.FullName;
+            path += $"{Path.DirectorySeparatorChar}MCMirror";
+            mcMirror = FolderToContainingCode.GetCode(path);
+            return mcMirror;
         }
     }
 }

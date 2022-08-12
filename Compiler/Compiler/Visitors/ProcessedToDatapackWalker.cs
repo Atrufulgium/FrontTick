@@ -320,6 +320,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 throw CompilationException.ToDatapackMethodCallsMustBeStatic;
 
             MCFunctionName methodName = nameManager.GetMethodName(CurrentSemantics, call, this);
+            // Handle all compiler-known custom names.
+            // This may also need a better system if there's more than one.
+            if (methodName == "RunRaw") {
+                HandleRunRaw(call);
+                return;
+            }
+
             // TODO: Currently ignoring in,out,ref.
             int i = 0;
             foreach(var arg in call.ArgumentList.Arguments) {
@@ -358,6 +365,22 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             } else {
                 throw CompilationException.ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls;
             }
+        }
+
+        private void HandleRunRaw(InvocationExpressionSyntax call) {
+            var argument = call.ArgumentList.Arguments[0];
+            if (argument.Expression is not LiteralExpressionSyntax lit
+                || lit.Kind() != SyntaxKind.StringLiteralExpression) {
+                AddCustomDiagnostic(DiagnosticRules.ToDatapackRunRawArgMustBeLiteral, call.GetLocation());
+                return;
+            }
+            // `lit.Token.Text` returns the *full* string, including the ""
+            // I currently don't allow other (@$) strings, so just assume "".
+            string code = lit.Token.Text;
+            code = code[1..(code.Length - 1)];
+            if (code.StartsWith('/'))
+                code = code[1..];
+            AddCode(code);
         }
 
         /// <summary>

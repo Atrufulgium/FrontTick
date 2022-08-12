@@ -176,13 +176,13 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// A list of valid c# files that may reference eachother's contents.
         /// </param>
         public bool Compile(
-            ICollection<string> sources
+            IEnumerable<string> sources
         ) {
             if (hasCompiled)
                 throw new InvalidOperationException("This instance has already compiled once. To recompile, use a new Compiler instance.");
             hasCompiled = true;
 
-            var syntaxTrees = new List<SyntaxTree>(sources.Count);
+            var syntaxTrees = new List<SyntaxTree>();
             foreach(string source in sources) {
                 syntaxTrees.Add(CSharpSyntaxTree.ParseText(source));
             }

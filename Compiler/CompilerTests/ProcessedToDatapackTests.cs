@@ -823,5 +823,62 @@ function compiled:internal/test.testmethod2
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
+
+        #region run raw tests
+        [TestMethod]
+        public void TestRunRaw1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+using static MCMirror.Internal.RawMCFunction;
+internal class Test {
+    static void TestMethod() {
+        Run(""say hoi"");
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+say hoi
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestRunRaw2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+using static MCMirror.Internal.RawMCFunction;
+internal class Test {
+    static void TestMethod() {
+        Run(""/say hoi"");
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+say hoi
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestRunRawWrong1()
+            => TestCompilationFails(@"
+using MCMirror;
+using static MCMirror.Internal.RawMCFunction;
+internal class Test {
+    static void TestMethod(int i) {
+        Run($""{i}"");
+    }
+}
+", "FT0005", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestRunRawWrong2()
+            => TestCompilationFails(@"
+using MCMirror;
+using static MCMirror.Internal.RawMCFunction;
+internal class Test {
+    const string hoi = ""say hoi"";
+    static void TestMethod(int i) {
+        Run(hoi);
+    }
+}
+", "FT0005", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        #endregion
     }
 }

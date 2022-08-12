@@ -1,4 +1,5 @@
 ﻿using MCMirror;
+using MCMirror.Internal;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,10 +9,15 @@ using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
+    /// <para>
     /// This walker collects all MCFunction-tagged methods in this syntax tree
     /// and at the same time checks whether they all satisfy the
     /// <c>static void(void)</c> signature and whether their optional name
     /// is legal.
+    /// </para>
+    /// <para>
+    /// This walker also finds all CustomCompiled-tagged methods.
+    /// </para>
     /// </summary>
     internal class FindEntryPointsWalker : CSharpSyntaxWalker, ICustomDiagnosable {
 
@@ -33,6 +39,13 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
+            // Before doing the normal path, check first if it's a custom compiled method.
+            // This is so hopelessly coupled with NameManager.cs
+            if (semantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out _)) {
+                nameManager.RegisterMethodname(semantics, method, this);
+                return;
+            }
+
             if (semantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out _)) {
                 // Check whether the signature is correct.
                 bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
