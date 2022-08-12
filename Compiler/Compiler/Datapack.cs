@@ -61,10 +61,9 @@ namespace Atrufulgium.FrontTick.Compiler {
                 Directory.CreateDirectory(packFunctionTagsDirectory);
                 using (var test = File.CreateText($"{packFunctionTagsDirectory}{slash}test.json")) {
                     test.WriteLine("{\"values\":[");
-                    // No trailing commas :(
-                    test.WriteLine($"   \"{testFunctions[0]}\"");
-                    for (int i = 1; i < testFunctions.Count; i++)
-                        test.WriteLine($"  ,\"{testFunctions[i]}\"");
+                    foreach (var t in testFunctions)
+                        test.WriteLine($"  \"{t}\",");
+                    test.WriteLine($"  \"{nameManager.TestPostProcessName}\"");
                     test.WriteLine("]}");
                 }
             }

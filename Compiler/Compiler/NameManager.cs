@@ -32,6 +32,10 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// The file name to put internal datapack setup into.
         /// </summary>
         public MCFunctionName SetupFileName => new($"{manespace}-internal:--load--");
+        /// <summary>
+        /// The file name to put test overview results into.
+        /// </summary>
+        public MCFunctionName TestPostProcessName => new($"{manespace}-internal:--test-postprocess--");
 
         public NameManager(string manespace) {
             this.manespace = manespace;

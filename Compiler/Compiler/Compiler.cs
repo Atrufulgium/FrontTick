@@ -243,6 +243,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             setupFile.code.Add("scoreboard objectives add _ dummy");
             setupFile.code.Add("scoreboard players set #GOTOFLAG _ 0");
             setupFile.code.Add("scoreboard players set #FLAGFOUND _ 0");
+            // Maintain this setting across reloads.
+            setupFile.code.Add("execute unless score #FAILSONLY _ matches 0.. run scoreboard players set #FAILSONLY _ 0");
+            setupFile.code.Add("scoreboard players set #TESTSUCCESSES _ 0");
+            setupFile.code.Add("scoreboard players set #TESTFAILURES _ 0");
             // Don't need to set #RET as it can only be used after a function
             // returns -- it is always set when read.
             foreach (int i in nameManager.Constants.ToList())
@@ -252,6 +256,15 @@ namespace Atrufulgium.FrontTick.Compiler {
             // especially for just 1 tick.
             setupFile.code.Add("gamerule maxCommandChainLength 5000000");
             finishedCompilation.Add(setupFile);
+
+            // Also the test post processing file.
+            DatapackFile postTestFile = new(nameManager.TestPostProcessName);
+            postTestFile.code.Add("tellraw @a [{\"text\":\"Testing complete.\",\"color\":\"white\"},{\"text\":\"\\n  Successes: \",\"color\":\"green\"},{\"score\":{\"name\":\"#TESTSUCCESSES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_green\"},{\"text\":\"\\n  Failures: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTFAILURES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
+            postTestFile.code.Add("execute if score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To hide subsequent successes, click here.)\",\"color\":\"dark_gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 1\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display off.\"]}}");
+            postTestFile.code.Add("execute unless score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To show subsequent successes, click here.)\",\"color\":\"dark_gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 0\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display on.\"]}}");
+            postTestFile.code.Add("scoreboard players set #TESTSUCCESSES _ 0");
+            postTestFile.code.Add("scoreboard players set #TESTFAILURES _ 0");
+            finishedCompilation.Add(postTestFile);
 
             return true;
         }

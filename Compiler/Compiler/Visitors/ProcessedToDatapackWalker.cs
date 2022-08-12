@@ -32,7 +32,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </para>
         /// </summary>
         readonly Stack<DatapackFile> wipFiles = new();
-        bool AtRootScope => wipFiles.Count == 1;
+        // We're at root scope if we aren't in a branch.
+        // However, gotos can introduce wipFiles.
+        // As such, we're only at root scope if no wipFiles are branchy.
+        bool AtRootScope => wipFiles.All(
+            file => !file.Path.name.Contains("-if-")
+                && !file.Path.name.Contains("-else-")
+        );
 
         MethodDeclarationSyntax currentNode;
         // Automatically incremented by
@@ -424,7 +430,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // As at this point, the actual method is done, it should have
             // assigned to #RET already. We can just freely read that here.
             AddCode($"execute if score #RET _ matches {expected} unless score #FAILSONLY _ matches 1 run tellraw @a [{{\"text\":\"Test \",\"color\":\"green\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_green\"}},{{\"text\":\" passed.\",\"color\":\"green\"}}]");
-            AddCode($"execute unless score #RET _ matches {expected} run tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\"}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expected}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]");
+            AddCode($"execute if score #RET _ matches {expected} run scoreboard players add #TESTSUCCESSES _ 1");
+            AddCode($"execute unless score #RET _ matches {expected} run tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\"}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expected}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\", but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]");
+            AddCode($"execute unless score #RET _ matches {expected} run scoreboard players add #TESTFAILURES _ 1");
 
             testFunctions.Add(nameManager.GetMethodName(CurrentSemantics, node, this));
         }

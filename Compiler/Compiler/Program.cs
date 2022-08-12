@@ -60,7 +60,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                         mcMirrorDirectory = args[i];
                         break;
                     default:
-                        Console.WriteLine($"Unknown option {args[i]}, use -c or -w, self.");
+                        Console.WriteLine($"Unknown option {args[i]}, use -c, -m, -w, or -n, self.");
                         return 1;
                 }
             }
@@ -95,10 +95,6 @@ namespace Atrufulgium.FrontTick.Compiler {
                 Compiler compiler = new(manespace: manespace);
                 // Compilation phases here yada yada
                 compiler.Compile(code);
-                Datapack datapack = compiler.CompiledDatapack;
-                if (compiler.CompilationSucceeded) {
-                    Console.WriteLine($"Compiled:\n{datapack.ToTreeString()}");
-                }
                 if (compiler.WarningDiagnostics.Count > 0) {
                     Console.WriteLine("Compilation warnings:");
                     foreach (var diagnostic in compiler.WarningDiagnostics)
@@ -110,10 +106,15 @@ namespace Atrufulgium.FrontTick.Compiler {
                         Console.WriteLine(diagnostic);
                     return 1;
                 }
+                Datapack datapack = compiler.CompiledDatapack;
                 string datapackPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 var slash = Path.DirectorySeparatorChar;
                 datapackPath += $"{slash}.minecraft{slash}saves{slash}{outputWorld}{slash}datapacks{slash}{manespace}";
                 datapack.WriteToFilesystem(datapackPath, manespace);
+                Console.WriteLine("\nCompilation succesful!");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("Don't forget to /reload in-game!");
+                Console.ResetColor();
             } catch (IOException e) {
                 Console.WriteLine("\n\n\nIO trouble ffs:\n");
                 Console.WriteLine(e);
