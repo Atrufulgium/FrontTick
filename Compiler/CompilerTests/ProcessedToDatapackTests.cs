@@ -518,6 +518,46 @@ execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compi
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
+        public void TestBranching8()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    [MCFunction]
+    static void TestMethod() {
+        int i;
+        i = 0;
+        if (i != 10) {
+            i = 10;
+        }
+    }
+}
+", @"
+# (File compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 0
+execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestBranching9()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    [MCFunction]
+    static void TestMethod() {
+        int i;
+        i = 0;
+        if (i == 10) {
+            i = 10;
+        }
+    }
+}
+", @"
+# (File compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 0
+execute if score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
         public void BranchingTestWrong1()
             => TestCompilationThrows(@"
 using MCMirror;

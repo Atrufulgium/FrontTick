@@ -7,6 +7,8 @@ This phase only does few optimisations, namely:
 TODO: The generated code also needs a few optimisations still. Namely:
 * Any mcfunction that is just a single `function ...` can be replaced at callsite with the called function;
 * Any mcfunction that is empty can be deleted and its callsite can be removed.
+* Multiple `goto`s to the same label generate different files that can easily be shared.
+* Branches with an "else" statement store the conditional in a unique temporary variable. Do the analysis of whether this is actually needed; the if-branch may not modify it.
 
 <table>
 <tr>
@@ -140,7 +142,7 @@ This means we can do the write-work exactly as the arbitrary assignment case.
 <td> ✅ </td>
 <td>
 
-Branching neq 0:
+Branching:
 ```csharp
 if (identifier != 0) {
     // Code1 - one op
@@ -148,7 +150,8 @@ if (identifier != 0) {
     // Code2 - many ops
 }
 ```
-(Note that Roslyn already expands `else if`.)
+Allows for `==` and `!=`, with integer literal RHS.
+Note that `else if` is disallowed; it should be `else { if }`.
 
 </td>
 <td>
@@ -163,7 +166,7 @@ execute if score Context#condition _ matches 0 run function namespace:context-el
 </td>
 </tr>
 <tr>
-<td> ❌ </td>
+<td> 🟡 </td>
 <td>
 
 Goto labels:
@@ -179,12 +182,14 @@ Upon encountering a label, create a new function for the remainder and run it.
 ```mcfunction
 function namespace:method-label1
 ```
-Labels just are attached `-labelname` to the original function name and do not stack.
+Labels just are attached `-label-number` to the original function name and do not stack.
+
+*Only implemented for "raw(?)" labels, not switch case labels.*
 
 </td>
 </tr>
 <tr>
-<td> ❌ </td>
+<td> ✅ </td>
 <td>
 
 Goto statement:
@@ -200,7 +205,7 @@ Just use the method from the previous rule.
 function namespace:method-label1
 ```
 `if (..) goto ..` does *not* prevent execution from the part after the branch finishes. <br/>
-The obvious solution consists of checking in all scopes between this and the target whether we `goto`'d via a flag. This explodes (especially in switches etc), but I can't think of anything better.
+The obvious solution consists of checking in all scopes between this and the target whether we `goto`'d via a flag. This explodes (especially in switches etc), but I can't think of anything better, so I went with that.
 
 Do note that the implementation of this needs to *also* deal with code splitting into a bazillion executors due to selectors being able to suddenly fork a ton. I don't even *know* what it is supposed to mean for e.g. a single branch of execution splitting into many and then returning different values.
 

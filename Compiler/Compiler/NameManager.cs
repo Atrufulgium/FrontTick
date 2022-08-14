@@ -25,8 +25,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// All constants encountered, which all need initialisation in the
         /// datapack.
         /// </summary>
-        public ReadOnlyCollection<int> Constants => new(constants);
-        readonly List<int> constants = new();
+        public ReadOnlyCollection<int> Constants => new(constants.ToArray());
+        readonly SortedSet<int> constants = new();
 
         /// <summary>
         /// The file name to put internal datapack setup into.

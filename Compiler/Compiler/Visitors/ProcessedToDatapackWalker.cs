@@ -92,12 +92,17 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             bool encounteredGoto = false;
 
             foreach (var statement in block.Statements) {
+                // (Don't want to consider labels in the return-legality, so
+                //  extract the statement. Labels may nest.)
                 var checkStatement = statement;
-                if (statement is LabeledStatementSyntax labeled)
+                while (checkStatement is LabeledStatementSyntax labeled) {
                     checkStatement = labeled.Statement;
+                    encounteredGoto = false;
+                }
                 encounteredReturnIllegalStatement |= !(checkStatement is ReturnStatementSyntax or IfStatementSyntax);
-                // Nothing may follow gotos.
-                if (encounteredGoto)
+                // Only labels may follow gotos.
+                // Deliberately checking `statement` and not `checkStatement`.
+                if (encounteredGoto && statement is not LabeledStatementSyntax)
                     throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
                 encounteredGoto |= statement is GotoStatementSyntax;
 
@@ -108,6 +113,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         private void HandleStatement(StatementSyntax statement) {
+            // Labels are ugly nested statements. Get rid of them.
+            // Fun fact: the things *can be nested*. Somewhy, someone decided
+            //     `label1: label2: label3: label4: return "ew";`
+            // is valid c#. Thanks, someone.
+            while (statement is LabeledStatementSyntax labeled) {
+                HandleGotoLabel(labeled, innerStatement: out statement);
+            }
+
             // Group all returns separately to be able to check for the
             // condition "returns must be at the end".
             if (statement is ReturnStatementSyntax ret) {
@@ -115,10 +128,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 return;
             } else if (statement is IfStatementSyntax ifst) {
                 HandleIfElseGroup(ifst);
-                return;
-            } else if (statement is LabeledStatementSyntax labeledReturn
-                && labeledReturn.Statement is ReturnStatementSyntax or IfStatementSyntax) {
-                HandleGotoLabel(labeledReturn);
                 return;
             }
 
@@ -129,8 +138,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 HandleLocalDeclaration(decl);
             } else if (statement is ExpressionStatementSyntax expr) {
                 HandleExpression(expr.Expression);
-            } else if (statement is LabeledStatementSyntax label) {
-                HandleGotoLabel(label);
             } else if (statement is GotoStatementSyntax got) {
                 HandleGoto(got);
             }
@@ -202,16 +209,29 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 targetElseName = GetBranchPath("else-branch");
 
             // The if-statement must be of the form
-            //   if (identifier != 0)
+            //   if (identifier != literal) [or ==]
             if (ifst.Condition is BinaryExpressionSyntax bin
                 && bin.Left is IdentifierNameSyntax id
-                && bin.OperatorToken.Text == "!="
-                && TryGetIntegerLiteral(bin.Right, out int rhsValue)
-                && rhsValue == 0) {
+                && bin.OperatorToken.Text is "!=" or "=="
+                && TryGetIntegerLiteral(bin.Right, out int rhsValue)) {
                 conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
             } else {
                 throw CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero;
             }
+
+            // In case we have an else branch, copy the if conditional over to
+            // the else conditional to ensure that not both branches run if
+            // the conditioned variable gets updated.
+            if (hasElse) {
+                // Use `branchCounter` to ensure uniqueness.
+                string updatedIdentifier = $"conditionIdentifier-{branchCounter}";
+                AddCode($"scoreboard players operation {updatedIdentifier} _ = {conditionIdentifier} _");
+                conditionIdentifier = updatedIdentifier;
+            }
+
+            bool equalsVariant = bin.OperatorToken.Text == "==";
+            string ifBranchMCConditional = equalsVariant ? "if" : "unless";
+            string elseBranchMCConditional = equalsVariant ? "unless" : "if";
 
             // We need this among other things to check the condition of the
             // if-else tree at the end of the method consisting entirely of
@@ -239,10 +259,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (wipFiles.Peek().code.Count == 1) {
                 string command = wipFiles.Peek().code[0];
                 wipFiles.Pop();
-                AddCode($"execute unless score {conditionIdentifier} _ matches 0 run {command}");
+                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
             } else {
                 compiler.finishedCompilation.Add(wipFiles.Pop());
-                AddCode($"execute unless score {conditionIdentifier} _ matches 0 run function {targetIfName}");
+                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetIfName}");
             }
 
             bool returnedAtOrBeforeIf = encounteredReturn;
@@ -265,10 +285,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 if (wipFiles.Peek().code.Count == 1) {
                     string command = wipFiles.Peek().code[0];
                     wipFiles.Pop();
-                    AddCode($"execute if score {conditionIdentifier} _ matches 0 run {command}");
+                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
                 } else {
                     compiler.finishedCompilation.Add(wipFiles.Pop());
-                    AddCode($"execute if score {conditionIdentifier} _ matches 0 run function {targetElseName}");
+                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetElseName}");
                 }
                 if (!returnedAtOrBeforeIf && encounteredReturn) {
                     // Found a return statement within the else-branch, but
@@ -335,12 +355,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             }
         }
 
-        private void HandleGotoLabel(LabeledStatementSyntax label) {
+        private void HandleGotoLabel(LabeledStatementSyntax label, out StatementSyntax innerStatement) {
             string name = label.Identifier.Text;
             var gotoBranch = GetGotoFunctionName(Dependency1.LabelToInt(name));
             AddCode($"function {gotoBranch}");
             wipFiles.Push(new(gotoBranch));
-            HandleStatement(label.Statement);
+            // Do not handle the statement here -- instead, return control to HandleStatement
+            // to let it work on the innerStatement.
+            innerStatement = label.Statement;
         }
 
         private void HandleInvocation(InvocationExpressionSyntax call) {
