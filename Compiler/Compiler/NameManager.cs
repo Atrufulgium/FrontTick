@@ -51,7 +51,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             string path;
             string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
             // Before doing the normal path, check first if it's a custom compiled method.
-            // This is so hopelessly coupled with FindEntryPointsWalker.cs
+            // This is so hopelessly coupled with RegisterMethodsWalker.cs
             if (semantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
                 // No error checking this branch whatsoever because really, I'm me.
                 string customName = (string)attrib.ConstructorArguments[0].Value;
@@ -225,6 +225,15 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// their results in, and callers should read the result form.
         /// </summary>
         public static string GetRetName() => "#RET";
+
+        /// <summary>
+        /// Whether the given string is valid as the name of a function file.
+        /// </summary>
+        public static bool IsValidDatapackName(MCFunctionName name) {
+            // There is exactly one : in there, but ignore :'s in general.
+            string check = name.name.Replace(":", "");
+            return check == NormalizeFunctionName(check);
+        }
 
         /// <summary>
         /// This normalizes strings to the <c>[a-z0-9/._-]*</c> range normal

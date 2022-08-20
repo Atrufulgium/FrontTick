@@ -1,9 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-
-// TODO: Far future when rewriting the tree: https://stackoverflow.com/a/12168782
+using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // Big note to self: On any Visit[X]() methods, if you don't call
@@ -40,8 +40,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public void AddCustomDiagnostic(DiagnosticDescriptor descriptor, Location location, params object[] messageArgs)
             => customDiagnostics.Add(Diagnostic.Create(descriptor, location, messageArgs));
 
-        /// <inheritdoc cref="AbstractFullWalker.CurrentEntryPoint"/>
-        internal EntryPoint CurrentEntryPoint { get; private set; }
         /// <inheritdoc cref="AbstractFullWalker.CurrentSemantics"/>
         internal SemanticModel CurrentSemantics { get; private set; }
 
@@ -53,18 +51,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public void FullVisit() {
-            foreach (var entry in compiler.entryPoints) {
-                CurrentEntryPoint = entry;
-                CurrentSemantics = entry.semantics;
-                Aborted = false;
-                Visit(entry.method);
+            // We will be modifying the compiler roots because of updates,
+            // so iterate a copy instead.
+            foreach (var entry in compiler.roots.ToArray()) {
+                CurrentSemantics = entry;
+                var result = Visit(entry.SyntaxTree.GetCompilationUnitRoot());
+                compiler.ReplaceTree(entry, result);
             }
-        }
-
-        protected bool Aborted { get; private set; }
-        /// <inheritdoc cref="AbstractFullWalker.Abort"/>
-        protected void Abort() {
-            Aborted = true;
         }
     }
 

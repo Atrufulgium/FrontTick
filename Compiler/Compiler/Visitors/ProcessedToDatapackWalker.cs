@@ -18,7 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // I "love" how this class is messy for the same reason every parser I've
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
-    public class ProcessedToDatapackWalker : AbstractFullWalker<GotoLabelerWalker> {
+    public class ProcessedToDatapackWalker : AbstractFullWalker<ApplyNoCompileAttributeRewriter, RegisterMethodsWalker, GotoLabelerWalker> {
 
         /// <summary>
         /// <para>
@@ -239,8 +239,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             bool returnedBeforeBranch = encounteredReturn;
 
             var parentBlock = ifst.Ancestors().OfType<BlockSyntax>().First();
-            bool requireFlag = Dependency1.AfterScopeRequiresFlag(parentBlock);
-            bool requireFlagConsume = Dependency1.AfterScopeRequiresFlagConsume(parentBlock, out var consumed);
+            bool requireFlag = Dependency3.AfterScopeRequiresFlag(parentBlock);
+            bool requireFlagConsume = Dependency3.AfterScopeRequiresFlagConsume(parentBlock, out var consumed);
 
             wipFiles.Push(new(targetIfName));
             if (ifst.Statement is BlockSyntax block)
@@ -273,8 +273,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // I'm not gonna bother.
                 if (ifst.Else.Statement is not BlockSyntax elseBlock)
                     throw CompilationException.ToDatapackBranchesMustBeBlocks;
-                requireFlag |= Dependency1.AfterScopeRequiresFlag(elseBlock);
-                requireFlagConsume |= Dependency1.AfterScopeRequiresFlagConsume(elseBlock, out var elseConsumed);
+                requireFlag |= Dependency3.AfterScopeRequiresFlag(elseBlock);
+                requireFlagConsume |= Dependency3.AfterScopeRequiresFlagConsume(elseBlock, out var elseConsumed);
                 consumed = consumed.Union(elseConsumed);
 
                 wipFiles.Push(new(targetElseName));
@@ -346,8 +346,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // level as the label,) immediately go.
             var parentBlock = got.Ancestors().OfType<BlockSyntax>().First();
             string name = ((IdentifierNameSyntax)got.Expression).Identifier.Text;
-            int id = Dependency1.LabelToInt(name);
-            if (Dependency1.ScopeContainsLabel(parentBlock, name)) {
+            int id = Dependency3.LabelToInt(name);
+            if (Dependency3.ScopeContainsLabel(parentBlock, name)) {
                 var gotoLabel = GetGotoFunctionName(id);
                 AddCode($"function {gotoLabel}");
             } else {
@@ -357,7 +357,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         private void HandleGotoLabel(LabeledStatementSyntax label, out StatementSyntax innerStatement) {
             string name = label.Identifier.Text;
-            var gotoBranch = GetGotoFunctionName(Dependency1.LabelToInt(name));
+            var gotoBranch = GetGotoFunctionName(Dependency3.LabelToInt(name));
             AddCode($"function {gotoBranch}");
             wipFiles.Push(new(gotoBranch));
             // Do not handle the statement here -- instead, return control to HandleStatement

@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -31,11 +32,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             => customDiagnostics.Add(Diagnostic.Create(descriptor, location, messageArgs));
 
         /// <summary>
-        /// When using <see cref="FullVisit"/>, all data relevant to the
-        /// current entry point.
-        /// </summary>
-        internal EntryPoint CurrentEntryPoint { get; private set; }
-        /// <summary>
         /// When using <see cref="FullVisit"/>, the current entry point's
         /// semantic model.
         /// </summary>
@@ -49,26 +45,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public void FullVisit() {
-            foreach (var entry in compiler.entryPoints) {
-                CurrentEntryPoint = entry;
-                CurrentSemantics = entry.semantics;
-                Aborted = false;
-                Visit(entry.method);
+            foreach (var entry in compiler.roots) {
+                CurrentSemantics = entry;
+                Visit(entry.SyntaxTree.GetCompilationUnitRoot());
             }
-        }
-
-        protected bool Aborted { get; private set; }
-        /// <summary>
-        /// Abort walking over the current entrypoint.
-        /// </summary>
-        /// <remarks>
-        /// <b>You need to test for <tt>Aborted</tt> yourself</b> at the
-        /// start of each Visit method and early-return. I'm not overwriting
-        /// the bazillion methods you could use, nor reading roslyn-source to
-        /// work out a better solution.
-        /// </remarks>
-        protected void Abort() {
-            Aborted = true;
         }
     }
 

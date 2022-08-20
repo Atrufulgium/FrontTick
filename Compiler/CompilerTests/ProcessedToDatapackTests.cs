@@ -945,5 +945,54 @@ internal class Test {
 }
 ", "FT0005", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
+
+        #region [NoCompile] tests
+        [TestMethod]
+        public void TestNoCompile1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+using MCMirror.Internal;
+internal class Test {
+    [NoCompile]
+    static int TestMethod1() {
+        return 1;
+    }
+
+    static int TestMethod2() {
+        return 2;
+    }
+    [NoCompile]
+    static int TestMethod3() {
+        return 3;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod2.mcfunction)
+scoreboard players set #RET _ 2
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestNoCompile2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+using MCMirror.Internal;
+[NoCompile]
+internal class Test {
+    static int TestMethod1() {
+        return 1;
+    }
+
+    static int TestMethod2() {
+        return 2;
+    }
+
+    static int TestMethod3() {
+        return 3;
+    }
+}
+", @"
+
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        #endregion
     }
 }

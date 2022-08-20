@@ -10,7 +10,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     public class Datapack {
         // Keep them sorted alphabetically by path to keep the string output
         // consistent. Maybe it even helps with the filesystem output.
-        public SortedSet<DatapackFile> files = new(Comparer<DatapackFile>.Create((a,b) => a.Path.CompareTo(b.Path)));
+        private readonly SortedSet<DatapackFile> files = new(Comparer<DatapackFile>.Create((a,b) => a.Path.CompareTo(b.Path)));
         public List<MCFunctionName> testFunctions = new();
 
         private NameManager nameManager;
@@ -19,8 +19,11 @@ namespace Atrufulgium.FrontTick.Compiler {
             this.nameManager = nameManager;
         }
         public Datapack(IEnumerable<DatapackFile> files, NameManager nameManager) : this(nameManager) {
+            // Only add datapacks that are intended to be valid -- exactly the
+            // ones with a valid name.
             foreach (var file in files)
-                this.files.Add(file);
+                if (NameManager.IsValidDatapackName(file.Path))
+                    this.files.Add(file);
         }
 
         /// <summary>
