@@ -1,6 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -19,8 +18,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// <para>
     /// These rewriters can have one or multiple dependencies on previous
-    /// visitors (either walkers or rewriters) in the form of generics. Whether
-    /// the dependencies are satisfied is only discovered during runtime.
+    /// visitors (either walkers or rewriters) in the form of generics.
+    /// These are added automatically when missing. It is recommended to use
+    /// their values not via <tt>DependencyX</tt> but with an intermediate
+    /// <tt>TDepX SomeProperName => DependencyX</tt> for clarity.
     /// </para>
     /// </summary>
     /// <remarks>
@@ -28,7 +29,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// get clashes with existing names, and allow literal name translation
     /// support to MCFunction, all non-method identifiers introduced by these
     /// methods should be prefixed with a '#'.
-    /// (c.f. vanilla c# prefixing &lt;&gt; with e.g. generated yield classes.)
+    /// (cf. vanilla c# prefixing &lt;&gt; with e.g. generated yield classes.)
     /// </remarks>
     public abstract class AbstractFullRewriter : CSharpSyntaxRewriter, IFullVisitor {
 
@@ -40,7 +41,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public void AddCustomDiagnostic(DiagnosticDescriptor descriptor, Location location, params object[] messageArgs)
             => customDiagnostics.Add(Diagnostic.Create(descriptor, location, messageArgs));
 
-        /// <inheritdoc cref="AbstractFullWalker.CurrentSemantics"/>
+        /// <summary>
+        /// When using <see cref = "FullVisit" />, the current
+        /// entry point's semantic model.
+        /// </summary>
         internal SemanticModel CurrentSemantics { get; private set; }
 
         internal Compiler compiler;
@@ -104,7 +108,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     }
 
     /// <inheritdoc/>
-    // no you're not gonna need more dependencies.
     public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4>
         : AbstractFullRewriter<TDep1, TDep2, TDep3>
         where TDep1 : IFullVisitor
@@ -117,6 +120,101 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override void SetCompiler(Compiler compiler) {
             base.SetCompiler(compiler);
             Dependency4 = compiler.appliedWalkers.Get<TDep4>();
+        }
+    }
+
+    /// <inheritdoc/>
+    public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5>
+        : AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4>
+        where TDep1 : IFullVisitor
+        where TDep2 : IFullVisitor
+        where TDep3 : IFullVisitor
+        where TDep4 : IFullVisitor
+        where TDep5 : IFullVisitor {
+
+        public TDep5 Dependency5 { get; private set; }
+
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
+            Dependency5 = compiler.appliedWalkers.Get<TDep5>();
+        }
+    }
+
+    /// <inheritdoc/>
+    public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
+        : AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5>
+        where TDep1 : IFullVisitor
+        where TDep2 : IFullVisitor
+        where TDep3 : IFullVisitor
+        where TDep4 : IFullVisitor
+        where TDep5 : IFullVisitor
+        where TDep6 : IFullVisitor {
+
+        public TDep6 Dependency6 { get; private set; }
+
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
+            Dependency6 = compiler.appliedWalkers.Get<TDep6>();
+        }
+    }
+
+    /// <inheritdoc/>
+    public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
+        : AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
+        where TDep1 : IFullVisitor
+        where TDep2 : IFullVisitor
+        where TDep3 : IFullVisitor
+        where TDep4 : IFullVisitor
+        where TDep5 : IFullVisitor
+        where TDep6 : IFullVisitor
+        where TDep7 : IFullVisitor {
+
+        public TDep7 Dependency7 { get; private set; }
+
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
+            Dependency7 = compiler.appliedWalkers.Get<TDep7>();
+        }
+    }
+
+    /// <inheritdoc/>
+    public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
+        : AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
+        where TDep1 : IFullVisitor
+        where TDep2 : IFullVisitor
+        where TDep3 : IFullVisitor
+        where TDep4 : IFullVisitor
+        where TDep5 : IFullVisitor
+        where TDep6 : IFullVisitor
+        where TDep7 : IFullVisitor
+        where TDep8 : IFullVisitor {
+
+        public TDep8 Dependency8 { get; private set; }
+
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
+            Dependency8 = compiler.appliedWalkers.Get<TDep8>();
+        }
+    }
+
+    /// <inheritdoc/>
+    public abstract class AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8, TDep9>
+        : AbstractFullRewriter<TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
+        where TDep1 : IFullVisitor
+        where TDep2 : IFullVisitor
+        where TDep3 : IFullVisitor
+        where TDep4 : IFullVisitor
+        where TDep5 : IFullVisitor
+        where TDep6 : IFullVisitor
+        where TDep7 : IFullVisitor
+        where TDep8 : IFullVisitor
+        where TDep9 : IFullVisitor {
+
+        public TDep9 Dependency9 { get; private set; }
+
+        public override void SetCompiler(Compiler compiler) {
+            base.SetCompiler(compiler);
+            Dependency9 = compiler.appliedWalkers.Get<TDep9>();
         }
     }
 }

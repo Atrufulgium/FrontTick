@@ -1,6 +1,4 @@
-﻿using MCMirror;
-using MCMirror.Internal;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
@@ -47,39 +45,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </summary>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="ArgumentException"></exception>
-        public bool RegisterMethodname(SemanticModel semantics, MethodDeclarationSyntax method, ICustomDiagnosable diagnosticsOutput) {
-            string path;
+        public bool RegisterMethodname(
+            SemanticModel semantics, 
+            MethodDeclarationSyntax method, 
+            string name, 
+            ICustomDiagnosable diagnosticsOutput, 
+            bool prefixNamespace = true
+        ) {
             string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            // Before doing the normal path, check first if it's a custom compiled method.
-            // This is so hopelessly coupled with RegisterMethodsWalker.cs
-            if (semantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
-                // No error checking this branch whatsoever because really, I'm me.
-                string customName = (string)attrib.ConstructorArguments[0].Value;
-                methodNames.Add(fullyQualifiedName, new MCFunctionName(customName));
-                return true;
-            }
 
-            if (semantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
-                if (attrib.ConstructorArguments.Length == 0) {
-                    path = fullyQualifiedName;
-                    path = NormalizeFunctionName(path);
-                } else {
-                    // Check whether the custom name is legal as mcfunction
-                    path = (string)attrib.ConstructorArguments[0].Value;
-                    if (path != NormalizeFunctionName(path) || path == "") {
-                        diagnosticsOutput.AddCustomDiagnostic(
-                            DiagnosticRules.MCFunctionAttributeIllegalName,
-                            method,
-                            method.Identifier.Text
-                        );
-                        return false;
-                    }
-                }
-            } else {
-                path = "internal/" + fullyQualifiedName;
-                path = NormalizeFunctionName(path);
-            }
-            path = $"{manespace}:{path}";
+            string path = name;
+            if (prefixNamespace)
+                path = $"{manespace}:{path}";
             var mcFunctionName = new MCFunctionName(path);
 
             if (methodNames.TryGetValue(fullyQualifiedName, out MCFunctionName registeredPath)) {
@@ -241,7 +218,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// spaces with underscores, and discarding the rest. There is no check
         /// as to whether the result is sensible/unique!
         /// </summary>
-        static string NormalizeFunctionName(string str) {
+        public static string NormalizeFunctionName(string str) {
             StringBuilder builder = new(str.Length);
             foreach (char c in str) {
                 if (('a' <= c && c <= 'z')

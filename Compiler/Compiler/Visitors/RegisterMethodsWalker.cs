@@ -17,15 +17,21 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
             base.VisitMethodDeclaration(method);
+            
+            string name;
 
             // Before doing the normal path, check first if it's a custom compiled method.
-            // This is so hopelessly coupled with NameManager.cs
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out _)) {
-                nameManager.RegisterMethodname(CurrentSemantics, method, this);
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
+                // No error checking this branch whatsoever because really, I'm me.
+                name = (string)attrib.ConstructorArguments[0].Value;
+                nameManager.RegisterMethodname(CurrentSemantics, method, name, this, prefixNamespace: false);
                 return;
             }
 
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out _)) {
+            // Try whether the sig is correct, and then store the method into here.
+            string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, method);
+
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
                 // Check whether the signature is correct.
                 bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
                 bool voidIn = method.ArityOfArguments() == 0;
@@ -37,8 +43,26 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         method.Identifier.Text
                     );
                 }
+                if (attrib.ConstructorArguments.Length == 0) {
+                    name = fullyQualifiedName;
+                    name = NameManager.NormalizeFunctionName(name);
+                } else {
+                    // Check whether the custom name is legal as mcfunction
+                    name = (string)attrib.ConstructorArguments[0].Value;
+                    if (name != NameManager.NormalizeFunctionName(name) || name == "") {
+                        AddCustomDiagnostic(
+                            DiagnosticRules.MCFunctionAttributeIllegalName,
+                            method.GetLocation(),
+                            method.Identifier.Text
+                        );
+                        return;
+                    }
+                }
+            } else {
+                name = "internal/" + fullyQualifiedName;
+                name = NameManager.NormalizeFunctionName(name);
             }
-            nameManager.RegisterMethodname(CurrentSemantics, method, this);
+            nameManager.RegisterMethodname(CurrentSemantics, method, name, this);
         }
     }
 }
