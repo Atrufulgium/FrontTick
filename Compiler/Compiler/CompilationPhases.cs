@@ -12,17 +12,19 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// this compiler will do the bare-bones minimum. This is the default.
         /// </summary>
         public static IFullVisitor[] BasicCompilationPhases => new IFullVisitor[] {
-                new ArithmeticFlattenRewriter(),
-                new ProcessedToDatapackWalker()
-            };
+            new SetupCategory(),
+            new PreProcessCategory(),
+            new ProcessedToDatapackWalker()
+        };
 
         /// <summary>
         /// If fed to <see cref="Compiler.SetCompilationPhases(IEnumerable{IFullVisitor})"/>,
         /// this will do as much as it can.
         /// </summary>
         public static IFullVisitor[] OptimisedCompilationPhases => new IFullVisitor[] {
-                new ArithmeticFlattenRewriter(),
-                new ProcessedToDatapackWalker()
-            };
+            new SetupCategory(),
+            new PreProcessCategory(),
+            new ProcessedToDatapackWalker()
+        };
     }
 }

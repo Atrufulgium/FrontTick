@@ -378,20 +378,22 @@ using MCMirror;
 internal class Test {
     [MCFunction]
     static void TestMethod() {
-        int i;
+        int i, j;
         i = 0;
+        j = 0;
         if (i != 0) {
-            i = 1;
+            j = 1;
         } else {
-            i = 2;
+            j = 2;
         }
     }
 }
 ", @"
 # (File compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
-execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 2
+scoreboard players set #compiled:test.testmethod#j _ 0
+execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
+execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 2
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -412,10 +414,11 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+ # (File compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
-execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
+scoreboard players operation conditionIdentifier-2 _ = #compiled:test.testmethod#i _
+execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+execute if score conditionIdentifier-2 _ matches 0 run function compiled:test.testmethod-1-else-branch
 
 # (File compiled:test.testmethod-1-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 2
@@ -427,70 +430,146 @@ scoreboard players set #compiled:test.testmethod#i _ 3
             => TestCompilationSucceeds(@"
 using MCMirror;
 internal class Test {
+    static void TestMethod(int i, int j) {
+        if (i != 0) {
+            j = 1;
+        } else {
+            j = 2;
+            j = 3;
+        }
+    }
+}
+", @"
+ # (File compiled:internal/test.testmethod.mcfunction)
+execute unless score #compiled:internal/test.testmethod##arg0 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg1 _ 1
+execute if score #compiled:internal/test.testmethod##arg0 _ matches 0 run function compiled:internal/test.testmethod-1-else-branch
+
+# (File compiled:internal/test.testmethod-1-else-branch.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod##arg1 _ 2
+scoreboard players set #compiled:internal/test.testmethod##arg1 _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestBranching7()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static void TestMethod(int i) {
+        if (i != 0) {
+            i = 1;
+        } else {
+            i = 2;
+        }
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation conditionIdentifier-2 _ = #compiled:internal/test.testmethod##arg0 _
+execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg0 _ 1
+execute if score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg0 _ 2
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestBranching8()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
     [MCFunction]
     static void TestMethod() {
-        int i;
+        int i, j;
         i = 0;
+        j = 0;
         if (i != 0) {
-            i = 0;
-            if (i != 0) {
-                i = 2;
-                i = 2;
-            } else {
-                i = 3;
-                i = 3;
-            }
-            i = 0;
+            j = 1;
         } else {
-            i = 1;
-            if (i != 0) {
-                i = 4;
-                i = 4;
-            } else {
-                i = 5;
-                i = 5;
-            }
-            i = 1;
+            j = 2;
+            j = 3;
         }
     }
 }
 ", @"
 # (File compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
+scoreboard players set #compiled:test.testmethod#j _ 0
+execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
+execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
+
+# (File compiled:test.testmethod-1-else-branch.mcfunction)
+scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players set #compiled:test.testmethod#j _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestBranching9()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    [MCFunction]
+    static void TestMethod() {
+        int i, j;
+        i = 0;
+        j = 0;
+        if (i != 0) {
+            j = 0;
+            if (i != 0) {
+                j = 2;
+                j = 2;
+            } else {
+                j = 3;
+                j = 3;
+            }
+            j = 0;
+        } else {
+            j = 1;
+            if (i != 0) {
+                j = 4;
+                j = 4;
+            } else {
+                j = 5;
+                j = 5;
+            }
+            j = 1;
+        }
+    }
+}
+", @"
+# (File compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 0
+scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
 
 # (File compiled:test.testmethod-0-if-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 0
+scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-2-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-3-else-branch
-scoreboard players set #compiled:test.testmethod#i _ 0
+scoreboard players set #compiled:test.testmethod#j _ 0
 
 # (File compiled:test.testmethod-1-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players set #compiled:test.testmethod#j _ 1
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-4-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-5-else-branch
-scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players set #compiled:test.testmethod#j _ 1
 
 # (File compiled:test.testmethod-2-if-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 2
-scoreboard players set #compiled:test.testmethod#i _ 2
+scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players set #compiled:test.testmethod#j _ 2
 
 # (File compiled:test.testmethod-3-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 3
-scoreboard players set #compiled:test.testmethod#i _ 3
+scoreboard players set #compiled:test.testmethod#j _ 3
+scoreboard players set #compiled:test.testmethod#j _ 3
 
 # (File compiled:test.testmethod-4-if-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 4
-scoreboard players set #compiled:test.testmethod#i _ 4
+scoreboard players set #compiled:test.testmethod#j _ 4
+scoreboard players set #compiled:test.testmethod#j _ 4
 
 # (File compiled:test.testmethod-5-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 5
-scoreboard players set #compiled:test.testmethod#i _ 5
+scoreboard players set #compiled:test.testmethod#j _ 5
+scoreboard players set #compiled:test.testmethod#j _ 5
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestBranching7()
+        public void TestBranching10()
             => TestCompilationSucceeds(@"
 using MCMirror;
 internal class Test {
@@ -518,7 +597,7 @@ execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compi
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestBranching8()
+        public void TestBranching11()
             => TestCompilationSucceeds(@"
 using MCMirror;
 internal class Test {
@@ -538,7 +617,7 @@ execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard pla
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestBranching9()
+        public void TestBranching12()
             => TestCompilationSucceeds(@"
 using MCMirror;
 internal class Test {

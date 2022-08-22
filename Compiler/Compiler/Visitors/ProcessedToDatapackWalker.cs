@@ -18,7 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // I "love" how this class is messy for the same reason every parser I've
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
-    public class ProcessedToDatapackWalker : AbstractFullWalker<ApplyNoCompileAttributeRewriter, RegisterMethodsWalker, GotoLabelerWalker> {
+    public class ProcessedToDatapackWalker : AbstractFullWalker<SetupCategory, PreProcessCategory, GotoLabelerWalker> {
 
         private GotoLabelerWalker GotoLabelerWalker => Dependency3;
 
@@ -224,11 +224,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // In case we have an else branch, copy the if conditional over to
             // the else conditional to ensure that not both branches run if
             // the conditioned variable gets updated.
+            // This is only necessary when there's a chance it's written to.
             if (hasElse) {
-                // Use `branchCounter` to ensure uniqueness.
-                string updatedIdentifier = $"conditionIdentifier-{branchCounter}";
-                AddCode($"scoreboard players operation {updatedIdentifier} _ = {conditionIdentifier} _");
-                conditionIdentifier = updatedIdentifier;
+                var dataFlow = CurrentSemantics.AnalyzeDataFlow(ifst);
+                var identifierSymbol = CurrentSemantics.GetSymbolInfo(id).Symbol;
+                bool modifiesIdentifier = 
+                    dataFlow.WrittenInside.Contains(identifierSymbol)
+                    || !(identifierSymbol is ILocalSymbol or IParameterSymbol);
+
+                if (modifiesIdentifier) {
+                    // Use `branchCounter` to ensure uniqueness.
+                    string updatedIdentifier = $"conditionIdentifier-{branchCounter}";
+                    AddCode($"scoreboard players operation {updatedIdentifier} _ = {conditionIdentifier} _");
+                    conditionIdentifier = updatedIdentifier;
+                }
             }
 
             bool equalsVariant = bin.OperatorToken.Text == "==";

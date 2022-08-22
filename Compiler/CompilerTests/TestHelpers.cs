@@ -7,24 +7,11 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             => TestCompilationSucceeds(new[] { source }, output, compilationPhases);
 
         public static void TestCompilationSucceeds(string[] sources, string output, IEnumerable<IFullVisitor>? compilationPhases = null) {
-            Compiler compiler = new();
-            if (compilationPhases != null)
-                compiler.SetCompilationPhases(compilationPhases);
-            compiler.Compile(sources.Concat(GetMCMirrorCode()));
-            try {
-                Assert.IsTrue(compiler.CompilationSucceeded);
-            } catch (AssertFailedException e) {
-                Console.WriteLine("There were compilation errors:");
-                foreach (var d in compiler.ErrorDiagnostics)
-                    Console.WriteLine(d);
-                throw e;
-            }
+            string actual = CompileToString(sources, compilationPhases, out Compiler compiler);
             // Normalize the string to proper newlines, removed whitespace, and
             // a single newline before/after to make the test output readable.
             output = output.Replace("\r\n", "\n").Trim();
             output = $"\n{output}\n";
-            var actual = compiler.CompiledDatapack.ToString(skipInternal: true).Replace("\r\n", "\n");
-            actual = $"\n{actual.Trim()}\n";
             try {
                 Assert.AreEqual(output, actual);
             } catch (AssertFailedException e) {
@@ -32,6 +19,72 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
                 Console.WriteLine(compiler.CompiledDatapack.ToTreeString());
                 throw e;
             }
+        }
+
+        public static void TestCompilationSucceedsTheSame(
+            string source1,
+            string source2,
+            IEnumerable<IFullVisitor>? compilationPhases1 = null,
+            IEnumerable<IFullVisitor>? compilationPhases2 = null
+        ) => TestCompilationSucceedsTheSame(new[] { source1 }, new[] { source2 }, compilationPhases1, compilationPhases2);
+
+        public static void TestCompilationSucceedsTheSame(
+            string source1,
+            string[] sources2,
+            IEnumerable<IFullVisitor>? compilationPhases1 = null,
+            IEnumerable<IFullVisitor>? compilationPhases2 = null
+        ) => TestCompilationSucceedsTheSame(new[] { source1 }, sources2, compilationPhases1, compilationPhases2);
+
+        public static void TestCompilationSucceedsTheSame(
+            string[] sources1,
+            string source2,
+            IEnumerable<IFullVisitor>? compilationPhases1 = null,
+            IEnumerable<IFullVisitor>? compilationPhases2 = null
+        ) => TestCompilationSucceedsTheSame(sources1, new[] { source2 }, compilationPhases1, compilationPhases2);
+
+        public static void TestCompilationSucceedsTheSame(
+            string[] sources1,
+            string[] sources2,
+            IEnumerable<IFullVisitor>? compilationPhases1 = null,
+            IEnumerable<IFullVisitor>? compilationPhases2 = null
+        ) {
+            string out1 = CompileToString(sources1, compilationPhases1, out Compiler compiler1, "There were compilation errors in sources1:");
+            string out2 = CompileToString(sources2, compilationPhases2, out Compiler compiler2, "There were compilation errors in sources2:");
+            try {
+                Assert.AreEqual(out1, out2);
+            } catch (AssertFailedException e) {
+                Console.WriteLine("First code in tree-form:");
+                Console.WriteLine(compiler1.CompiledDatapack.ToTreeString());
+                Console.WriteLine("\nSecond code in tree-form:");
+                Console.WriteLine(compiler2.CompiledDatapack.ToTreeString());
+                throw e;
+            }
+        }
+
+        private static string CompileToString(
+            string[] sources,
+            IEnumerable<IFullVisitor>? compilationPhases,
+            out Compiler compiler,
+            string failTitle = "There were compilation errors:"
+        ) {
+            compiler = new();
+            if (compilationPhases != null)
+                compiler.SetCompilationPhases(compilationPhases);
+            compiler.Compile(sources.Concat(GetMCMirrorCode()));
+            try {
+                Assert.IsTrue(compiler.CompilationSucceeded);
+            }
+            catch (AssertFailedException e) {
+                Console.WriteLine(failTitle);
+                foreach (var d in compiler.ErrorDiagnostics)
+                    Console.WriteLine(d);
+                throw e;
+            }
+            // Normalize the string to proper newlines, removed whitespace, and
+            // a single newline before/after to make the test output readable.
+            var output = compiler.CompiledDatapack.ToString(skipInternal: true).Replace("\r\n", "\n");
+            output = $"\n{output.Trim()}\n";
+            return output;
         }
 
         public static void TestCompilationFails(string source, string errorCode, IEnumerable<IFullVisitor>? compilationPhases = null)
