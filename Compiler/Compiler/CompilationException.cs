@@ -48,6 +48,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] \"return RET\"'s RET must be a literal, identifier, or method call.");
         public static CompilationException ToDatapackUnsupportedUnary
             => new("[To Datapack] The only supported unary operations are \"+literal\" and \"-literal\".");
+        public static CompilationException ToDatapackUnsupportedStatementType
+            => new("[To Datapack] Encountered an unsupported statement type while handling a statement.");
         public static CompilationException ToDatapackVariablesFieldLocalOrParams
             => new("[To Datapack] The only supported variable types are class fields, method locals, or method parameters.");
     }

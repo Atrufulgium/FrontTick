@@ -3,7 +3,7 @@
     /// This is to collect all setup visitors into a single class with
     /// dependencies.
     /// </summary>
-    public class SetupCategory : AbstractFullRewriter<
+    public class SetupCategory : AbstractFullWalker<
         ApplyNoCompileAttributeRewriter,
         RegisterMethodsWalker
         > { }

@@ -46,11 +46,36 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public void FullVisit() {
+            GlobalPreProcess();
             foreach (var entry in compiler.roots) {
                 CurrentSemantics = entry;
+                PreProcess();
                 Visit(entry.SyntaxTree.GetCompilationUnitRoot());
+                PostProcess();
             }
+            GlobalPostProcess();
         }
+
+        /// <summary>
+        /// For each syntax tree, this is called just before it's visited.
+        /// </summary>
+        /// <remarks> No need to call the base method. </remarks>
+        public virtual void PreProcess() { }
+        /// <summary>
+        /// For each syntax tree, this is called just after it's been visited.
+        /// </summary>
+        /// <remarks> No need to call the base method. </remarks>
+        public virtual void PostProcess() { }
+        /// <summary>
+        /// This is called just before any syntax tree is visited.
+        /// </summary>
+        /// <remarks> No need to call the base method. </remarks>
+        public virtual void GlobalPreProcess() { }
+        /// <summary>
+        /// This is called just after all syntax trees have been visited.
+        /// </summary>
+        /// <remarks> No need to call the base method. </remarks>
+        public virtual void GlobalPostProcess() { }
     }
 
     /// <inheritdoc/>

@@ -4,8 +4,9 @@
     /// c# <see cref="ProcessedToDatapackWalker"> needs into a single class
     /// with dependencies.
     /// </summary>
-    public class PreProcessCategory : AbstractFullRewriter<
+    public class PreProcessCategory : AbstractFullWalker<
         GuaranteeBlockRewriter,
+        LoopsToGotoRewriter,
         ArithmeticFlattenRewriter
         > { }
 }

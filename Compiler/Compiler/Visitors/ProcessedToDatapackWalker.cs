@@ -106,7 +106,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // Deliberately checking `statement` and not `checkStatement`.
                 if (encounteredGoto && statement is not LabeledStatementSyntax)
                     throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
-                encounteredGoto |= statement is GotoStatementSyntax;
+                encounteredGoto |= checkStatement is GotoStatementSyntax;
 
                 HandleStatement(statement);
             }
@@ -142,7 +142,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 HandleExpression(expr.Expression);
             } else if (statement is GotoStatementSyntax got) {
                 HandleGoto(got);
+            } else if (statement is EmptyStatementSyntax) {
+                // We'll also autogen this a ton, probably.
+            } else {
+                throw CompilationException.ToDatapackUnsupportedStatementType;
             }
+            // Note that blocks are *not* checked here. This is on purpose, as
+            // not having nested blocks for no reason is a nice assumption.
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
@@ -356,7 +362,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // However, if there is no if-else tree, (the goto is on the same
             // level as the label,) immediately go.
             var parentBlock = got.Ancestors().OfType<BlockSyntax>().First();
-            string name = ((IdentifierNameSyntax)got.Expression).Identifier.Text;
+            string name = got.Target();
             int id = GotoLabelerWalker.LabelToInt(name);
             if (GotoLabelerWalker.ScopeContainsLabel(parentBlock, name)) {
                 var gotoLabel = GetGotoFunctionName(id);
