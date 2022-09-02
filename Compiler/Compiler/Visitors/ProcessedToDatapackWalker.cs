@@ -19,6 +19,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
     public class ProcessedToDatapackWalker : AbstractFullWalker<SetupCategory, PreProcessCategory, GotoLabelerWalker> {
+        // TODO: ProcessedToDatapackWalker optimisation opportunities:
+        // * Replace `operation += const` with `add const` (or `remove const` if negative)
+        // * Replace `operation -= const` with `remove const` (or `add const` if negative)
+        // * MCFunction files that are just a simple `function ...` can be skipped
+        // * MCFunction files that are empty can have their callsite removed
+        // * Multiple `goto`s to the same label generate different files currently
+
+        // TODO: ProcessedToDatapackWalker todo list:
+        // * Allow min as `operation <`, max as `operation >`
+        // * Allow swap `><`
 
         private GotoLabelerWalker GotoLabelerWalker => Dependency3;
 

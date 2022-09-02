@@ -7,46 +7,51 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <summary>
-    /// This is to transform for/while/do while loops into goto loops.
+    /// <para>
+    /// This is to transform while loops into goto loops.
+    /// </para>
+    /// <para>
+    /// Transform
+    /// <code>
+    ///     while(condition) {
+    ///         // Stuff
+    ///     }
+    /// </code>
+    /// into something like
+    /// <code>
+    ///     {
+    ///     WhileStart:
+    ///         if (condition) {
+    ///             // Stuff
+    ///             goto WhileStart;
+    ///         }
+    ///     WhileBreak: ; // Only if there's a "break".
+    ///     }
+    /// </code>
+    /// Any contained <tt>break;</tt> statements get turned into
+    /// <tt>goto WhileBreak;</tt> while any <tt>continue;</tt> statements
+    /// get turned into <tt>goto WhileStart;</tt>.
+    /// </para>
     /// </summary>
-    public class LoopsToGotoRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
-        // TODO: LoopsToGotoRewriter optimisation opportunities:
+    public class WhileToGotoRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
+        // TODO: WhileToGotoRewriter optimisation opportunities:
         // * If a loop's final statement is `break;`, we do not need a goto.
         //   Simply exit the generated if-statement.
         // * If a loop ends with a branching tree that ends the block via means
         //   of `break`, `continue`, `goto`, or `return`, we still introduce
         //   an extra goto at the end. This case is fairly rare however.
+        // TODO: Depend on something that pulls declaration to the method start (for easier for loops)
 
         string currentContinueLabel = null;
         string currentBreakLabel = null;
-        Stack<bool> foundBreakPerWhile = new();
+        Stack<bool> foundBreakPerLoop = new();
 
         public override void PreProcess() {
-            foundBreakPerWhile.Clear();
+            foundBreakPerLoop.Clear();
             // Keep a base of "false" in order to not have to care about size.
-            foundBreakPerWhile.Push(false);
+            foundBreakPerLoop.Push(false);
         }
 
-        /// <summary>
-        /// Transform
-        /// <code>
-        ///     while(condition) {
-        ///         // Stuff
-        ///     }
-        /// </code>
-        /// into something like
-        /// <code>
-        ///     WhileStart:
-        ///     if (condition) {
-        ///         // Stuff
-        ///         goto WhileStart;
-        ///     }
-        ///     WhileBreak: // Only if there's a "break".
-        /// </code>
-        /// Any contained <tt>break;</tt> statements get turned into
-        /// <tt>goto WhileBreak;</tt> while any <tt>continue;</tt> statements
-        /// get turned into <tt>goto WhileStart;</tt>.
-        /// </summary>
         public override SyntaxNode VisitWhileStatement(WhileStatementSyntax whilenode) {
             (string startLabel, string breakLabel) = GetUniqueLabels();
             // Here we use that all looping mechanisms have block bodies.
@@ -65,10 +70,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // with a break label).
             (string oldContinue, string oldBreak) = (currentContinueLabel, currentBreakLabel);
             (currentContinueLabel, currentBreakLabel) = (startLabel, breakLabel);
-            foundBreakPerWhile.Push(false);
+            foundBreakPerLoop.Push(false);
             var node = base.VisitLabeledStatement(labeledLoop);
             (currentContinueLabel, currentBreakLabel) = (oldContinue, oldBreak);
-            bool foundBreak = foundBreakPerWhile.Pop();
+            bool foundBreak = foundBreakPerLoop.Pop();
 
             // If we have a goto as the very last line of the original loop, we
             // would have two sequential gotos, which smells of incorrect code.
@@ -110,14 +115,23 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // to flatten it.
         }
 
+        public override SyntaxNode VisitForStatement(ForStatementSyntax node)
+            => throw CompilationException.LoopsToGotoOnlyWhileInWhileProcessing;
+
+        public override SyntaxNode VisitForEachStatement(ForEachStatementSyntax node)
+            => throw CompilationException.LoopsToGotoOnlyWhileInWhileProcessing;
+
+        public override SyntaxNode VisitDoStatement(DoStatementSyntax node)
+            => throw CompilationException.LoopsToGotoOnlyWhileInWhileProcessing;
+
         public override SyntaxNode VisitBreakStatement(BreakStatementSyntax node) {
-            foundBreakPerWhile.Pop();
-            foundBreakPerWhile.Push(true);
+            foundBreakPerLoop.ReplaceTop(true);
             return GotoStatement(currentBreakLabel);
         }
 
         public override SyntaxNode VisitContinueStatement(ContinueStatementSyntax node) {
             return GotoStatement(currentContinueLabel);
+
         }
 
         public override SyntaxNode VisitBlock(BlockSyntax node) {

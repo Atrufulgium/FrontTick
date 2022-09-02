@@ -217,5 +217,125 @@ public class Test {
     }
 }
 ");
+
+        [TestMethod]
+        public void ForTest1()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        i = 1;
+        while (i != 2) {
+            i = 4;
+            i += 3;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        for (i = 1; i != 2; i += 3) {
+            i = 4;
+        }
+    }
+}
+");
+
+        [TestMethod]
+        public void ForTest2()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        i = 1;
+        while (i != 2) {
+            i = 4;
+            if (i == 5) {
+                if (i == 6) {
+                    i += 3;
+                    continue;
+                }
+                i += 7;
+                break;
+            }
+            i += 3;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        for (i = 1; i != 2; i += 3) {
+            i = 4;
+            if (i == 5) {
+                if (i == 6) {
+                    continue;
+                }
+                i += 7;
+                break;
+            }
+        }
+    }
+}
+");
+
+        // Mixing for, while
+        [TestMethod]
+        public void MixedTest1()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        i = 1;
+        while (i != 2) {
+            while (i != 4) {
+                i = 5;
+                while (i != 6) {
+                    while (i != 8) {
+                        if (i == 9)
+                            continue;
+                    }
+                    if (i == 10) {
+                        i += 7;
+                        continue;
+                    }
+                    i += 7;
+                }
+                if (i == 11)
+                    continue;
+            }
+            if (i == 12) {
+                i += 3;
+                continue;
+            }
+            i += 3;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        for (i = 1; i != 2; i += 3) {
+            while (i != 4) {
+                for (i = 5; i != 6; i += 7) {
+                    while (i != 8) {
+                        if (i == 9)
+                            continue;
+                    }
+                    if (i == 10)
+                        continue;
+                }
+                if (i == 11)
+                    continue;
+            }
+            if (i == 12)
+                continue;
+        }
+    }
+}
+");
     }
 }

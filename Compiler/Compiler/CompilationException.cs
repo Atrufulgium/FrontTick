@@ -16,6 +16,10 @@ namespace Atrufulgium.FrontTick.Compiler {
     public class CompilationException : Exception {
         public CompilationException(string message) : base(message) { }
 
+        public static CompilationException LoopsToGotoForInitNoDeclarationsAllowed
+            => new("[Loops To Goto] A for loop may not contain a declaration in its initializer.");
+        public static CompilationException LoopsToGotoOnlyWhileInWhileProcessing
+            => new("[Loops to Goto] When processing while -> goto, there may not be any for, foreach, or do-while loops.");
         public static CompilationException ToDatapackAssignmentOpsMustBeSimpleOrArithmetic
             => new("[To Datapack] Assignments must be one of \"=\", \"+=\", \"-=\", \"*=\", \"/=\", or \"%=\".");
         public static CompilationException ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls
