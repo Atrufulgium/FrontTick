@@ -29,6 +29,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // TODO: ProcessedToDatapackWalker todo list:
         // * Allow min as `operation <`, max as `operation >`
         // * Allow swap `><`
+        // * Put the goto stuff in a seperate pass.
+        // * Instead of the current return requirement, just goto the end. May also need a seperate pass.
 
         private GotoLabelerWalker GotoLabelerWalker => Dependency3;
 
@@ -228,6 +230,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             // The if-statement must be of the form
             //   if (identifier != literal) [or ==]
+
             if (ifst.Condition is BinaryExpressionSyntax bin
                 && bin.Left is IdentifierNameSyntax id
                 && bin.OperatorToken.Text is "!=" or "=="
@@ -283,13 +286,17 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 compiler.finishedCompilation.Add(wipFiles.Pop());
 
             // Don't do the extra file if it's just one command.
-            if (wipFiles.Peek().code.Count == 1) {
+            // (Naturally, don't do anything if it's nothing.)
+            int branchSize = wipFiles.Peek().code.Count;
+            if (branchSize == 1) {
                 string command = wipFiles.Peek().code[0];
                 wipFiles.Pop();
                 AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
-            } else {
+            } else if (branchSize > 1) {
                 compiler.finishedCompilation.Add(wipFiles.Pop());
                 AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetIfName}");
+            } else {
+                wipFiles.Pop();
             }
 
             bool returnedAtOrBeforeIf = encounteredReturn;
@@ -309,13 +316,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 while (wipFiles.Peek().Path != targetElseName)
                     compiler.finishedCompilation.Add(wipFiles.Pop());
 
-                if (wipFiles.Peek().code.Count == 1) {
+                branchSize = wipFiles.Peek().code.Count;
+                if (branchSize == 1) {
                     string command = wipFiles.Peek().code[0];
                     wipFiles.Pop();
                     AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
-                } else {
+                } else if (branchSize > 1) {
                     compiler.finishedCompilation.Add(wipFiles.Pop());
                     AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetElseName}");
+                } else {
+                    wipFiles.Pop();
                 }
                 if (!returnedAtOrBeforeIf && encounteredReturn) {
                     // Found a return statement within the else-branch, but

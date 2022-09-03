@@ -40,7 +40,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // * If a loop ends with a branching tree that ends the block via means
         //   of `break`, `continue`, `goto`, or `return`, we still introduce
         //   an extra goto at the end. This case is fairly rare however.
-        // TODO: Depend on something that pulls declaration to the method start (for easier for loops)
 
         string currentContinueLabel = null;
         string currentBreakLabel = null;

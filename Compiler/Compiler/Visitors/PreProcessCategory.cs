@@ -7,6 +7,7 @@
     public class PreProcessCategory : AbstractFullWalker<
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
+        IfTrueFalseRewriter,
         ArithmeticFlattenRewriter
         > { }
 }

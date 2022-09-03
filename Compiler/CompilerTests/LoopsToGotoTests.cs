@@ -281,6 +281,124 @@ public class Test {
 }
 ");
 
+        [TestMethod]
+        public void DoWhileTest1a()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+    loopstart:
+        i += 1;
+        if (i != 2) {}
+        else goto loopend;
+        goto loopstart;
+    loopend: ;
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        do {
+            i += 1;
+        } while (i != 2);
+    }
+}
+");
+
+        [TestMethod]
+        public void DoWhileTest1b()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        while (true) {
+            i += 1;
+            if (i != 2) {}
+            else break;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        do {
+            i += 1;
+        } while (i != 2);
+    }
+}
+");
+
+        [TestMethod]
+        public void DoWhileTest2a()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+    loopstart:
+        i += 1;
+        if (i == 3) {
+            if (i == 4)
+                goto loopstart;
+            goto loopend;
+        }
+        if (i != 2) {}
+        else goto loopend;
+        goto loopstart;
+    loopend: ;
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        do {
+            i += 1;
+            if (i == 3) {
+                if (i == 4)
+                    continue;
+                break;
+            }
+        } while (i != 2);
+    }
+}
+");
+
+        [TestMethod]
+        public void DoWhileTest2b()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        while (true) {
+            i += 1;
+            if (i == 3) {
+                if (i == 4)
+                    continue;
+                break;
+            }
+            if (i != 2) {}
+            else break;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        do {
+            i += 1;
+            if (i == 3) {
+                if (i == 4)
+                    continue;
+                break;
+            }
+        } while (i != 2);
+    }
+}
+");
+
         // Mixing for, while
         [TestMethod]
         public void MixedTest1()
@@ -331,6 +449,67 @@ public class Test {
                 if (i == 11)
                     continue;
             }
+            if (i == 12)
+                continue;
+        }
+    }
+}
+");
+
+        // Mixing for, do while
+        [TestMethod]
+        public void MixedTest2()
+            => TestCompilationSucceedsTheSame(@"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        i = 1;
+        while (i != 2) {
+            while (true) {
+                i = 5;
+                while (i != 6) {
+                    while (true) {
+                        if (i == 9)
+                            continue;
+                        if (i != 8) {}
+                        else break;
+                    }
+                    if (i == 10) {
+                        i += 7;
+                        continue;
+                    }
+                    i += 7;
+                }
+                if (i == 11)
+                    continue;
+                if (i != 4) {}
+                else break;
+            }
+            if (i == 12) {
+                i += 3;
+                continue;
+            }
+            i += 3;
+        }
+    }
+}
+", @"
+using MCMirror;
+public class Test {
+    public static void TestMethod(int i) {
+        for (i = 1; i != 2; i += 3) {
+            do {
+                for (i = 5; i != 6; i += 7) {
+                    do {
+                        if (i == 9)
+                            continue;
+                    } while (i != 8);
+                    if (i == 10)
+                        continue;
+                }
+                if (i == 11)
+                    continue;
+            } while (i != 4);
             if (i == 12)
                 continue;
         }

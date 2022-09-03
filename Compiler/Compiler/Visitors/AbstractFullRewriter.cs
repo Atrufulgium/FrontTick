@@ -5,11 +5,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
-    // Big note to self: On any Visit[X]() methods, if you don't call
-    // base.Visit[X](), you just won't walk child methods; if you call it
-    // before doing anything, you go deep -> shallow; if you call it after
-    // doing everything, you go shallow -> deep.
-    // The latter only makes sense if you don't rewrite.
     /// <summary>
     /// <para>
     /// Represents a rewriter writing not just over all internal nodes of a

@@ -4,10 +4,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
-    // Big note to self: On any Visit[X]() methods, if you don't call
-    // base.Visit[X](), you just won't walk child methods; if you call it
-    // before doing anything, you go deep -> shallow; if you call it after
-    // doing everything, you go shallow -> deep.
     /// <summary>
     /// <para>
     /// Represents a walker walking not just over all internal nodes of a
@@ -17,7 +13,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <para>
     /// These walkers can have one or multiple dependencies on previous
     /// visitors (either walkers or rewriters) in the form of generics.
-    /// These are add automatically when missing. It is recommended to use
+    /// These are added automatically when missing. It is recommended to use
     /// their values not via <tt>DependencyX</tt> but with an intermediate
     /// <tt>TDepX SomeProperName => DependencyX</tt> for clarity.
     /// </para>

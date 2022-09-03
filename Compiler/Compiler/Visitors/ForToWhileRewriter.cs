@@ -30,7 +30,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// </summary>
     public class ForToWhileRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
-        
+        // TODO: Depend on something that pulls declaration to the method start (for easier for loops)
+
         // This tracks whether we are in a for -> while conversion (null if not
         // and we're in another looptype), and if so, what the increment is.
         // This increment is to be added before `continue;` statements.
