@@ -215,12 +215,11 @@ Do note that the implementation of this needs to *also* deal with code splitting
 <td> ✅ </td>
 <td>
 
-Branch-independent return:
+Return, anywhere.
 ```csharp
-// (Method root scope)
-return value;
-// (No non-returns)
+return [literal | identifier | call];
 ```
+(Secretly an assignment storing a result in scoreboard.)
 
 </td>
 <td>
@@ -228,38 +227,6 @@ return value;
 Simply assign to the special `#RET` (or for larger types `#RET#0`, `#RET#1`, etc.), the same way as integer-scoreboard assignment.
 
 We can ignore any assignment and handle just the call if it is of the form `return Value();` because otherwise we'd get `#RET _ = #RET _`.
-
-</td>
-</tr>
-
-<tr>
-<td> ✅ </td>
-<td>
-
-Branch-dependent return:
-```csharp
-// (Method root scope)
-// A if-else tree where *every* if has an else.
-// Every branch must be a return.
-// Example:
-if (i1 != 0) {
-    if (i2 != 0) {
-        return i2;
-    } else {
-        return i1;
-    }
-} else {
-    return i1;
-}
-```
-
-</td>
-<td>
-
-Simply have a conditional assignment to `#RET`. No need to quit the function because there is no code after this anyway. (This state should be achieved with `goto`s.)
-
-By forcing this format, we compile into disjoint branches that each return something, without having any other behaviour that might affect stuff if we run everything anyway.
-
 </td>
 </tr>
 <tr>

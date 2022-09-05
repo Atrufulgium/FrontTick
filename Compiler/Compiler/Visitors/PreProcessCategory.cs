@@ -8,6 +8,7 @@
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
         IfTrueFalseRewriter,
-        ArithmeticFlattenRewriter
+        ArithmeticFlattenRewriter,
+        ReturnRewriter
         > { }
 }

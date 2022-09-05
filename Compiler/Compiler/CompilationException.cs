@@ -23,7 +23,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static CompilationException ToDatapackAssignmentOpsMustBeSimpleOrArithmetic
             => new("[To Datapack] Assignments must be one of \"=\", \"+=\", \"-=\", \"*=\", \"/=\", or \"%=\".");
         public static CompilationException ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls
-            => new("[To Datapack] \"a ∘= RHS\"'s RHS must be a literal, identifier, or method call.");
+            => new("[To Datapack] \"a ∘= RHS\"'s RHS must be a literal, identifier, or method call. This includes \"assigning\" to returns in `return ...`.");
         public static CompilationException ToDatapackBranchesMustBeBlocks
             => new("[To Datapack] The if- and else-branch of a conditional must be a block ({}) and not a single statement.");
         public static CompilationException ToDatapackGotoMustBeLastBlockStatement
@@ -40,16 +40,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] Calls' arguments must consist of identifiers or literals.");
         public static CompilationException ToDatapackMethodCallsMustBeStatic
             => new("[To Datapack] Calls may only target static methods.");
-        public static CompilationException ToDatapackReturnBranchMustBeReturnStatement
-            => new("[To Datapack] Encountered a non-return statement in branching if-else tree featuring a return statement. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
-        public static CompilationException ToDatapackReturnElseMustAlsoHaveReturnIf
-            => new("[To Datapack] Encountered a return-statement in an else block, without a return statement in the corresponding if-block. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
-        public static CompilationException ToDatapackReturnIfMustAlsoHaveReturnElse
-            => new("[To Datapack] Encountered a return-statement in an if block, without a return statement in the corresponding else-block. In a returning if-else tree, every if must have an else, and every branch must be a return statement.");
+        public static CompilationException ToDatapackReturnDoesntMatchVoidness
+            => new("[To Datapack] Either this method returns void but has a return of the form `return ...`, or this method doesn't return void but has a return of the form `return;`.");
         public static CompilationException ToDatapackReturnNoNonReturnAfterReturn
             => new("[To Datapack] (Conditional) returns must be the final statements in a method. No functionality allowed after that.");
-        public static CompilationException ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls
-            => new("[To Datapack] \"return RET\"'s RET must be a literal, identifier, or method call.");
         public static CompilationException ToDatapackUnsupportedUnary
             => new("[To Datapack] The only supported unary operations are \"+literal\" and \"-literal\".");
         public static CompilationException ToDatapackUnsupportedStatementType

@@ -35,7 +35,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // Check whether the signature is correct.
                 bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
                 bool voidIn = method.ArityOfArguments() == 0;
-                bool voidOut = method.ReturnType.ChildTokensContain(SyntaxKind.VoidKeyword);
+                bool voidOut = method.ReturnsVoid();
                 if (!(hasStatic && voidIn && voidOut)) {
                     this.AddCustomDiagnostic(
                         DiagnosticRules.MCFunctionAttributeIncorrect,

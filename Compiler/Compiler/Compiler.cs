@@ -127,41 +127,56 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
+        /// <para>
         /// This method goes through each visitor (which MUST inherit either
         /// <see cref="AbstractFullRewriter"/> or <see cref="AbstractFullWalker"/>
         /// and variants!) and adds any missing dependencies to this compiler
         /// process.
+        /// </para>
+        /// <para>
+        /// Any phase that is required earlier as dependency is moved.
+        /// </para>
         /// </summary>
         IEnumerable<IFullVisitor> ApplyDependencies(IEnumerable<IFullVisitor> compilationPhases) {
-            var phasesList = compilationPhases.ToList();
-            var toHandle = new Queue<IFullVisitor>(phasesList);
+            var phasesList = (from p in compilationPhases select p.GetType()).ToList();
+            var toHandle = new Queue<Type>(phasesList);
             while(toHandle.Count > 0) {
                 var visitor = toHandle.Dequeue();
-                Type baseType = visitor.GetType().BaseType;
+                var baseType = visitor.BaseType;
                 foreach(Type dependency in baseType.GenericTypeArguments) {
                     // We care mostly about type, so need to manually walk the list.
                     // Good 'ol O(ew). Luckily these lists will never be too large
                     // so I don't care about more sophisticated methods.
+                    // What are topologically sorted graphs etc etc
                     // TODO: If multiple, remove duplicates?
-                    // TODO: If dependency exists after, show warning?
                     int visitorIndex = -1;
                     bool foundDependency = false;
+                    int dependencyIndex = -1;
                     for (int i = 0; i < phasesList.Count; i++) {
-                        if (phasesList[i].GetType() == dependency) {
+                        if (phasesList[i] == dependency) {
+                            dependencyIndex = i;
                             foundDependency = true;
-                            break;
                         }
                         if (phasesList[i] == visitor)
                             visitorIndex = i;
                     }
+                    if (dependencyIndex > visitorIndex) {
+                        // This dependency is too late in the list and needs
+                        // to be moved ahead.
+                        // Note that this is viral and this dependency's
+                        // dependencies may need to be moved ahead as well.
+                        phasesList.RemoveAt(dependencyIndex);
+                        foundDependency = false;
+                        foreach (Type dependencyDependency in dependency.GenericTypeArguments)
+                            toHandle.Enqueue(dependencyDependency);
+                    }
                     if (!foundDependency) {
-                        var newVisitor = (IFullVisitor)Activator.CreateInstance(dependency);
-                        toHandle.Enqueue(newVisitor);
-                        phasesList.Insert(visitorIndex, newVisitor);
+                        toHandle.Enqueue(dependency);
+                        phasesList.Insert(visitorIndex, dependency);
                     }
                 }
             }
-            return phasesList;
+            return from p in phasesList select (IFullVisitor)Activator.CreateInstance(p);
         }
 
         /// <summary>

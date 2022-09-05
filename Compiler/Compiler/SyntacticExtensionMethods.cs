@@ -15,6 +15,12 @@ namespace Atrufulgium.FrontTick.Compiler {
             => (from t in node.ChildTokens() where t.IsKind(token) select t).Any();
 
         /// <summary>
+        /// Whether or not this method is of void signature.
+        /// </summary>
+        public static bool ReturnsVoid(this MethodDeclarationSyntax method)
+            => method.ReturnType.ChildTokensContain(SyntaxKind.VoidKeyword);
+
+        /// <summary>
         /// The property <see cref="MethodDeclarationSyntax.Arity"/> is used to
         /// get the number of generic type parameters (resulting in 0 for non-
         /// generic methods). This method gives the *actual* arity: the number

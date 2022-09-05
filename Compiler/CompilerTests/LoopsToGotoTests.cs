@@ -84,6 +84,7 @@ public class Test {
 }
 ");
 
+        // TODO: Why is `loop2break: ;` actually *necessary*? Is there any meaningful difference in the generated code?
         [TestMethod]
         public void WhileTest4()
             => TestCompilationSucceedsTheSame(@"
@@ -105,7 +106,7 @@ public class Test {
                 }
                 goto loop2;
             }
-        loop2break:
+        loop2break: ;
             goto loop1;
         }
     }

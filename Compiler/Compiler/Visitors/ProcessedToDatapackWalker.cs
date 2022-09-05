@@ -18,7 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // I "love" how this class is messy for the same reason every parser I've
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
-    public class ProcessedToDatapackWalker : AbstractFullWalker<SetupCategory, PreProcessCategory, GotoLabelerWalker> {
+    public class ProcessedToDatapackWalker : AbstractFullWalker<SetupCategory, PreProcessCategory, ReturnRewriter, GotoLabelerWalker> {
         // TODO: ProcessedToDatapackWalker optimisation opportunities:
         // * Replace `operation += const` with `add const` (or `remove const` if negative)
         // * Replace `operation -= const` with `remove const` (or `add const` if negative)
@@ -27,12 +27,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // * Multiple `goto`s to the same label generate different files currently
 
         // TODO: ProcessedToDatapackWalker todo list:
+        // * Update all "return" code as the assumptions have changed MASSIVELY. (also the docs).
         // * Allow min as `operation <`, max as `operation >`
         // * Allow swap `><`
         // * Put the goto stuff in a seperate pass.
         // * Instead of the current return requirement, just goto the end. May also need a seperate pass.
+        // * Can extract all arithmetic processing to their own structs/classes like `MCInt` that use `Run(..)`
 
-        private GotoLabelerWalker GotoLabelerWalker => Dependency3;
+        private GotoLabelerWalker GotoLabelerWalker => Dependency4;
+        private int returnGotoLabel;
+
+        public override void GlobalPreProcess() {
+            returnGotoLabel = GotoLabelerWalker.LabelToInt(NameManager.GetRetGotoName());
+        }
 
         /// <summary>
         /// <para>
@@ -59,7 +66,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// <see cref="GetBranchPath(string)"/>
         // but needs manual resetting.
         int branchCounter;
-        bool encounteredReturn;
         Dictionary<int, MCFunctionName> gotoFunctionNames;
 
         /// <summary>
@@ -71,7 +77,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
             currentNode = node;
             branchCounter = 0;
-            encounteredReturn = false;
             gotoFunctionNames = new();
             // Don't do the base-call as we're manually walking everything from
             // here on out, as the code must abide a very specific structure.
@@ -94,61 +99,49 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         private void HandleBlock(BlockSyntax block) {
-            // Within if-else trees we only allow returns or branches.
-            // Statements after returns get correctly flagged as wrong.
-            // In order to flag statements *before* returns in branches as
-            // "wrong", we need to check (for simplicity once at the end) if
-            // this block contains both a return(/branch) and a non-return.
-            // In that case, throw.
-            // (Exception: the root scope allows returns and non-returns.
-            //  Also, take into account labels!)
-            bool encounteredReturnIllegalStatement = false;
-            bool encounteredGoto = false;
+            bool directlyAfterGoto = false;
+            bool encounteredLabelAfterGoto = false;
 
             foreach (var statement in block.Statements) {
-                // (Don't want to consider labels in the return-legality, so
-                //  extract the statement. Labels may nest.)
+                // (Don't want to consider labels, so extract the statement.
+                //  Labels may nest.)
                 var checkStatement = statement;
                 while (checkStatement is LabeledStatementSyntax labeled) {
                     checkStatement = labeled.Statement;
-                    encounteredGoto = false;
+                    encounteredLabelAfterGoto = true;
                 }
-                encounteredReturnIllegalStatement |= !(checkStatement is ReturnStatementSyntax or IfStatementSyntax);
                 // Only labels may follow gotos.
                 // Deliberately checking `statement` and not `checkStatement`.
-                if (encounteredGoto && statement is not LabeledStatementSyntax)
+                if (directlyAfterGoto && statement is not LabeledStatementSyntax)
                     throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
-                encounteredGoto |= checkStatement is GotoStatementSyntax;
+                directlyAfterGoto |= checkStatement is GotoStatementSyntax;
 
-                HandleStatement(statement);
+                HandleStatement(statement, directlyAfterGoto);
+                // TODO: haaaaacky
+                if (encounteredLabelAfterGoto) {
+                    encounteredLabelAfterGoto = false;
+                    directlyAfterGoto = false;
+                }
             }
-            if (!AtRootScope && encounteredReturn && encounteredReturnIllegalStatement)
-                throw CompilationException.ToDatapackReturnBranchMustBeReturnStatement;
         }
 
-        private void HandleStatement(StatementSyntax statement) {
+        // The "encounteredGoto" is a quick fix for `goto ...; label: ...`
+        // generating double `function ...`. This param is only true for labels
+        // directly after a goto statement.
+        private void HandleStatement(StatementSyntax statement, bool encounteredGoto) {
             // Labels are ugly nested statements. Get rid of them.
             // Fun fact: the things *can be nested*. Somewhy, someone decided
             //     `label1: label2: label3: label4: return "ew";`
             // is valid c#. Thanks, someone.
             while (statement is LabeledStatementSyntax labeled) {
-                HandleGotoLabel(labeled, innerStatement: out statement);
+                HandleGotoLabel(labeled, encounteredGoto, innerStatement: out statement);
             }
 
-            // Group all returns separately to be able to check for the
-            // condition "returns must be at the end".
             if (statement is ReturnStatementSyntax ret) {
                 HandleReturn(ret);
-                return;
             } else if (statement is IfStatementSyntax ifst) {
                 HandleIfElseGroup(ifst);
-                return;
-            }
-
-            if (encounteredReturn)
-                throw CompilationException.ToDatapackReturnNoNonReturnAfterReturn;
-
-            if (statement is LocalDeclarationStatementSyntax decl) {
+            } else if (statement is LocalDeclarationStatementSyntax decl) {
                 HandleLocalDeclaration(decl);
             } else if (statement is ExpressionStatementSyntax expr) {
                 HandleExpression(expr.Expression);
@@ -192,6 +185,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 throw CompilationException.ToDatapackAssignmentOpsMustBeSimpleOrArithmetic;
             bool isSetCommand = false;
 
+            // The lhs can be created by
+            /// <see cref="ReturnRewriter"/>
+            // to be
+            /// <see cref="NameManager.GetRetName()"/>
+            // which then shouldn't be fully qualified.
+            bool lhsIsRet = lhsName.EndsWith($"#{NameManager.GetRetName()}");
+            if (lhsIsRet)
+                lhsName = NameManager.GetRetName();
+
             // Partially copypasted into
             /// <see cref="HandleReturn(ReturnStatementSyntax)"/>
             if (TryGetIntegerLiteral(assign.Right, out int literal)) {
@@ -204,6 +206,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
                 HandleInvocation(rhsCall);
                 rhsName = NameManager.GetRetName();
+                // No need to do anything on
+                //    #RET _ = RET _
+                if (lhsIsRet && op == "=")
+                    return;
             } else {
                 throw CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls;
             }
@@ -213,6 +219,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 AddCode($"scoreboard players operation {lhsName} _ {op} {rhsName} _");
         }
 
+        // "private void HandleIfElseSoup"
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
             // TODO: Implementing goto in here is kinda messy and really
             // deserves its own pass. Nevertheless, for the time being, I'll
@@ -244,6 +251,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // the else conditional to ensure that not both branches run if
             // the conditioned variable gets updated.
             // This is only necessary when there's a chance it's written to.
+            // TODO: Guarantee this in a seperate pass.
             if (hasElse) {
                 var dataFlow = CurrentSemantics.AnalyzeDataFlow(ifst);
                 var identifierSymbol = CurrentSemantics.GetSymbolInfo(id).Symbol;
@@ -263,11 +271,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string ifBranchMCConditional = equalsVariant ? "if" : "unless";
             string elseBranchMCConditional = equalsVariant ? "unless" : "if";
 
-            // We need this among other things to check the condition of the
-            // if-else tree at the end of the method consisting entirely of
-            // return branches.
-            bool returnedBeforeBranch = encounteredReturn;
-
             var parentBlock = ifst.Ancestors().OfType<BlockSyntax>().First();
             bool requireFlag = GotoLabelerWalker.AfterScopeRequiresFlag(parentBlock);
             bool requireFlagConsume = GotoLabelerWalker.AfterScopeRequiresFlagConsume(parentBlock, out var consumed);
@@ -282,6 +285,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Every such file will be fully processed and done by the time we
             // return here. As such, we need to pop until we're back at the if-
             // block that brought us here in the first place.
+            // TODO: do this via stacksize instead of string comparison. wtf.
             while (wipFiles.Peek().Path != targetIfName)
                 compiler.finishedCompilation.Add(wipFiles.Pop());
 
@@ -298,8 +302,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             } else {
                 wipFiles.Pop();
             }
-
-            bool returnedAtOrBeforeIf = encounteredReturn;
 
             if (hasElse) {
                 // Same as above, but for else.
@@ -327,15 +329,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 } else {
                     wipFiles.Pop();
                 }
-                if (!returnedAtOrBeforeIf && encounteredReturn) {
-                    // Found a return statement within the else-branch, but
-                    // there is not an if-branch. This is illegal.
-                    throw CompilationException.ToDatapackReturnElseMustAlsoHaveReturnIf;
-                }
-            } else if (!returnedBeforeBranch && returnedAtOrBeforeIf) {
-                // Found a return statement within the if-branch, but there is
-                // not an else-branch. This is illegal.
-                throw CompilationException.ToDatapackReturnIfMustAlsoHaveReturnElse;
             }
 
             if (requireFlag || requireFlagConsume) {
@@ -361,15 +354,29 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 }
                 if (requireFlagConsume) {
                     foreach (int flag in consumed) {
+                        // There's two cases.
+                        // (1) We're not at the final return's label. The regular case.
+                        // (2) We *are* at the final return's label. Then the goto
+                        //     target of the regular case doesn't even exist as
+                        /// <see cref="HandleGotoLabel(LabeledStatementSyntax, out StatementSyntax)"/>
+                        //     ignores it as well. Then *just* reset the flag.
+
                         // Go to a small intermediate function that resets the flag,
                         // and then run the goto.
                         var gotoBranch = GetBranchPath($"goto-{flag}");
                         var gotoLabel = GetGotoFunctionName(flag);
-                        AddCode($"execute if score #GOTOFLAG _ matches {flag} run function {gotoBranch}");
-                        wipFiles.Push(new(gotoBranch));
-                        AddCode($"scoreboard players set #GOTOFLAG _ 0");
-                        AddCode($"function {gotoLabel}");
-                        compiler.finishedCompilation.Add(wipFiles.Pop());
+
+                        if (flag != returnGotoLabel) {
+                            // (1)
+                            AddCode($"execute if score #GOTOFLAG _ matches {flag} run function {gotoBranch}");
+                            wipFiles.Push(new(gotoBranch));
+                            AddCode("scoreboard players set #GOTOFLAG _ 0");
+                            AddCode($"function {gotoLabel}");
+                            compiler.finishedCompilation.Add(wipFiles.Pop());
+                        } else {
+                            // (2)
+                            AddCode($"execute if score #GOTOFLAG _ matches {flag} run scoreboard players set #GOTOFLAG _ 0");
+                        }
                     }
                 }
                 // Now put the original rest of the file after the continuation
@@ -385,21 +392,35 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string name = got.Target();
             int id = GotoLabelerWalker.LabelToInt(name);
             if (GotoLabelerWalker.ScopeContainsLabel(parentBlock, name)) {
-                var gotoLabel = GetGotoFunctionName(id);
-                AddCode($"function {gotoLabel}");
+                // No need to go to the function if we're the ret label as then
+                // the function simply does not exist.
+                if (name != NameManager.GetRetGotoName()) {
+                    var gotoLabel = GetGotoFunctionName(id);
+                    AddCode($"function {gotoLabel}");
+                }
             } else {
                 AddCode($"scoreboard players set #GOTOFLAG _ {id}");
             }
         }
 
-        private void HandleGotoLabel(LabeledStatementSyntax label, out StatementSyntax innerStatement) {
-            string name = label.Identifier.Text;
-            var gotoBranch = GetGotoFunctionName(GotoLabelerWalker.LabelToInt(name));
-            AddCode($"function {gotoBranch}");
-            wipFiles.Push(new(gotoBranch));
+        private void HandleGotoLabel(LabeledStatementSyntax label, bool directlyAfterGoto, out StatementSyntax innerStatement) {
             // Do not handle the statement here -- instead, return control to HandleStatement
             // to let it work on the innerStatement.
+            // This out argument really isn't necessary, but makes it *explicit* that
+            // there's something happening here, which I like.
             innerStatement = label.Statement;
+
+            string name = label.Identifier.Text;
+            // If we're the label of the method's final return statement,
+            // there is no need to do anything.
+            if (name == NameManager.GetRetGotoName()) {
+                return;
+            }
+
+            var gotoBranch = GetGotoFunctionName(GotoLabelerWalker.LabelToInt(name));
+            if (!directlyAfterGoto)
+                AddCode($"function {gotoBranch}");
+            wipFiles.Push(new(gotoBranch));
         }
 
         private void HandleInvocation(InvocationExpressionSyntax call) {
@@ -433,26 +454,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             AddCode($"function {methodName}");
         }
 
+        // TODO: remove
         private void HandleReturn(ReturnStatementSyntax ret) {
-            encounteredReturn = true;
-            // This is basically an assignment "#RET = [return content]".
-            // Currently basically copypasta from
+            // Assignment to #RET is already done in
             /// <see cref="HandleAssignment(AssignmentExpressionSyntax, string)"/>
-            // but should be refactored to be neater at some point.
-            // OTOH, it's subtly different *enough* with the call case.
-            string RET = NameManager.GetRetName();
-            if (TryGetIntegerLiteral(ret.Expression, out int literal)) {
-                AddCode($"scoreboard players set {RET} _ {literal}");
-            } else if (ret.Expression is IdentifierNameSyntax id) {
-                string identifier = nameManager.GetVariableName(CurrentSemantics, id, this);
-                AddCode($"scoreboard players operation {RET} _ = {identifier} _");
-            } else if (ret.Expression is InvocationExpressionSyntax call) {
-                HandleInvocation(call);
-                // No need to assign `call`'s #RET result to our (the same)
-                // #RET lol
-            } else {
-                throw CompilationException.ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls;
-            }
+            // so we don't need to do *anything*, as
+            /// <see cref="ReturnRewriter"/>
+            // guaranteed that there is nothing after this.
         }
 
         private void HandleRunRaw(InvocationExpressionSyntax call) {
@@ -466,6 +474,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // This includes the surrounding [@$]"", escaped chars, etc.
             // We need the actual value meant.
             // I currently don't allow other (@$) strings, so just assume "".
+            // TODO: Proper string management.
             string code = lit.Token.Text;
             code = code[1..(code.Length - 1)];
             code = System.Text.RegularExpressions.Regex.Unescape(code);

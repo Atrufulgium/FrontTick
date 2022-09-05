@@ -204,6 +204,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static string GetRetName() => "#RET";
 
         /// <summary>
+        /// Gives the name of the label at the end of a method where the method
+        /// returns its value.
+        /// </summary>
+        public static string GetRetGotoName() => "#ret-label";
+
+        /// <summary>
         /// Whether the given string is valid as the name of a function file.
         /// </summary>
         public static bool IsValidDatapackName(MCFunctionName name) {

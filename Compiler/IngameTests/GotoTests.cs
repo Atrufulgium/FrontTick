@@ -124,5 +124,17 @@ namespace MinecraftTests {
             }
             return gotocounter;
         }
+
+        // From a bug I encountered with allowing labels after gotos: both
+        // generate a goto. This is incorrect and would result in "5" here.
+        [MCTest(3)]
+        public static int GotoTest6() {
+            int i;
+            i = 1;
+            goto label;
+            label:
+            i += 2;
+            return i;
+        }
     }
 }

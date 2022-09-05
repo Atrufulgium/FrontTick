@@ -1,5 +1,7 @@
-﻿using Microsoft.CodeAnalysis.CSharp;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -8,8 +10,10 @@ namespace Atrufulgium.FrontTick.Compiler {
     public static class SyntaxFactoryHelpers {
 
         public static GotoStatementSyntax GotoStatement(string identifier)
-            => SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(identifier));
+            => SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, IdentifierName(identifier));
 
+        public static SingleVariableDesignationSyntax SingleVariableDesignation(string identifier)
+            => SyntaxFactory.SingleVariableDesignation(Identifier(identifier));
 
     }
 }

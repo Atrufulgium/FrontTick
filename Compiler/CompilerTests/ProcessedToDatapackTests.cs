@@ -793,43 +793,7 @@ internal class Test {
         return 2 + 2;
     }
 }
-", CompilationException.ToDatapackReturnMustBeIdentifierOrLiteralsOrCalls,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestReturnWrong3()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static int TestMethod() {
-        int i;
-        i = 0;
-        if (i != 0) {
-            return 3;
-        }
-        return 4;
-    }
-}
-", CompilationException.ToDatapackReturnIfMustAlsoHaveReturnElse,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestReturnWrong4()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static int TestMethod() {
-        int i;
-        i = 0;
-        if (i != 0) {
-            i = 3;
-            return i;
-        } else {
-            return 4;
-        }
-    }
-}
-", CompilationException.ToDatapackReturnBranchMustBeReturnStatement,
+", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -849,44 +813,6 @@ internal class Test {
     }
 }
 ", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestReturnWrong6()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static int TestMethod() {
-        int i;
-        i = 0;
-        if (i != 0) {
-            return i;
-        } else {
-            i = 3;
-        }
-        return i;
-    }
-}
-", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestReturnWrong7()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static int TestMethod() {
-        int i;
-        i = 0;
-        if (i != 0) {
-            i = 3;
-        } else {
-            return i;
-        }
-        return i;
-    }
-}
-", CompilationException.ToDatapackReturnElseMustAlsoHaveReturnIf,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
