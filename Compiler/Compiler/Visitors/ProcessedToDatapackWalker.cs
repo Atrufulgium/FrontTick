@@ -64,7 +64,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         MethodDeclarationSyntax currentNode;
         // Automatically incremented by
         /// <see cref="GetBranchPath(string)"/>
-        // but needs manual resetting.
+        // but needs manual resetting in
+        /// <see cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         int branchCounter;
         Dictionary<int, MCFunctionName> gotoFunctionNames;
 
@@ -497,10 +498,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, node);
             // As at this point, the actual method is done, it should have
             // assigned to #RET already. We can just freely read that here.
+            // To also check for not-completely run methods, we should keep
+            // track fo a "skipped" variable, incremented at the start, and
+            // decremented at the end.
+            wipFiles.Peek().code.Insert(0, "scoreboard players add #TESTSSKIPPED _ 1");
             AddCode($"execute if score #RET _ matches {expected} unless score #FAILSONLY _ matches 1 run tellraw @a [{{\"text\":\"Test \",\"color\":\"green\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_green\"}},{{\"text\":\" passed.\",\"color\":\"green\"}}]");
             AddCode($"execute if score #RET _ matches {expected} run scoreboard players add #TESTSUCCESSES _ 1");
             AddCode($"execute unless score #RET _ matches {expected} run tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\"}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expected}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\", but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]");
             AddCode($"execute unless score #RET _ matches {expected} run scoreboard players add #TESTFAILURES _ 1");
+            AddCode("scoreboard players remove #TESTSSKIPPED _ 1");
 
             testFunctions.Add(nameManager.GetMethodName(CurrentSemantics, node, this));
         }
