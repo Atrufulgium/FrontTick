@@ -190,10 +190,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             /// <see cref="ReturnRewriter"/>
             // to be
             /// <see cref="NameManager.GetRetName()"/>
-            // which then shouldn't be fully qualified.
-            bool lhsIsRet = lhsName.EndsWith($"#{NameManager.GetRetName()}");
-            if (lhsIsRet)
-                lhsName = NameManager.GetRetName();
+            // which isn't qualified by
+            /// <see cref="NameManager.GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>'s
+            // special behaviour in that case.
+            bool lhsIsRet = lhsName == NameManager.GetRetName();
 
             // Partially copypasted into
             /// <see cref="HandleReturn(ReturnStatementSyntax)"/>

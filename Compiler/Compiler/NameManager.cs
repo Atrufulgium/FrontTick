@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Atrufulgium.FrontTick.Compiler {
     public class NameManager {
@@ -142,8 +143,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// a fully qualified method name if it is a local.
         /// </para>
         /// <para>
-        /// The exception to this are the method's arguments, which lose their
+        /// One exception to this are the method's arguments, which lose their
         /// name and instead become <tt>#fully_qualified_method##arg0</tt>, etc.
+        /// </para>
+        /// <para>
+        /// Another exception to this are variables <tt>#ALLCAPS</tt>, which
+        /// instead return <tt>#ALLCAPS</tt> without full qualification.
         /// </para>
         /// </summary>
         /// <remarks>
@@ -151,6 +156,48 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// been registered already.
         /// </remarks>
         public string GetVariableName(
+            SemanticModel semantics,
+            IdentifierNameSyntax identifier,
+            ICustomDiagnosable diagnosticsOutput
+        ) {
+            string varName = GetVariableNameIgnoringInternals(semantics, identifier, diagnosticsOutput);
+            var match = afterFinalPoundAllcapsRegex.Match(varName);
+            if (match.Success) {
+                // So apparantly c#'s regex API is hilariously weird -- a regex
+                // `some (group)` that captures "some group" has a Groups
+                // property ["some group", "group"], even though I only have
+                // one capturing group. Ew.
+                return match.Groups[1].Value;
+            }
+            return varName;
+        }
+
+        /// <summary>
+        /// This regex matches all strings ending in <tt>##ALLCAPS</tt>, and
+        /// captures <tt>#ALLCAPS</tt> (without the first #).
+        /// In particular, this matches:
+        /// <code>
+        ///   lorem#ipsum##ALLCAPS
+        ///   ##EMPTYQUALIFIER       (this will never happen)
+        /// </code>
+        /// but not
+        /// <code>
+        ///   lorem#ipsum##nocaps
+        ///   lorem#ipsum##
+        ///   lorem#ipsum#ALLCAPS
+        ///   lorem#ipsum##finalCAPS
+        ///   #NOQUALIFIER
+        /// </code>
+        /// </summary>
+        static readonly Regex afterFinalPoundAllcapsRegex
+            = new(@"#(#[A-Z]+)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Does the same as
+        /// <see cref="GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>
+        /// except for the <tt>#ALLCAPS</tt> variables part.
+        /// </summary>
+        private string GetVariableNameIgnoringInternals(
             SemanticModel semantics,
             IdentifierNameSyntax identifier,
             ICustomDiagnosable diagnosticsOutput
