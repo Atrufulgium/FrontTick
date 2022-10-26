@@ -19,8 +19,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <code>
     ///     while (true) {
     ///         // Stuff
-    ///         if (cond) {}
-    ///         else break;
+    ///         if (cond) {continue;}
+    ///         else {break};
     ///     }
     /// </code>
     /// </para>
@@ -36,7 +36,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             body = body.WithAppendedStatement(
                 IfStatement(
                     node.Condition,
-                    Block(),
+                    Block(ContinueStatement()),
                     ElseClause(
                         Block(BreakStatement())
                     )

@@ -117,7 +117,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // (excluding firstGotoer).
             List<StatementSyntax> after = new();
 
+            // For enforcing the "goto must be last block statement" rule.
+            // Nothing may follow gotos -- not even labels.
+            // (This is because splitting the method like that is basically
+            //  a function call. Do *not* put it in the same method then.
+            //  Banning goto from user-code is fine (apart from multiple
+            //  break), and auto-generated code does not create the
+            //  `goto ..; label: ..` construction, so this also just
+            //  should not happen.)
+            bool encounteredGoto = false;
+
             foreach(var s in node.Statements) {
+                if (encounteredGoto)
+                    throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
+
                 // Replace any goto statement with an assignment to the flag.
                 // This is safe, as any analysis considers the *original* node.
                 // (Also this is at most the last statement due to the "goto
@@ -130,6 +143,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                             GotoLabelToScoreboardID(got)
                         )
                     );
+                    encounteredGoto = true;
                 }
 
                 // If we're done and just scanning the rest of the scope

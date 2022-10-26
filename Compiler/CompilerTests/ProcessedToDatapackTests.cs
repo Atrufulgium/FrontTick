@@ -721,6 +721,8 @@ function compiled:internal/test.testmethod2
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // TODO: Regression: final return trees now result in nested function calls instead of just assignment.
+        // It _works_ but is *far* from optimal and I'd really like the old behaviour.
         [TestMethod]
         public void TestReturn4()
             => TestCompilationSucceeds(@"
@@ -746,11 +748,24 @@ internal class Test {
 scoreboard players set #compiled:internal/test.testmethod#i _ 0
 scoreboard players set #compiled:internal/test.testmethod#j _ 0
 execute unless score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-0-if-branch
-execute if score #compiled:internal/test.testmethod#i _ matches 0 run scoreboard players set #RET _ 3
+execute if score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-1-else-branch
+execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 
 # (File compiled:internal/test.testmethod-0-if-branch.mcfunction)
-execute unless score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 1
-execute if score #compiled:internal/test.testmethod#j _ matches 0 run scoreboard players set #RET _ 2
+execute unless score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-2-if-branch
+execute if score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-3-else-branch
+
+# (File compiled:internal/test.testmethod-1-else-branch.mcfunction)
+scoreboard players set #RET _ 3
+scoreboard players set #GOTOFLAG _ 1
+
+# (File compiled:internal/test.testmethod-2-if-branch.mcfunction)
+scoreboard players set #RET _ 1
+scoreboard players set #GOTOFLAG _ 1
+
+# (File compiled:internal/test.testmethod-3-else-branch.mcfunction)
+scoreboard players set #RET _ 2
+scoreboard players set #GOTOFLAG _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -765,7 +780,7 @@ internal class Test {
 }
 ", @"
 # (File compiled:internal/test.testmethod.mcfunction)
-function compiled:internal/test.testmethod-0-goto-label-1
+scoreboard players set #RET _ 0
 
 # (File compiled:internal/test.testmethod-0-goto-label-1.mcfunction)
 scoreboard players set #RET _ 0

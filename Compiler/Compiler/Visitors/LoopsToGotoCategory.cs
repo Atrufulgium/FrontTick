@@ -6,7 +6,8 @@
         GuaranteeBlockRewriter,
         ForToWhileRewriter,
         DoWhileToWhileRewriter,
-        WhileToGotoRewriter> {
+        WhileToGotoRewriter,
+        GuaranteeBlockRewriter2> {
         // TODO: In order to not break on the `break;` in switches, require those to be processed earlier!
     }
 }

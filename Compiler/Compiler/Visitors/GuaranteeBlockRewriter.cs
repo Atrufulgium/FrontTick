@@ -97,4 +97,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             return base.VisitBlock(node);
         }
     }
+
+    /// <summary>
+    /// A copy of <see cref="GuaranteeBlockRewriter"/> for running this phase
+    /// an additional time (in <see cref="LoopsToGotoCategory"/>).
+    /// </summary>
+    // TODO: Do something so that this hilarious hack isn't needed.
+    public class GuaranteeBlockRewriter2 : GuaranteeBlockRewriter { }
 }

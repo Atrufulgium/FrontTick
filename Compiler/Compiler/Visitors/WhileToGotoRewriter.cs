@@ -33,6 +33,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// get turned into <tt>goto WhileStart;</tt>.
     /// </para>
     /// </summary>
+    // This purposely violates the "labels are the last statement of each block"
+    // and "labels must label blocks" rules. Makes the code more readable.
+    // Extra fix pass after.
     public class WhileToGotoRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
         // TODO: WhileToGotoRewriter optimisation opportunities:
         // * If a loop's final statement is `break;`, we do not need a goto.
@@ -40,6 +43,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // * If a loop ends with a branching tree that ends the block via means
         //   of `break`, `continue`, `goto`, or `return`, we still introduce
         //   an extra goto at the end. This case is fairly rare however.
+
+        // TODO: this is very indirect, but
+        // while (true) {
+        //     if (i != 0) {}
+        //     else continue;
+        // }
+        // results in the incorrect `goto A; B: ..` structure.
+        // When fixed, also update the comment in the IfTrueFalseRewriter.
 
         string currentContinueLabel = null;
         string currentBreakLabel = null;
@@ -74,20 +85,21 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             (currentContinueLabel, currentBreakLabel) = (oldContinue, oldBreak);
             bool foundBreak = foundBreakPerLoop.Pop();
 
-            // If we have a goto as the very last line of the original loop, we
+            // If we have a branch as the very last line of the original loop, we
             // would have two sequential gotos, which smells of incorrect code.
             // (Note that with the above-introduced GotoStatementSyntax it
             //  would now be the second-to-last.)
             // In this case, simply remove the goto added above.
             // (I can't do this before the `base.Visit()` unfortunately --
             //  consider that e.g. `break;` is converted into goto.)
+            // This includes trees.
 
             // Labels and such may have been introduced, but by construction
             // the first child if-statement corresponds to the created if
             // statement above.
             var block = (BlockSyntax) node.DescendantNodes().OfType<IfStatementSyntax>().First().Statement;
             var originalLast = block.Statements.Reverse().Skip(1).First(); // Original last statement.
-            if (originalLast is GotoStatementSyntax) {
+            if (originalLast.AllPathsJump()) {
                 var last = block.Statements.Last();
                 node = node.ReplaceNode(
                     block,
@@ -98,7 +110,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (foundBreak) {
                 // Simply add a label after for the break we have to go to.
                 var withBreak = Block(
-                    (StatementSyntax) node,
+                    (StatementSyntax)node,
                     LabeledStatement(
                         breakLabel,
                         EmptyStatement()

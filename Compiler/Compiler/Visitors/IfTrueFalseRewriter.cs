@@ -8,6 +8,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// flattens the accesible branch.
     /// </summary>
     public class IfTrueFalseRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
+        // TODO: Due to the assumption that `goto A; B: ..` is disallowed, but
+        // this being able to flatten `goto A; } B: ..` into that, this breaks
+        // an assumption.
+        // When fixed, also update the comment in WhileToGotoRewriter.
 
         public override SyntaxNode VisitIfStatement(IfStatementSyntax node) {
             if (node.Condition is LiteralExpressionSyntax lit) {

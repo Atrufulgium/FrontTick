@@ -110,5 +110,40 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </summary>
         public static string Identifier(this GotoStatementSyntax got)
             => ((IdentifierNameSyntax)got.Expression).Identifier.Text;
+
+        /// <summary>
+        /// <para>
+        /// Whether this node is one of `return`, `goto`, `break`, or
+        /// `continue`, or whether this contains blocks that *all* end in
+        /// such statement.
+        /// </para>
+        /// <para>
+        /// This assumes <see cref="Visitors.GuaranteeBlockRewriter"/>.
+        /// </para>
+        /// </summary>
+        public static bool AllPathsJump(this SyntaxNode node) {
+            // I hate this pile of edge cases.
+            if (node is ReturnStatementSyntax or GotoStatementSyntax
+                or BreakStatementSyntax or ContinueStatementSyntax)
+                return true; // We're a single jump
+            else if (node.DescendantNodes().OfType<BlockSyntax>().IsEmpty())
+                return false; // We're not even branching
+
+            foreach (var descendant in node.DescendantNodesAndSelf()) {
+                if (descendant is BlockSyntax block) {
+                    if (block.Statements.Count == 0)
+                        return false; // Of course a non-jump if empty
+                    if (block.Statements.Last() is not 
+                        (ReturnStatementSyntax or GotoStatementSyntax
+                        or BreakStatementSyntax or ContinueStatementSyntax))
+                        return false; // Some branch ends in non-jump.
+                }
+                if (descendant is IfStatementSyntax ifst
+                    && (ifst.Statement is not BlockSyntax || ifst.Else == null
+                    || ifst.Else.Statement is not BlockSyntax))
+                    return false; // Else must exist
+            }
+            return true; // All branches end in jump
+        }
     }
 }

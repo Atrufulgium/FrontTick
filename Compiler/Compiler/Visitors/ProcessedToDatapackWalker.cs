@@ -124,24 +124,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             wipFiles.Push(new(reason));
             int stackSize = wipFiles.Count;
 
-            bool directlyAfterGoto = false;
-
             foreach (var statement in block.Statements) {
                 // (Don't want to consider labels, so extract the statement.
                 //  Labels may nest.)
                 var checkStatement = statement;
                 while (checkStatement is LabeledStatementSyntax labeled)
                     checkStatement = labeled.Statement;
-
-                // Nothing may follow gotos -- not even labels.
-                // (This is because splitting the method like that is basically
-                //  a function call. Do *not* put it in the same method then.
-                //  Banning goto from user-code is fine (apart from multiple
-                //  break), and auto-generated code does not create the
-                //  `goto ..; label: ..` construction, so this also just
-                //  should not happen.)
-                if (directlyAfterGoto)
-                    throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
 
                 HandleStatement(statement);
             }

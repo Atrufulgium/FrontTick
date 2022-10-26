@@ -84,7 +84,6 @@ public class Test {
 }
 ");
 
-        // TODO: Why is `loop2break: ;` actually *necessary*? Is there any meaningful difference in the generated code?
         [TestMethod]
         public void WhileTest4()
             => TestCompilationSucceedsTheSame(@"
@@ -106,7 +105,7 @@ public class Test {
                 }
                 goto loop2;
             }
-        loop2break: ;
+        loop2break:
             goto loop1;
         }
     }
@@ -185,7 +184,6 @@ public class Test {
 }
 ");
 
-        // TODO: This testcase shows an optimisation opportunity.
         [TestMethod]
         public void WhileTest7()
     => TestCompilationSucceedsTheSame(@"
@@ -199,7 +197,6 @@ public class Test {
                 goto loop;
             else
                 goto loopend;
-            goto loop; // This is unfortunate!
         }
     loopend: ;
     }
@@ -290,9 +287,8 @@ public class Test {
     public static void TestMethod(int i) {
     loopstart:
         i += 1;
-        if (i != 2) {}
+        if (i != 2) goto loopstart;
         else goto loopend;
-        goto loopstart;
     loopend: ;
     }
 }
@@ -315,7 +311,7 @@ public class Test {
     public static void TestMethod(int i) {
         while (true) {
             i += 1;
-            if (i != 2) {}
+            if (i != 2) continue;
             else break;
         }
     }
@@ -344,9 +340,8 @@ public class Test {
                 goto loopstart;
             goto loopend;
         }
-        if (i != 2) {}
+        if (i != 2) goto loopstart;
         else goto loopend;
-        goto loopstart;
     loopend: ;
     }
 }
@@ -379,7 +374,7 @@ public class Test {
                     continue;
                 break;
             }
-            if (i != 2) {}
+            if (i != 2) continue;
             else break;
         }
     }
@@ -472,7 +467,7 @@ public class Test {
                     while (true) {
                         if (i == 9)
                             continue;
-                        if (i != 8) {}
+                        if (i != 8) continue;
                         else break;
                     }
                     if (i == 10) {
@@ -483,7 +478,7 @@ public class Test {
                 }
                 if (i == 11)
                     continue;
-                if (i != 4) {}
+                if (i != 4) continue;
                 else break;
             }
             if (i == 12) {
