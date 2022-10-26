@@ -116,7 +116,8 @@ namespace MinecraftTests {
             i = 0;
             j = 1;
             gotocounter += 1;
-            goto label2;
+            if (i == 0)
+                goto label2;
         label4:
             if (j == 0) {
                 gotocounter += 1;
