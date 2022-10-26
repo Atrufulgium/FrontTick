@@ -119,7 +119,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             while (enclosingBlock.Parent is not MethodDeclarationSyntax) {
                 if (enclosingBlock.Parent is not LabeledStatementSyntax label)
                     return false;
-                enclosingBlock = (BlockSyntax)label.Parent;
+                if (label.Parent is not BlockSyntax block)
+                    throw CompilationException.ToDatapackGotoLabelMustBeBlock;
+                enclosingBlock = block;
             }
             return true;
         }

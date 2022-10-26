@@ -166,7 +166,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             while (!path.EndsWith(target))
                 path = Directory.GetParent(path)!.FullName;
             path += $"{Path.DirectorySeparatorChar}MCMirror";
-            mcMirror = FolderToContainingCode.GetCode(path);
+            mcMirror = from codepaths in FolderToContainingCode.GetCode(path) select codepaths.code;
             return mcMirror;
         }
     }

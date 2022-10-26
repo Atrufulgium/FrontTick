@@ -89,7 +89,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             Console.WriteLine($"    Output world name:      {outputWorld}");
             Console.WriteLine($"    Datapack namespace:     {manespace}");
             try {
-                IEnumerable<string> code = FolderToContainingCode.GetCode(inputDirectory);
+                IEnumerable<(string code, string path)> code = FolderToContainingCode.GetCode(inputDirectory);
                 if (mcMirrorDirectory != null)
                     code = code.Concat(FolderToContainingCode.GetCode(mcMirrorDirectory));
                 Compiler compiler = new(manespace: manespace);

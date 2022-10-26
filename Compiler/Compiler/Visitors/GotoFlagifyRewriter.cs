@@ -205,7 +205,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Note: the introduced goto statement in this does not matter
             // for analysis anymore. The only analysis after this is on
             // the "after" branch, which is unrelated to this.
-            foreach (var label in gotos) {
+            foreach (var label in gotos.Keys) {
                 // We need to check the *modified* tree here.
                 // But the parent of the *original* node is relevant also for
                 // label checking.
@@ -245,24 +245,38 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         /// <summary>
+        /// <para>
         /// For every goto statement in <paramref name="node"/> and deeper
         /// scopes, returns the associated string label. This includes already-
         /// transformed gotostatements that are of the form
         /// <tt>#GOTOFLAG = &lt;x&gt;</tt>
+        /// </para>
+        /// <para>
+        /// Duplicates are stored as a (label, occurances>0) key-value pair.
+        /// </para>
         /// </summary>
-        private HashSet<string> ContainedGotoStatements(BlockSyntax node) {
-            HashSet<string> ret = new();
+        private Dictionary<string, int> ContainedGotoStatements(BlockSyntax node) {
+            Dictionary<string, int> ret = new();
             foreach (var descendant in node.DescendantNodes()) {
                 if (descendant is GotoStatementSyntax l) {
-                    ret.Add(l.Identifier());
+                    string label = l.Identifier();
+                    if (ret.ContainsKey(label))
+                        ret[label]++;
+                    else
+                        ret.Add(label, 1);
                 } else if (descendant is AssignmentExpressionSyntax a
                     && a.Kind() == SyntaxKind.SimpleAssignmentExpression
                     && a.Left is IdentifierNameSyntax id
                     && id.Identifier.Text == NameManager.GetGotoFlagName()) {
                     var textnum = ((LiteralExpressionSyntax)a.Right).Token.Text;
                     var intnum = int.Parse(textnum);
-                    if (intnum != 0) // Don't wanna add the resetter =0 lol
-                        ret.Add(ScoreboardIDToGotoLabel(intnum));
+                    if (intnum != 0) {
+                        string label = ScoreboardIDToGotoLabel(intnum);
+                        if (ret.ContainsKey(label))
+                            ret[label]++;
+                        else
+                            ret.Add(label, 1);
+                    }
                 }
             }
             return ret;
@@ -301,18 +315,22 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// a goto statement somewhere and a label.
         /// </summary>
         /// <remarks>
-        /// This definition needs thinking if a single label has multiple gotos,
-        /// especially in unrelated scope. Generalise to contain *all*? Any?
-        /// TODO: This needs some heavy thinking and testing.
+        /// <para>
+        /// This name is only really accurate when this label has only one goto.
+        /// In fact, this returns true if the number of goto labels in this
+        /// scope is higher than in any child scope, instead of just going 1→0.
+        /// </para>
         /// </remarks>
         private bool IsFinestScopeContainingGotoAndLabel(BlockSyntax node, SyntaxNode nodeParent, string label) {
             // Yes this performance and style is terrible.
             // No I don't care currently, it has to *work* first.
             // Fancier graphs are later.
-            bool containsGoto = ContainedGotoStatements(node).Contains(label);
+            int containedGotoes;
+            if (!ContainedGotoStatements(node).TryGetValue(label, out containedGotoes))
+                containedGotoes = 0;
             bool containsLabel = ContainedLabels(node).Contains(label);
             containsLabel |= nodeParent is LabeledStatementSyntax l && l.Identifier.Text == label;
-            bool containsBoth = containsGoto && containsLabel;
+            bool containsBoth = containedGotoes > 0 && containsLabel;
             if (!containsBoth)
                 return false;
 
@@ -320,20 +338,29 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             foreach(var statement in node.Statements) {
                 // If any child label/branch *also* contains both, it's false.
                 check.Clear();
-                if (statement is LabeledStatementSyntax l2)
-                    check.Add((BlockSyntax)l2.Statement);
-                else if (statement is IfStatementSyntax i) {
-                    check.Add((BlockSyntax)i.Statement);
-                    if (i.Else != null)
-                        check.Add((BlockSyntax)i.Else.Statement);
+                if (statement is LabeledStatementSyntax l2) {
+                    if (l2.Statement is not BlockSyntax block)
+                        throw CompilationException.ToDatapackGotoLabelMustBeBlock;
+                    check.Add(block);
+                } else if (statement is IfStatementSyntax i) {
+                    if (i.Statement is not BlockSyntax ifblock)
+                        throw CompilationException.ToDatapackBranchesMustBeBlocks;
+                    check.Add(ifblock);
+                    if (i.Else != null) {
+                        if (i.Else.Statement is not BlockSyntax elseblock)
+                            throw CompilationException.ToDatapackBranchesMustBeBlocks;
+                        check.Add(elseblock);
+                    }
                 }
 
                 foreach(var b in check) {
-                    containsGoto = ContainedGotoStatements(b).Contains(label);
-                    containsLabel = ContainedLabels(b).Contains(label);
-                    containsLabel |= TryGetBlockLabel(b, out string l3) && l3 == label;
-                    containsBoth = containsGoto && containsLabel;
-                    if (containsBoth)
+                    int checkContainedGotoes;
+                    if (!ContainedGotoStatements(b).TryGetValue(label, out checkContainedGotoes))
+                        checkContainedGotoes = 0;
+                    bool checkContainsLabel = ContainedLabels(b).Contains(label);
+                    checkContainsLabel |= TryGetBlockLabel(b, out string l3) && l3 == label;
+                    bool finerButNotFewer = checkContainsLabel && (containedGotoes == checkContainedGotoes);
+                    if (finerButNotFewer)
                         return false;
                 }
             }

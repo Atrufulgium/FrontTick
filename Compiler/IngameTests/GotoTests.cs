@@ -125,11 +125,32 @@ namespace MinecraftTests {
             return gotocounter;
         }
 
+        // The "goto < label < goto" case in scoping is weird.
+        // Definitely needs testing.
+        [MCTest(27)]
+        public static int GotoTest6() {
+            int i;
+            int j;
+            i = 0;
+            j = 1;
+            if (i == 0)
+                goto label;
+            i += 1;
+            j *= 2;
+        label:
+            i += 1;
+            j *= 3;
+            if (i != 3) {
+                goto label;
+            }
+            return j;
+        }
+
         // From a bug I encountered with allowing labels after gotos: both
         // generate a goto. This is incorrect and would result in "5" here.
         // TODO: This should just throw a error as user-code should not use goto.
         [MCTest(3)]
-        public static int GotoTest6() {
+        public static int GotoTestIgnore() {
             int i;
             i = 1;
             goto label;
