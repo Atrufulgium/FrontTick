@@ -13,5 +13,11 @@ namespace Atrufulgium.FrontTick.Compiler {
             stack.Push(item);
             return ret;
         }
+
+        public static bool IsEmpty<T>(this IEnumerable<T> collection) {
+            foreach (var ele in collection)
+                return false;
+            return true;
+        }
     }
 }

@@ -237,7 +237,6 @@ namespace Atrufulgium.FrontTick.Compiler {
             DatapackFile setupFile = new(nameManager.SetupFileName);
             setupFile.code.Add("scoreboard objectives add _ dummy");
             setupFile.code.Add("scoreboard players set #GOTOFLAG _ 0");
-            setupFile.code.Add("scoreboard players set #FLAGFOUND _ 0");
             // Maintain this setting across reloads.
             setupFile.code.Add("execute unless score #FAILSONLY _ matches 0.. run scoreboard players set #FAILSONLY _ 0");
             setupFile.code.Add("scoreboard players set #TESTSUCCESSES _ 0");

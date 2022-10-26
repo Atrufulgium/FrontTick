@@ -240,7 +240,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             return $"#CONST#{value}";
         }
 
-        public string GetArgumentName(MCFunctionName mcfunctionname, int index) {
+        public static string GetArgumentName(MCFunctionName mcfunctionname, int index) {
             return $"#{mcfunctionname}##arg{index}";
         }
 
@@ -255,6 +255,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// returns its value.
         /// </summary>
         public static string GetRetGotoName() => "#ret-label";
+
+        public static string GetGotoFlagName() => "#GOTOFLAG";
 
         /// <summary>
         /// Whether the given string is valid as the name of a function file.

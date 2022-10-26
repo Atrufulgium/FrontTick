@@ -7,9 +7,8 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <summary>
     /// <para>
-    /// Any method that has returns in it has the return value put in a temp
-    /// var, and then <tt>goto</tt>s to a new label at the end of the method
-    /// to return that temp var.
+    /// Any method that has returns in it has the return value put in #RET,
+    /// and then <tt>goto</tt>s to a new label at the end of the method.
     /// </para>
     /// <para>
     /// Any code after a <tt>return</tt> at this stage is illegal and throws
@@ -17,6 +16,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// </summary>
     public class ReturnRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
+        // TODO: Put the new return at the end of nested labels instead of not. (Also remove the GotoFlagify todo)
 
         bool isVoid;
 
@@ -31,11 +31,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 newBody = newBody.WithAppendedStatement(
                     LabeledStatement(
                         NameManager.GetRetGotoName(),
-                        ReturnStatement()
+                        Block( // Recall that labels may only label blocks
+                            ReturnStatement()
+                        )
                     )
                 );
             } else {
-                // Init of the temp var
+                // Init of the return var
                 newBody = newBody.WithPrependedStatement(
                     ExpressionStatement(
                         DeclarationExpression(
@@ -44,12 +46,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         )
                     )
                 );
-                // Returning the temp var
+                // Returning at the end for correctness but really, everything
+                // after will ignore the return and only care about signature
+                // and the #RET-assignment.
                 newBody = newBody.WithAppendedStatement(
                     LabeledStatement(
                         NameManager.GetRetGotoName(),
-                        ReturnStatement(
-                            IdentifierName(NameManager.GetRetName())
+                        Block( // Recall that labels may only label blocks
+                            ReturnStatement(
+                                IdentifierName(NameManager.GetRetName())
+                            )
                         )
                     )
                 );
@@ -63,6 +69,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 var ret = GotoStatement(NameManager.GetRetGotoName());
                 return base.VisitGotoStatement(ret);
             } else {
+                // If we are the last return, doing a goto is incorrect.
+                // This because this is the only place in the codebase that
+                // creates a `goto A; B:` structure otherwise, which is
+                // explicitely assumed not to be the case.
+                StatementSyntax jumpStatement = GotoStatement(NameManager.GetRetGotoName());
+                if (IsOriginallyRootScope(node))
+                    jumpStatement = EmptyStatement();
+
                 var ret = Block(
                     ExpressionStatement(
                         AssignmentExpression(
@@ -71,7 +85,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                             node.Expression
                         )
                     ),
-                    GotoStatement(NameManager.GetRetGotoName())
+                    jumpStatement
                 );
                 return VisitBlock(ret);
             }
@@ -94,6 +108,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             }
 
             return ((BlockSyntax)base.VisitBlock(node)).Flattened();
+        }
+
+        /// <summary>
+        /// Returns whether going up to the root scope is achieved through only
+        /// labeled blocks. This implies that this is the last return statement.
+        /// </summary>
+        public bool IsOriginallyRootScope(ReturnStatementSyntax ret) {
+            BlockSyntax enclosingBlock = (BlockSyntax)ret.Parent;
+            while (enclosingBlock.Parent is not MethodDeclarationSyntax) {
+                if (enclosingBlock.Parent is not LabeledStatementSyntax label)
+                    return false;
+                enclosingBlock = (BlockSyntax)label.Parent;
+            }
+            return true;
         }
     }
 }

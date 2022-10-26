@@ -26,8 +26,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] \"a ∘= RHS\"'s RHS must be a literal, identifier, or method call. This includes \"assigning\" to returns in `return ...`.");
         public static CompilationException ToDatapackBranchesMustBeBlocks
             => new("[To Datapack] The if- and else-branch of a conditional must be a block ({}) and not a single statement.");
+        public static CompilationException ToDatapackGotoLabelMustBeBlock
+            => new("[To Datapack] A labeled statement may only label a block ({}) and nothing else.");
         public static CompilationException ToDatapackGotoMustBeLastBlockStatement
-            => new("[To Datapack] In every block, goto must be the last statement -- nothing may follow.\n(With one exception: labels may follow goto statements.)");
+            => new("[To Datapack] In every block, goto must be the last statement -- nothing may follow, not even labels.");
         public static CompilationException ToDatapackIfConditionalMustBeIdentifierNotEqualToZero
             => new("[To Datapack] The conditional of a if-statement must be of the form `identifier != 0`.");
         public static CompilationException ToDatapackDeclarationsMayNotBeInitializers

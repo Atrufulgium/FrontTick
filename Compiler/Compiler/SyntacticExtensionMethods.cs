@@ -53,11 +53,14 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// (Yes, <see cref="BlockSyntax.AddStatements(StatementSyntax[])"/>
         ///  exists, but is not obvious in *where* it adds them.)
         /// </remarks>
-        public static BlockSyntax WithAppendedStatement(this BlockSyntax block, IEnumerable<StatementSyntax> statement) {
-            return SyntaxFactory.Block(block.Statements.Concat(statement));
-        }
+        public static BlockSyntax WithAppendedStatement(this BlockSyntax block, IEnumerable<StatementSyntax> statement)
+            => SyntaxFactory.Block(block.Statements.Concat(statement));
 
-        /// <inheritdoc/>
+        /// <inheritdoc cref="WithAppendedStatement(BlockSyntax, IEnumerable{StatementSyntax})"/>
+        public static BlockSyntax WithAppendedStatement(this BlockSyntax block, params StatementSyntax[] statement)
+            => block.WithAppendedStatement((IEnumerable<StatementSyntax>)statement);
+
+        /// <inheritdoc cref="WithAppendedStatement(BlockSyntax, IEnumerable{StatementSyntax})"/>
         public static BlockSyntax WithAppendedStatement(this BlockSyntax block, StatementSyntax statement)
             => block.WithAppendedStatement(new[] { statement });
 
@@ -66,73 +69,46 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// except for all statements in <paramref name="statement"/> being
         /// prepended to before the statement list.
         /// </summary>
-        public static BlockSyntax WithPrependedStatement(this BlockSyntax block, IEnumerable<StatementSyntax> statement) {
-            return SyntaxFactory.Block(statement.Concat(block.Statements));
-        }
+        public static BlockSyntax WithPrependedStatement(this BlockSyntax block, IEnumerable<StatementSyntax> statement)
+            => SyntaxFactory.Block(statement.Concat(block.Statements));
 
-        /// <inheritdoc/>
+        /// <inheritdoc cref="WithPrependedStatement(BlockSyntax, IEnumerable{StatementSyntax})"/>
+        public static BlockSyntax WithPrependedStatement(this BlockSyntax block, params StatementSyntax[] statement)
+            => block.WithPrependedStatement((IEnumerable<StatementSyntax>)statement);
+
+        /// <inheritdoc cref="WithPrependedStatement(BlockSyntax, IEnumerable{StatementSyntax})"/>
         public static BlockSyntax WithPrependedStatement(this BlockSyntax block, StatementSyntax statement)
-            => block.WithPrependedStatement(new[] { statement });
+            => block.WithPrependedStatement(new[] { statement } );
 
         /// <summary>
+        /// <para>
         /// Turns block statements that have nested block statements into a
-        /// single list of statements. This takes into account labels.
+        /// single list of statements without nested block statements.
+        /// </para>
+        /// <para>
+        /// Blocks part of labels count as seperate from their parent blocks.
+        /// </para>
         /// </summary>
         public static BlockSyntax Flattened(this BlockSyntax block) {
-            List<SyntaxNode> nestedNodes = new();
+            List<BlockSyntax> nestedNodes = new();
             // Add all direct blocks and blocks that are labeled.
             foreach (var s in block.Statements) {
                 var statement = s;
-                while (statement is LabeledStatementSyntax label)
-                    statement = label.Statement;
-                if (statement is BlockSyntax)
-                    nestedNodes.Add(s);
+                if (statement is BlockSyntax b)
+                    nestedNodes.Add(b);
             }
 
             // Create a new block by replacing everything with its flattening.
-            foreach (var node in nestedNodes) {
-                if (node is BlockSyntax b)
-                    block = block.ReplaceNode(node, b.Flattened().Statements);
-                else if (node is LabeledStatementSyntax l)
-                    block = block.ReplaceNode(node, l.Flattened().Statements);
+            foreach (var b in nestedNodes) {
+                block = block.ReplaceNode(b, b.Flattened().Statements);
             }
             return block;
         }
 
         /// <summary>
-        /// Turns code of the form
-        /// <code>
-        ///     label1:
-        ///     label2:
-        ///         {
-        ///         // code
-        ///         }
-        /// </code>
-        /// into
-        /// <code>
-        ///     {
-        ///     label1:
-        ///     label2:
-        ///         // code
-        ///     }
-        /// </code>
-        /// This requires <paramref name="labeledBlock"/> to label a BlockSyntax.
+        /// Ignoring the goto's kind, returns the associated literal.
         /// </summary>
-        public static BlockSyntax Flattened(this LabeledStatementSyntax labeledBlock) {
-            string labelID = labeledBlock.Identifier.Text;
-
-            // Label the first statement of this flattened block.
-            // (Recursion to handle `label: label: label: ...`.)
-            BlockSyntax block;
-            if (labeledBlock.Statement is LabeledStatementSyntax label) {
-                block = label.Flattened();
-            } else if (labeledBlock.Statement is BlockSyntax b) {
-                block = b;
-            } else 
-                throw new System.ArgumentException("This may only be called on labeled blocks.", nameof(labeledBlock));
-
-            var first = block.Statements.First();
-            return block.ReplaceNode(first, SyntaxFactory.LabeledStatement(labelID, first));
-        }
+        public static string Identifier(this GotoStatementSyntax got)
+            => ((IdentifierNameSyntax)got.Expression).Identifier.Text;
     }
 }

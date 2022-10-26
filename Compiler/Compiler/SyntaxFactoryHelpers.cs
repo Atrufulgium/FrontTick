@@ -15,5 +15,24 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static SingleVariableDesignationSyntax SingleVariableDesignation(string identifier)
             => SyntaxFactory.SingleVariableDesignation(Identifier(identifier));
 
+        // I don't like BinaryExpression(<syntaxkind>, ...), so variants here.
+
+        public static BinaryExpressionSyntax BinaryEqualsExpression(ExpressionSyntax left, ExpressionSyntax right)
+            => BinaryExpression(SyntaxKind.EqualsExpression, left, right);
+
+        // I hate `ExpressionStatement([..]ExpressionSyntax)`, so I'm adding these shortcuts as needed.
+        // I could autogen these but I'm *lazy*.
+
+        public static StatementSyntax AssignmentStatement(
+            SyntaxKind kind, ExpressionSyntax left, ExpressionSyntax right
+        ) => ExpressionStatement(AssignmentExpression(kind, left, right));
+
+        public static StatementSyntax SimpleAssignmentStatement(ExpressionSyntax left, ExpressionSyntax right)
+            => AssignmentStatement(SyntaxKind.SimpleAssignmentExpression, left, right);
+
+        // Also, literals are ew
+
+        public static LiteralExpressionSyntax NumericLiteralExpression(int value)
+            => LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
     }
 }

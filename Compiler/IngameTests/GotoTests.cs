@@ -127,6 +127,7 @@ namespace MinecraftTests {
 
         // From a bug I encountered with allowing labels after gotos: both
         // generate a goto. This is incorrect and would result in "5" here.
+        // TODO: This should just throw a error as user-code should not use goto.
         [MCTest(3)]
         public static int GotoTest6() {
             int i;
