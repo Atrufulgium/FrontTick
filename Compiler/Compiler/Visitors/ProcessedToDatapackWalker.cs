@@ -24,7 +24,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // * Replace `operation -= const` with `remove const` (or `add const` if negative)
         // * MCFunction files that are just a simple `function ...` can be skipped
         // * MCFunction files that are empty can have their callsite removed
-        // * Multiple `goto`s to the same label generate different files currently (TODO: After the update, is this still true?)
+        // (The above two points are implemented for files within one c# method,
+        //  but not full generality.)
+        // * Multiple `goto`s to the same label generate different files currently
 
         // TODO: ProcessedToDatapackWalker todo list:
         // * Allow min as `operation <`, max as `operation >`
@@ -74,25 +76,54 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Don't do the base-call as we're manually walking everything from
             // here on out, as the code must abide a very specific structure.
             MCFunctionName path = nameManager.GetMethodName(CurrentSemantics, node, this);
-            wipFiles.Push(new(path));
 
-            HandleBlock(node.Body);
+            HandleBlock(node.Body, path, pop: false);
 
             // If this method is a test, we need to add some post processing to
-            // the mcfunction. As such, pop all but the last, do that
-            // processing, and then finish.
-            while (wipFiles.Count > 1)
-                compiler.finishedCompilation.Add(wipFiles.Pop());
-
+            // the mcfunction.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCTestAttribute), out var attrib))
                 HandleMCTestMethod(node, attrib);
 
             compiler.finishedCompilation.Add(wipFiles.Pop());
         }
 
-        // TODO: blocks should be in 1:1 correspondence with mcfunction files at this point. Implement wipFiles.Push/Pop here, and only here.
-        // Can also add a "reason"-or-something string argument for the scope increase name.
-        private void HandleBlock(BlockSyntax block) {
+        /// <summary>
+        /// <para>
+        /// Parses a block statement, and returns a string to call its content.
+        /// </para>
+        /// <para>
+        /// This string is either just a <tt>function ...</tt>, or the file's
+        /// content if it's just one line of <tt>.mcfunction</tt>, or the empty
+        /// string if the generated function is empty.
+        /// </para>
+        /// </summary>
+        /// <param name="block"> The block to parse. </param>
+        /// <param name="reason">
+        /// The mcfunction name of this generated scope, usually of the form
+        /// <tt>method's mcfunction-specific</tt>.
+        /// should be.
+        /// </param>
+        /// <param name="pop">
+        /// Whether the returned string is of the above format because we pop
+        /// here, or whether the returned string is empty and <paramref name="reason"/>'s
+        /// generated file is not popped yet for future parsing.
+        /// </param>
+        /// <param name="storeOneliners">
+        /// (When <paramref name="pop"/> is true) whether generated functions
+        /// that are one line long are still commited to the list of all
+        /// functions.
+        /// </param>
+        // We can do this by all prior work guaranteeing a 1:1
+        // block <=> mcfunction file correspondence
+        private string HandleBlock(
+            BlockSyntax block,
+            MCFunctionName reason,
+            bool pop = true,
+            bool storeOneliners = false
+        ) {
+            wipFiles.Push(new(reason));
+            int stackSize = wipFiles.Count;
+
             bool directlyAfterGoto = false;
 
             foreach (var statement in block.Statements) {
@@ -113,6 +144,28 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     throw CompilationException.ToDatapackGotoMustBeLastBlockStatement;
 
                 HandleStatement(statement);
+            }
+
+            PopWIPStackUntilSize(stackSize);
+
+            if (!pop) {
+                return "";
+            }
+
+            int remainingFileSize = wipFiles.Peek().code.Count;
+            if (remainingFileSize == 0) {
+                wipFiles.Pop();
+                return "";
+            } else if (remainingFileSize == 1) {
+                string command = wipFiles.Peek().code[0];
+                if (storeOneliners)
+                    compiler.finishedCompilation.Add(wipFiles.Pop());
+                else
+                    wipFiles.Pop();
+                return command;
+            } else {
+                compiler.finishedCompilation.Add(wipFiles.Pop());
+                return $"function {reason}";
             }
         }
 
@@ -200,7 +253,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 AddCode($"scoreboard players operation {lhsName} _ {op} {rhsName} _");
         }
 
-        // "private void HandleIfElseSoup"
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
             MCFunctionName targetIfName = GetBranchPath("if-branch"),
                 targetElseName = null;
@@ -245,32 +297,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string ifBranchMCConditional = equalsVariant ? "if" : "unless";
             string elseBranchMCConditional = equalsVariant ? "unless" : "if";
 
-            wipFiles.Push(new(targetIfName));
-            int targetIfStackSize = wipFiles.Count;
-            if (ifst.Statement is BlockSyntax block)
-                HandleBlock(block);
-            else
+            if (ifst.Statement is not BlockSyntax block)
                 throw CompilationException.ToDatapackBranchesMustBeBlocks;
-            // The above handling of blocks can introduce more wipFiles (via
-            // gotos and such).
-            // Every such file will be fully processed and done by the time we
-            // return here. As such, we need to pop until we're back at the if-
-            // block that brought us here in the first place.
-            PopWIPStackUntilSize(targetIfStackSize);
 
-            // Don't do the extra file if it's just one command.
-            // (Naturally, don't do anything if it's nothing.)
-            int branchSize = wipFiles.Peek().code.Count;
-            if (branchSize == 1) {
-                string command = wipFiles.Peek().code[0];
-                wipFiles.Pop();
-                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
-            } else if (branchSize > 1) {
-                compiler.finishedCompilation.Add(wipFiles.Pop());
-                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetIfName}");
-            } else {
-                wipFiles.Pop();
-            }
+            string call = HandleBlock(block, targetIfName);
+            if (call != "")
+                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
 
             if (hasElse) {
                 // Same as above, but for else.
@@ -279,22 +311,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 if (ifst.Else.Statement is not BlockSyntax elseBlock)
                     throw CompilationException.ToDatapackBranchesMustBeBlocks;
 
-                wipFiles.Push(new(targetElseName));
-                int targetElseStackSize = wipFiles.Count;
-                HandleBlock(elseBlock);
-                PopWIPStackUntilSize(targetElseStackSize);
-
-                branchSize = wipFiles.Peek().code.Count;
-                if (branchSize == 1) {
-                    string command = wipFiles.Peek().code[0];
-                    wipFiles.Pop();
-                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {command}");
-                } else if (branchSize > 1) {
-                    compiler.finishedCompilation.Add(wipFiles.Pop());
-                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run function {targetElseName}");
-                } else {
-                    wipFiles.Pop();
-                }
+                call = HandleBlock(elseBlock, targetElseName);
+                if (call != "")
+                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
             }
         }
 
@@ -321,15 +340,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             // Otherwise, there is a statement that needs processing.
             var gotoBranch = GetGotoFunctionName(GotoFlagifyRewriter.GotoLabelToScoreboardID(name));
-            AddCode($"function {gotoBranch}");
 
-            wipFiles.Push(new(gotoBranch));
-            // We need all statements after to be in scope of this goto label.
-            int afterGotoStackSize = wipFiles.Count;
             if (label.Statement is not BlockSyntax block)
                 throw CompilationException.ToDatapackGotoLabelMustBeBlock;
-            HandleBlock(block);
-            PopWIPStackUntilSize(afterGotoStackSize);
+
+            // Even if this place doesn't need it, labels exist for a reason.
+            // As such, store the labeled part also even if the result is just
+            // one line long.
+            string call = HandleBlock(block, gotoBranch, storeOneliners: true);
+            if (call != "")
+                AddCode(call);
         }
 
         private void HandleInvocation(InvocationExpressionSyntax call) {
@@ -483,24 +503,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             => wipFiles.Peek().code.Add(code.Replace(" run execute ", " "));
 
         /// <summary>
-        /// <para>
         /// Finishes the compilation of all work-in-progress datapack files
         /// until the remaining stack of them is of a certain size.
-        /// </para>
-        /// <para>
-        /// This returns the number of lines in the final popped file, i.e. the
-        /// file at index size+1.
-        /// </para>
         /// </summary>
-        private int PopWIPStackUntilSize(int size) {
-            int lastCodeSize = -1;
+        private void PopWIPStackUntilSize(int size) {
             while (wipFiles.Count > size) {
                 var finished = wipFiles.Pop();
-                lastCodeSize = finished.code.Count;
                 compiler.finishedCompilation.Add(finished);
             }
-
-            return lastCodeSize;
         }
     }
 }
