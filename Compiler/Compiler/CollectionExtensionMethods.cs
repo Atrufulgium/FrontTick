@@ -14,10 +14,23 @@ namespace Atrufulgium.FrontTick.Compiler {
             return ret;
         }
 
+        /// <summary>
+        /// Simply returns whether this IEnumerable has any elements.
+        /// </summary>
         public static bool IsEmpty<T>(this IEnumerable<T> collection) {
-            foreach (var ele in collection)
+            foreach (var _ in collection)
                 return false;
             return true;
+        }
+
+        /// <summary>
+        /// Returns the same collection, but with every <paramref name="element"/> removed.
+        /// </summary>
+        public static IEnumerable<T> Skip<T>(this IEnumerable<T> collection, T element) {
+            foreach (var ele in collection) {
+                if (!ele.Equals(element))
+                    yield return ele;
+            }
         }
     }
 }

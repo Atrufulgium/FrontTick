@@ -16,7 +16,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// </summary>
     public class ReturnRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
-        // TODO: Put the new return at the end of nested labels instead of not. (Also remove the GotoFlagify todo)
 
         bool isVoid;
 
@@ -26,17 +25,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             node = (MethodDeclarationSyntax) base.VisitMethodDeclaration(node);
 
             var newBody = node.Body;
-            if (isVoid) {
-                // Just returning
-                newBody = newBody.WithAppendedStatement(
-                    LabeledStatement(
-                        NameManager.GetRetGotoName(),
-                        Block( // Recall that labels may only label blocks
-                            ReturnStatement()
-                        )
-                    )
-                );
-            } else {
+            if (!isVoid) {
                 // Init of the return var
                 newBody = newBody.WithPrependedStatement(
                     ExpressionStatement(
@@ -46,20 +35,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         )
                     )
                 );
-                // Returning at the end for correctness but really, everything
-                // after will ignore the return and only care about signature
-                // and the #RET-assignment.
-                newBody = newBody.WithAppendedStatement(
-                    LabeledStatement(
-                        NameManager.GetRetGotoName(),
-                        Block( // Recall that labels may only label blocks
-                            ReturnStatement(
-                                IdentifierName(NameManager.GetRetName())
-                            )
-                        )
-                    )
-                );
             }
+            var retStatement = isVoid ? ReturnStatement() : ReturnStatement(IdentifierName(NameManager.GetRetName()));
+            var labeledRet = LabeledStatement(NameManager.GetRetGotoName(), Block(retStatement));
+            // Due to GuaranteeBlockRewriter's "labels are followed by nothing"
+            // guarantee, the end is of the form `label: .. label: statement;`
+            // for some number ≥0 of labels.
+            // We want to add this labled ret to the end of that.
+            newBody = newBody.WithAppendedStatementThroughLabels(labeledRet);
 
             return node.WithBody(newBody);
         }

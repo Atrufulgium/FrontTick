@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -144,6 +145,113 @@ namespace Atrufulgium.FrontTick.Compiler {
                     return false; // Else must exist
             }
             return true; // All branches end in jump
+        }
+
+        /// <summary>
+        /// Gets a list of sibling nodes (including itself) in prefix document order.
+        /// </summary>
+        public static IEnumerable<SyntaxNode> SiblingNodesAndSelf(this SyntaxNode node) {
+            if (node.Parent == null)
+                return new[] { node };
+            return node.Parent.ChildNodes();
+        }
+
+        /// <summary>
+        /// Gets a list of sibling nodes in prefix document order.
+        /// </summary>
+        public static IEnumerable<SyntaxNode> SiblingNodes(this SyntaxNode node) {
+            return node.SiblingNodesAndSelf().Skip(node);
+        }
+
+        /// <summary>
+        /// <para>
+        /// Returns the next sibling according to prefix document order.
+        /// </para>
+        /// <para>
+        /// Will be <tt>null</tt> if the next sibling does not exist.
+        /// </para>
+        /// </summary>
+        public static SyntaxNode NextSibling(this SyntaxNode node) {
+            bool foundNode = false;
+            foreach (var sibling in node.SiblingNodesAndSelf()) {
+                if (foundNode)
+                    return sibling;
+                foundNode = sibling.Equals(node);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// <para>
+        /// Returns the previous sibling according to prefix document order.
+        /// </para>
+        /// <para>
+        /// Will be <tt>null</tt> if the previous sibling does not exist.
+        /// </para>
+        /// </summary>
+        public static SyntaxNode PrevSibling(this SyntaxNode node) {
+            SyntaxNode prevNode = null;
+            foreach (var sibling in node.SiblingNodesAndSelf()) {
+                if (sibling.Equals(node))
+                    return prevNode;
+                prevNode = sibling;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Replaces the last statement of a block with the given statement.
+        /// Throws when there's no statements.
+        /// </summary>
+        public static BlockSyntax WithLastStatementReplaced(this BlockSyntax block, StatementSyntax statementSyntax) {
+            var statements = block.Statements;
+            statements = statements.RemoveAt(statements.Count - 1);
+            statements = statements.Add(statementSyntax);
+            return block.WithStatements(statements);
+        }
+
+        /// <summary>
+        /// If a block ends with
+        /// <code>
+        ///         // Stuff
+        ///         label: {
+        ///             // Stuff
+        ///             label: {
+        ///                 // Stuff
+        ///                 ...
+        ///                     label {
+        ///                         // Stuff
+        ///                     }
+        ///                 ...
+        ///             }
+        ///         }
+        /// </code>
+        /// this adds <paramref name="block"/> to the end of the innermost label.
+        /// </summary>
+        public static BlockSyntax WithAppendedStatementThroughLabels(this BlockSyntax block, StatementSyntax statement) {
+            // Collect all relevant scopes
+            Stack<BlockSyntax> finalBlocks = new();
+            finalBlocks.Push(block);
+            while (block.Statements.Count > 0 &&
+                block.Statements.Last() is LabeledStatementSyntax lab) {
+                block = (BlockSyntax)lab.Statement;
+                finalBlocks.Push(block);
+            }
+
+            // Specially handle the top scope.
+            block = finalBlocks.Pop();
+            block = block.WithAppendedStatement(statement);
+
+            // For each block, replace the label to point to the modified block.
+            while (finalBlocks.Count > 0) {
+                var outerBlock = finalBlocks.Pop();
+                var lastLabel = (LabeledStatementSyntax)outerBlock.Statements.Last();
+                lastLabel = lastLabel.WithStatement(block);
+                outerBlock = outerBlock.WithLastStatementReplaced(lastLabel);
+                block = outerBlock;
+            }
+
+            return block;
         }
     }
 }

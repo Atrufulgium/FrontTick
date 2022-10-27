@@ -21,7 +21,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// </summary>
     public class GotoFlagifyRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, LoopsToGotoCategory, ReturnRewriter> {
-        // TODO: This is incorrect because ReturnRewriter's return breaks the label assumption. Not majorly incorrect though. (Also remove the ReturnRewriter todo)
 
         // The basic idea is that any code of the form
         //     // Label here
