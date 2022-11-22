@@ -212,11 +212,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // The lhs can be created by
             /// <see cref="ReturnRewriter"/>
             // to be
-            /// <see cref="NameManager.GetRetName()"/>
+            /// <see cref="nameManager.GetRetName()"/>
             // which isn't qualified by
-            /// <see cref="NameManager.GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>'s
+            /// <see cref="nameManager.GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>'s
             // special behaviour in that case.
-            bool lhsIsRet = lhsName == NameManager.GetRetName();
+            bool lhsIsRet = lhsName == nameManager.GetRetName();
 
             if (TryGetIntegerLiteral(assign.Right, out int literal)) {
                 isSetCommand = op == "=";
@@ -227,7 +227,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 rhsName = nameManager.GetVariableName(CurrentSemantics, assign.Right, this);
             } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
                 HandleInvocation(rhsCall);
-                rhsName = NameManager.GetRetName();
+                rhsName = nameManager.GetRetName();
                 // No need to do anything on
                 //    #RET _ = RET _
                 if (lhsIsRet && op == "=")
@@ -354,7 +354,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // TODO: Currently ignoring in,out,ref.
             int i = 0;
             foreach(var arg in call.ArgumentList.Arguments) {
-                string argName = NameManager.GetArgumentName(methodName, i);
+                string argName = nameManager.GetArgumentName(methodName, i);
                 // Too copypastay of the statement case, this code's the sketch anyway
                 if (TryGetIntegerLiteral(arg.Expression, out int literal)) {
                     // Again, integer rhs => lhs is of integer type
@@ -505,12 +505,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 throw CompilationException.ToDatapackStructsMustEventuallyInt;
             } else {
                 foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {
-                    // This is incredibly awkward and I want another way.
-                    // The specific (internal) type of `m` contains `TypeSyntax` but it's protected.
-                    // Sigh.
                     ITypeSymbol fieldType = m.Type;
                     string name = m.Name;
-                    AddAssignment(NameManager.GetCombinedName(lhs, name), NameManager.GetCombinedName(rhs, name), op, fieldType);
+                    AddAssignment(nameManager.GetCombinedName(lhs, name), nameManager.GetCombinedName(rhs, name), op, fieldType);
                 }
             }
         }

@@ -31,12 +31,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     ExpressionStatement(
                         DeclarationExpression(
                             node.ReturnType,
-                            SingleVariableDesignation(NameManager.GetRetName())
+                            SingleVariableDesignation(nameManager.GetRetName())
                         )
                     )
                 );
             }
-            var retStatement = isVoid ? ReturnStatement() : ReturnStatement(IdentifierName(NameManager.GetRetName()));
+            var retStatement = isVoid ? ReturnStatement() : ReturnStatement(IdentifierName(nameManager.GetRetName()));
             var labeledRet = LabeledStatement(NameManager.GetRetGotoName(), Block(retStatement));
             // Due to GuaranteeBlockRewriter's "labels are followed by nothing"
             // guarantee, the end is of the form `label: .. label: statement;`
@@ -64,7 +64,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     ExpressionStatement(
                         AssignmentExpression(
                             SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(NameManager.GetRetName()),
+                            IdentifierName(nameManager.GetRetName()),
                             node.Expression
                         )
                     ),

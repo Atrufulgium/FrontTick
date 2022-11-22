@@ -108,7 +108,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
 
-            nameManager = new(manespace);
+            nameManager = new(manespace, new NamePostProcessors.Identity());
             this.references = ReferenceManager.GetReferences(references);
 
             SetCompilationPhases(CompilationPhases.BasicCompilationPhases);
@@ -245,8 +245,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             setupFile.code.Add("scoreboard players set #TESTSSKIPPED _ 0");
             // Don't need to set #RET as it can only be used after a function
             // returns -- it is always set when read.
-            foreach (int i in nameManager.Constants.ToList())
-                setupFile.code.Add($"scoreboard players set {nameManager.GetConstName(i)} _ {i}");
+            foreach (var (num, name) in nameManager.GetAllConstantNames())
+                setupFile.code.Add($"scoreboard players set {name} _ {num}");
             // On my machine, I can get ~125k (fast) commands / tick.
             // Then 2 seconds worth of commands seems like a reasonable limit,
             // especially for just 1 tick.

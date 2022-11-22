@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
     public static class CollectionExtensionMethods {
@@ -31,6 +32,11 @@ namespace Atrufulgium.FrontTick.Compiler {
                 if (!ele.Equals(element))
                     yield return ele;
             }
+        }
+
+        public static IEnumerable<T> EnumerateCopy<T>(this IEnumerable<T> collection) {
+            var copy = collection.ToList();
+            return copy;
         }
     }
 }

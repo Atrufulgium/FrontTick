@@ -4,7 +4,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -21,10 +20,13 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </summary>
         public readonly string manespace;
         /// <summary>
+        /// The postprocessor for this instance.
+        /// </summary>
+        public readonly INameManagerPostProcessor postProcessor;
+        /// <summary>
         /// All constants encountered, which all need initialisation in the
         /// datapack.
         /// </summary>
-        public ReadOnlyCollection<int> Constants => new(constants.ToArray());
         readonly SortedSet<int> constants = new();
 
         /// <summary>
@@ -36,8 +38,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </summary>
         public MCFunctionName TestPostProcessName => new($"{manespace}-internal:--test-postprocess--");
 
-        public NameManager(string manespace) {
+        public NameManager(string manespace, INameManagerPostProcessor postProcessor) {
             this.manespace = manespace;
+            this.postProcessor = postProcessor;
         }
 
         /// <summary>
@@ -155,7 +158,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// For this method to work, the containing context method must have
         /// been registered already.
         /// </remarks>
-        public string GetVariableName(
+        private string GetVariableName(
             SemanticModel semantics,
             IdentifierNameSyntax identifier,
             ICustomDiagnosable diagnosticsOutput
@@ -181,7 +184,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <tt>#RET#x</tt> may occur.
         /// </para>
         /// </summary>
-        public string GetVariableName(
+        private string GetVariableName(
             SemanticModel semantics,
             MemberAccessExpressionSyntax access,
             ICustomDiagnosable diagnosticsOutput
@@ -214,13 +217,14 @@ namespace Atrufulgium.FrontTick.Compiler {
             ICustomDiagnosable diagnosticsOutput
         ) {
             if (variable is IdentifierNameSyntax id)
-                return GetVariableName(semantics, id, diagnosticsOutput);
+                return postProcessor.PostProcess(GetVariableName(semantics, id, diagnosticsOutput));
             else if (variable is MemberAccessExpressionSyntax member)
-                return GetVariableName(semantics, member, diagnosticsOutput);
+                return postProcessor.PostProcess(GetVariableName(semantics, member, diagnosticsOutput));
             throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
         }
 
-        public static string GetCombinedName(string prefix, string suffix) => $"{prefix}#{suffix}";
+        public string GetCombinedName(string prefix, string suffix)
+            => postProcessor.PostProcess($"{prefix}#{suffix}");
 
         /// <summary>
         /// This regex matches all strings ending in <tt>##ALLCAPS</tt>, and
@@ -287,18 +291,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </remarks>
         public string GetConstName(int value) {
             constants.Add(value);
-            return $"#CONST#{value}";
+            return postProcessor.PostProcess($"#CONST#{value}");
         }
 
-        public static string GetArgumentName(MCFunctionName mcfunctionname, int index) {
-            return $"#{mcfunctionname}##arg{index}";
+        public string GetArgumentName(MCFunctionName mcfunctionname, int index) {
+            return postProcessor.PostProcess($"#{mcfunctionname}##arg{index}");
         }
 
         /// <summary>
         /// Gives the name of a unified return variable callees should store
         /// their results in, and callers should read the result form.
         /// </summary>
-        public static string GetRetName() => "#RET";
+        public string GetRetName() => postProcessor.PostProcess("#RET");
 
         /// <summary>
         /// Gives the name of the label at the end of a method where the method
@@ -307,6 +311,17 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static string GetRetGotoName() => "#ret-label";
 
         public static string GetGotoFlagName() => "#GOTOFLAG";
+
+        /// <summary>
+        /// Returns a string representation of all known constants in the
+        /// datapack, tagged with their original value.
+        /// </summary>
+        public IEnumerable<(int, string)> GetAllConstantNames() {
+            // Adding duplicates to a SortedSet counts as a modification to
+            // the enumerator somewhy? Even though HashSet is fine.
+            foreach (var constant in constants.EnumerateCopy())
+                yield return (constant, GetConstName(constant));
+        }
 
         /// <summary>
         /// Whether the given string is valid as the name of a function file.
