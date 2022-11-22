@@ -46,10 +46,14 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] Either this method returns void but has a return of the form `return ...`, or this method doesn't return void but has a return of the form `return;`.");
         public static CompilationException ToDatapackReturnNoNonReturnAfterReturn
             => new("[To Datapack] (Conditional) returns must be the final statements in a method. No functionality allowed after that.");
+        public static CompilationException ToDatapackStructsMustEventuallyInt
+            => new("[To Datapack] Any used struct's members must eventually be of Int32 type.");
         public static CompilationException ToDatapackUnsupportedUnary
             => new("[To Datapack] The only supported unary operations are \"+literal\" and \"-literal\".");
         public static CompilationException ToDatapackUnsupportedStatementType
             => new("[To Datapack] Encountered an unsupported statement type while handling a statement.");
+        public static CompilationException ToDatapackVariableNamesAreFromIdentifiersOrAccesses
+            => new("[To Datapack] The only allowed variables to process to names are identifiers or accesses with `.`.");
         public static CompilationException ToDatapackVariablesFieldLocalOrParams
             => new("[To Datapack] The only supported variable types are class fields, method locals, or method parameters.");
     }

@@ -173,6 +173,56 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
+        /// <inheritdoc cref="GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>
+        /// <para>
+        /// Member accesses are transformed in the most direct way possible: a
+        /// <tt>lorem.ipsum</tt> gets turned into <tt>#fully_qualified_method#lorem#ipsum</tt>.
+        /// This is appended to the exceptions listed above, for instance
+        /// <tt>#RET#x</tt> may occur.
+        /// </para>
+        /// </summary>
+        public string GetVariableName(
+            SemanticModel semantics,
+            MemberAccessExpressionSyntax access,
+            ICustomDiagnosable diagnosticsOutput
+        ) {
+            // Note that a.b.c is stored in the syntax tree as (a.b).c!
+            // Also note that the two types are "simple" and "pointer".
+            // lol pointers imagine that.
+            List<string> accesses = new();
+            while (access.Expression is MemberAccessExpressionSyntax a) {
+                if (access.Kind() == SyntaxKind.PointerMemberAccessExpression)
+                    diagnosticsOutput.AddCustomDiagnostic(DiagnosticRules.NoUnsafe, access);
+
+                accesses.Add(access.Name.Identifier.Text);
+                access = a;
+            }
+            accesses.Add(access.Name.Identifier.Text);
+            if (access.Expression is not IdentifierNameSyntax identifier)
+                throw new ArgumentException("Malformed access in the syntax tree!");
+
+            string prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
+            // No datapack-normalisation necessary as ingame scoreboards handle like everything.
+            string suffix = string.Join('#', ((IEnumerable<string>)accesses).Reverse().ToArray());
+            return $"{prefix}#{suffix}";
+        }
+
+        /// <inheritdoc cref="GetVariableName(SemanticModel, MemberAccessExpressionSyntax, ICustomDiagnosable)"/>
+        public string GetVariableName(
+            SemanticModel semantics,
+            ExpressionSyntax variable,
+            ICustomDiagnosable diagnosticsOutput
+        ) {
+            if (variable is IdentifierNameSyntax id)
+                return GetVariableName(semantics, id, diagnosticsOutput);
+            else if (variable is MemberAccessExpressionSyntax member)
+                return GetVariableName(semantics, member, diagnosticsOutput);
+            throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
+        }
+
+        public static string GetCombinedName(string prefix, string suffix) => $"{prefix}#{suffix}";
+
+        /// <summary>
         /// This regex matches all strings ending in <tt>##ALLCAPS</tt>, and
         /// captures <tt>#ALLCAPS</tt> (without the first #).
         /// In particular, this matches:

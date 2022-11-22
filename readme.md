@@ -45,8 +45,7 @@ Data transformation
 - [ ] Arbitrary arithmetic.
 - [x] Static function calls.
 - [ ] General function calls.
-- [x] Return at the end of a method.
-- [ ] General return.
+- [x] Return.
 - [ ] `ref`, `in`, `out` modifiers.
 - [ ] Recursive function calls.
 
@@ -57,7 +56,7 @@ Control flow
 - [x] Goto.
 - [ ] Switches.
 - [ ] Switches' `goto case`.
-- [ ] `for`, `while`, `do while` with `break` and `continue`.
+- [x] `for`, `while`, `do while` with `break` and `continue`.
 - [ ] `foreach`.
 - [ ] Throw simple exceptions.
 

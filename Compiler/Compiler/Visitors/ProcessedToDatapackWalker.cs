@@ -177,7 +177,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // blocks are supposed to correspond to mcfunctions at this point,
             // and having them nested for no reason is seriously wrong then.
             // Note II: No ReturnStatementSyntax. This has been processed into
-            // gotos already.
+            // gotos already. The final `return` is in a labeled block we ignore.
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
@@ -194,8 +194,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Holy moly there's many
             // https://github.com/dotnet/roslyn/blob/main/src/Compilers/CSharp/Portable/Generated/CSharp.Generated.g4#L713
             if (expr is AssignmentExpressionSyntax assign
-                && assign.Left is IdentifierNameSyntax lhs) {
-                string lhsName = nameManager.GetVariableName(CurrentSemantics, lhs, this);
+                && assign.Left is IdentifierNameSyntax or MemberAccessExpressionSyntax) {
+                string lhsName = nameManager.GetVariableName(CurrentSemantics, assign.Left, this);
                 HandleAssignment(assign, lhsName);
             } else if (expr is InvocationExpressionSyntax call) {
                 HandleInvocation(call);
@@ -223,8 +223,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 rhsName = literal.ToString();
                 if (!isSetCommand)
                     rhsName = nameManager.GetConstName(literal);
-            } else if (assign.Right is IdentifierNameSyntax rhsId) {
-                rhsName = nameManager.GetVariableName(CurrentSemantics, rhsId, this);
+            } else if (assign.Right is IdentifierNameSyntax or MemberAccessExpressionSyntax) {
+                rhsName = nameManager.GetVariableName(CurrentSemantics, assign.Right, this);
             } else if (assign.Right is InvocationExpressionSyntax rhsCall) {
                 HandleInvocation(rhsCall);
                 rhsName = NameManager.GetRetName();
@@ -235,10 +235,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             } else {
                 throw CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls;
             }
-            if (isSetCommand)
+            if (isSetCommand) // Automatic integer rhs, so is single integer!
                 AddCode($"scoreboard players set {lhsName} _ {rhsName}");
             else
-                AddCode($"scoreboard players operation {lhsName} _ {op} {rhsName} _");
+                AddAssignment(lhsName, rhsName, op, CurrentSemantics.GetTypeInfo(assign.Left).Type);
         }
 
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
@@ -251,6 +251,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             // The if-statement must be of the form
             //   if (identifier != literal) [or ==]
+            // TODO: >, >=, <, <=
 
             if (ifst.Condition is BinaryExpressionSyntax bin
                 && bin.Left is IdentifierNameSyntax id
@@ -293,9 +294,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
 
             if (hasElse) {
-                // Same as above, but for else.
-                // This stuff seems generalizable but if it remains these two
-                // I'm not gonna bother.
                 if (ifst.Else.Statement is not BlockSyntax elseBlock)
                     throw CompilationException.ToDatapackBranchesMustBeBlocks;
 
@@ -359,9 +357,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 string argName = NameManager.GetArgumentName(methodName, i);
                 // Too copypastay of the statement case, this code's the sketch anyway
                 if (TryGetIntegerLiteral(arg.Expression, out int literal)) {
+                    // Again, integer rhs => lhs is of integer type
                     AddCode($"scoreboard players set {argName} _ {literal}");
-                } else if (arg.Expression is IdentifierNameSyntax id) {
-                    AddCode($"scoreboard players operation {argName} _ = {nameManager.GetVariableName(CurrentSemantics, id, this)} _");
+                } else if (arg.Expression is IdentifierNameSyntax or MemberAccessExpressionSyntax) {
+                    string rhsName = nameManager.GetVariableName(CurrentSemantics, arg.Expression, this);
+                    AddAssignment(argName, rhsName, "=", CurrentSemantics.GetTypeInfo(arg.Expression).Type);
                 } else {
                     throw CompilationException.ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals;
                 }
@@ -489,6 +489,31 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </remarks>
         private void AddCode(string code)
             => wipFiles.Peek().code.Add(code.Replace(" run execute ", " "));
+
+        /// <summary>
+        /// <para>
+        /// Adds code to the currently considered datapack file for any
+        /// assignment. It takes into account the multiple values that need to
+        /// be copied for larger structs.
+        /// </para>
+        /// </summary>
+        private void AddAssignment(string lhs, string rhs, string op, ITypeSymbol type) {
+            // Todo: this will probably be pretty expensive in the long run. Cache (type,fields[]) in some dict.
+            if (CurrentSemantics.TypesMatch(type, typeof(int))) {
+                AddCode($"scoreboard players operation {lhs} _ {op} {rhs} _");
+            } else if (type.IsPrimitive()) {
+                throw CompilationException.ToDatapackStructsMustEventuallyInt;
+            } else {
+                foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {
+                    // This is incredibly awkward and I want another way.
+                    // The specific (internal) type of `m` contains `TypeSyntax` but it's protected.
+                    // Sigh.
+                    ITypeSymbol fieldType = m.Type;
+                    string name = m.Name;
+                    AddAssignment(NameManager.GetCombinedName(lhs, name), NameManager.GetCombinedName(rhs, name), op, fieldType);
+                }
+            }
+        }
 
         /// <summary>
         /// Finishes the compilation of all work-in-progress datapack files

@@ -49,5 +49,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "Methods attributed [MCTest(int)] must have signature static int(void).",
                 messageFormat: "Make sure that [MCTest(int)]-attributed '{0}' is static, returns an int, and has no arguments."
             );
+
+        public static DiagnosticDescriptor NoUnsafe
+            => Create(
+                id: "FT0007",
+                title: "Unsafe code is unsupported.",
+                messageFormat: "Everything associated with unsafe code, the keyword, pointers, spans, etc, is not supported."
+            );
     }
 }

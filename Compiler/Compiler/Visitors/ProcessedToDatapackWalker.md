@@ -9,6 +9,7 @@ TODO: The generated code also needs a few optimisations still. Namely:
 * Any mcfunction that is empty can be deleted and its callsite can be removed.
 * Multiple `goto`s to the same label generate different files that can easily be shared.
 * Branches with an "else" statement store the conditional in a unique temporary variable. Do the analysis of whether this is actually needed; the if-branch may not modify it.
+* The pattern `blah = ...; return blah;` is fairly common, and does a bunch of useless copying for large structs.
 
 <table>
 <tr>
@@ -51,6 +52,53 @@ scoreboard players operation TARGET _ ∘= TARGET _
 Otherwise:
 ```mcfunction
 scoreboard players set TARGET _ = TARGET
+```
+
+</td>
+</tr>
+<tr>
+<td> ❌ </td>
+<td>
+
+Struct initialisation with `default`:
+```csharp
+myStruct = default;
+```
+```csharp
+myStruct = default<MyStruct>;
+```
+
+</td>
+<td>
+
+Sets all members, recursively, to zero. For instance suppose a `int2` struct contains `x` and `y`, and a `Box` struct contains `int2 min` and `int2 max`. Then `box = default` is equivalent to:
+```csharp
+box.min.x = 0;
+box.min.y = 0;
+box.max.x = 0;
+box.max.y = 0;
+```
+
+</td>
+</tr>
+<tr>
+<td> ✅ </td>
+<td>
+
+Struct (partial) (arithmetic) assignment:
+```csharp
+boxA.min = boxB.max;
+```
+```csharp
+pos.x += 8;
+```
+
+</td>
+<td>
+
+This should go the same as regular (arithmetic) assignment, but instead in addition to a fully qualified name, also walk through structs. A local `box.min.y += 3` may turn into
+```
+scoreboard players operation add #(qualified context)#box#min#y _ 3
 ```
 
 </td>

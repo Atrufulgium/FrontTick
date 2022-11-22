@@ -48,6 +48,9 @@ Notes to keep in mind
 * Perhaps do held item detection/etc via the tick advancement with checking the held item via its "stored enchantment" id?
 * *Held* rightclick-items are very easy to detect with eyes of ender in worlds without fortresses. Maybe also in worlds with fortresses a single click?
 * Short-circuiting boolean conditions how? Just chaining `execute if ...` and `execute unless ...`?
+* PRNG is ez, there are predicates with specifiable random chance. For a fully random integer, simply have `execute if predicate coinflip run scoreboard players add <...> <power of two>` for each power of two until it fits in the range. Up to 32 commands for full range, but only 6 for a nice `[0,100)`.
+* Okay fine the full list here is a goldmine https://old.reddit.com/r/MinecraftCommands/wiki/questions .
+* Temporary entities are *not* needed as the execution context has a position that can be moved around. Obvious in hindsight.
 
 Basic ideas for transformation rules
 ======
@@ -392,7 +395,7 @@ static void Test() {
 scoreboard players set Test#vector#x _ 3
 scoreboard players set Test#vector#y _ 4
 ```
-This generalizes naturally to also structs containing structs. To now use the `LengthSquared()`, we call it (as a static method) with its struct as argument.
+This generalizes naturally to also structs containing structs (by doing for instance `#Test#vector#x#a`). To now use the `LengthSquared()`, we call it (as a static method) with its struct as argument.
 ```csharp
 int LengthSquared() {
     return x*x + y*y;

@@ -2,6 +2,8 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -146,6 +148,82 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, Type)"/>
         public static bool TypesMatch(this SemanticModel semantics, ITypeSymbol typeSymbol, ITypeSymbol otherTypeSymbol) {
             return SymbolEqualityComparer.Default.Equals(typeSymbol, otherTypeSymbol);
+        }
+
+        // Taken from https://stackoverflow.com/a/30445814
+        /// <summary>
+        /// Returns all types higher in the inheritance tree from this type and
+        /// itself.
+        /// </summary>
+        public static IEnumerable<ITypeSymbol> GetBaseTypesAndThis(this SemanticModel semantics, SyntaxNode node) {
+            var typeSymbol = semantics.GetTypeInfo(node).Type;
+            return semantics.GetBaseTypesAndThis(typeSymbol);
+        }
+
+        /// <inheritdoc cref="GetBaseTypesAndThis(SemanticModel, SyntaxNode)"/>
+        public static IEnumerable<ITypeSymbol> GetBaseTypesAndThis(this SemanticModel semantics, ITypeSymbol type) {
+            var current = type;
+            while (current != null) {
+                yield return current;
+                current = current.BaseType;
+            }
+        }
+
+        /// <summary>
+        /// Returns all members of this type regardless of accessibility modifier
+        /// and including inheritance.
+        /// </summary>
+        public static IEnumerable<ISymbol> GetAllMembers(this SemanticModel semantics, SyntaxNode node)
+            => semantics.GetAllMembers(semantics.GetTypeInfo(node).Type);
+
+        /// <inheritdoc cref="GetAllMembers(SemanticModel, SyntaxNode)"/>
+        public static IEnumerable<ISymbol> GetAllMembers(this SemanticModel semantics, ITypeSymbol type)
+            => semantics.GetBaseTypesAndThis(type).SelectMany(n => n.GetMembers());
+
+        /// <summary>
+        /// Returns all fields of this type regardless of accessibility modifier
+        /// and including inheritance.
+        /// </summary>
+        // TODO: There is a `.IsDefinition` for e.g. inheritance, look into that.
+        public static IEnumerable<ISymbol> GetAllFields(this SemanticModel semantics, SyntaxNode node)
+            => semantics.GetAllFields(semantics.GetTypeInfo(node).Type);
+
+        /// <inheritdoc cref="GetAllFields(SemanticModel, SyntaxNode)"/>
+        public static IEnumerable<ISymbol> GetAllFields(this SemanticModel semantics, ITypeSymbol type)
+            => from m in semantics.GetAllMembers(type) where m.Kind == SymbolKind.Field select m;
+
+        /// <summary>
+        /// Returns all methods of this type regardless of accessibility modifier
+        /// and including inheritance.
+        /// </summary>
+        public static IEnumerable<ISymbol> GetAllMethods(this SemanticModel semantics, SyntaxNode node)
+            => semantics.GetAllMethods(semantics.GetTypeInfo(node).Type);
+
+        /// <inheritdoc cref="GetAllMethods(SemanticModel, SyntaxNode)"/>
+        public static IEnumerable<ISymbol> GetAllMethods(this SemanticModel semantics, ITypeSymbol type)
+            => from m in semantics.GetAllMembers(type) where m.Kind == SymbolKind.Method select m;
+
+        // See https://stackoverflow.com/a/43949455
+        public static bool IsPrimitive(this ITypeSymbol type) {
+            switch (type.SpecialType) {
+                case SpecialType.System_Boolean:
+                case SpecialType.System_SByte:
+                case SpecialType.System_Int16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_Byte:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_UInt64:
+                case SpecialType.System_Single:
+                case SpecialType.System_Double:
+                case SpecialType.System_Char:
+                case SpecialType.System_String:
+                case SpecialType.System_Object:
+                    return true;
+                default:
+                    return false;
+            }
         }
     }
 }

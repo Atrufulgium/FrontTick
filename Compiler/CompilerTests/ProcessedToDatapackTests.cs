@@ -909,6 +909,169 @@ scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
+        #region struct tests
+        [TestMethod]
+        public void StructAccessTest1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static void TestMethod(int i) {
+        int3 pos;
+        pos.x = 2;
+        pos.y = i;
+        pos.z = 0;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#pos#x _ 2
+scoreboard players operation #compiled:internal/test.testmethod#pos#y _ = #compiled:internal/test.testmethod##arg0 _
+scoreboard players set #compiled:internal/test.testmethod#pos#z _ 0
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructAccessTest2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int TestMethod(int3 pos) {
+        return pos.z;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0#z _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructAssignTest1()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static void TestMethod(Lorem a, Lorem b) {
+        a = b;
+    }
+}
+struct Lorem {
+    Ipsum ipsum;
+    int val;
+    DolorSitAmet dolorSitAmet;
+}
+struct Ipsum {
+    DolorSitAmet dolorSitAmet2;
+}
+struct DolorSitAmet {
+    int3 pos;
+    int w;
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#x _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#x _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#y _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#y _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#z _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#z _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#w _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#w _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#val _ = #compiled:internal/test.testmethod##arg1#val _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#x _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#x _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#y _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#y _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#z _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#z _
+scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#w _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#w _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructAssignTest2()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int3 TestMethod() {
+        int3 pos;
+        pos.x = 1;
+        pos.y = 2;
+        pos.z = 3;
+        return pos;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#pos#x _ 1
+scoreboard players set #compiled:internal/test.testmethod#pos#y _ 2
+scoreboard players set #compiled:internal/test.testmethod#pos#z _ 3
+scoreboard players operation #RET#x _ = #compiled:internal/test.testmethod#pos#x _
+scoreboard players operation #RET#y _ = #compiled:internal/test.testmethod#pos#y _
+scoreboard players operation #RET#z _ = #compiled:internal/test.testmethod#pos#z _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructAssignTest3()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static int3 TestMethod() {
+        int3 pos;
+        pos.x = 1;
+        pos.y = 2;
+        pos.z = 3;
+        return pos;
+    }
+
+    static void TestMethod2() {
+        int3 pos;
+        pos = TestMethod();
+        pos.z = 4;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod#pos#x _ 1
+scoreboard players set #compiled:internal/test.testmethod#pos#y _ 2
+scoreboard players set #compiled:internal/test.testmethod#pos#z _ 3
+scoreboard players operation #RET#x _ = #compiled:internal/test.testmethod#pos#x _
+scoreboard players operation #RET#y _ = #compiled:internal/test.testmethod#pos#y _
+scoreboard players operation #RET#z _ = #compiled:internal/test.testmethod#pos#z _
+
+# (File compiled:internal/test.testmethod2.mcfunction)
+function compiled:internal/test.testmethod
+scoreboard players operation #compiled:internal/test.testmethod2#pos#x _ = #RET#x _
+scoreboard players operation #compiled:internal/test.testmethod2#pos#y _ = #RET#y _
+scoreboard players operation #compiled:internal/test.testmethod2#pos#z _ = #RET#z _
+scoreboard players set #compiled:internal/test.testmethod2#pos#z _ 4
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructAssignTest4()
+            => TestCompilationSucceeds(@"
+using MCMirror;
+internal class Test {
+    static void TestMethod(int3 a) {
+        a.x = 24;
+        a.y += 23;
+    }
+}
+", @"
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod##arg0#x _ 24
+scoreboard players operation #compiled:internal/test.testmethod##arg0#y _ += #CONST#23 _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void StructWrongTest1()
+            => TestCompilationThrows(@"
+using MCMirror;
+internal class Test {
+    static Wrong2 TestMethod(Wrong2 w) {
+        return w;
+    }
+}
+
+struct Wrong1 {
+    float i;
+}
+struct Wrong2 {
+    Wrong1 wrong;
+}
+", CompilationException.ToDatapackStructsMustEventuallyInt,
+                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        #endregion
+
         #region run raw tests
         [TestMethod]
         public void TestRunRaw1()
