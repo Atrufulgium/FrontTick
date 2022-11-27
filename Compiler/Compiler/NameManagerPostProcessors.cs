@@ -7,6 +7,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// whatever purpose.
     /// </summary>
     public interface INameManagerPostProcessor {
+        // TODO: this is a bad abstraction, just create something for (selector, scoreboard) pairs
         public string PostProcess(string name);
     }
 

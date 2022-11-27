@@ -20,6 +20,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[Loops To Goto] A for loop may not contain a declaration in its initializer.");
         public static CompilationException LoopsToGotoOnlyWhileInWhileProcessing
             => new("[Loops to Goto] When processing while -> goto, there may not be any for, foreach, or do-while loops.");
+        public static CompilationException OperatorsRequireUnderlyingMethod
+            => new("[Ops to Methods] Every unary and binary operator requires an underlying method. (Exception: `int +=,-=,*=,/=,%=,==,!=,>=,<=,>,< int`.)");
         public static CompilationException ToDatapackAssignmentOpsMustBeSimpleOrArithmetic
             => new("[To Datapack] Assignments must be one of \"=\", \"+=\", \"-=\", \"*=\", \"/=\", or \"%=\".");
         public static CompilationException ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls

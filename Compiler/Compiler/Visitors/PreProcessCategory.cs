@@ -5,6 +5,7 @@
     /// with dependencies.
     /// </summary>
     public class PreProcessCategory : AbstractFullWalker<
+        NameOperatorsCategory,
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
         IfTrueFalseRewriter,

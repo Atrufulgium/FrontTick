@@ -14,5 +14,12 @@
         public int x;
         public int y;
         public int z;
+
+        public static int3 operator +(int3 a, int3 b) {
+            a.x += b.x;
+            a.y += b.y;
+            a.z += b.z;
+            return a;
+        }
     }
 }

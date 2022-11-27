@@ -10,6 +10,9 @@ using System.Text.RegularExpressions;
 
 namespace Atrufulgium.FrontTick.Compiler {
     public class NameManager {
+        // TODO: clean this shit up, again.
+        // Also don't have a bunch of naming stuff in RegisterMethodsWalker
+        // and CopyOperatorsToNamedRewriter.
 
         /// <summary>
         /// A dictionary converting fully qualified name c# => mcfunction name.
@@ -54,9 +57,11 @@ namespace Atrufulgium.FrontTick.Compiler {
             MethodDeclarationSyntax method, 
             string name, 
             ICustomDiagnosable diagnosticsOutput, 
-            bool prefixNamespace = true
+            bool prefixNamespace = true,
+            string fullyQualifiedName = null
         ) {
-            string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
+            if (fullyQualifiedName == null)
+                fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
 
             string path = name;
             if (prefixNamespace)
@@ -335,8 +340,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// This normalizes strings to the <c>[a-z0-9/._-]*</c> range normal
         /// datapack filenames support by lowercasing the letters, replacing
-        /// spaces with underscores, and discarding the rest. There is no check
-        /// as to whether the result is sensible/unique!
+        /// spaces with underscores, replacing sharps by minuses, and
+        /// discarding the rest. There is no check as to whether the result is
+        /// sensible/unique!
         /// </summary>
         public static string NormalizeFunctionName(string str) {
             StringBuilder builder = new(str.Length);
@@ -350,6 +356,8 @@ namespace Atrufulgium.FrontTick.Compiler {
                     builder.Append((char)(c - 'A' + 'a'));
                 } else if (c == ' ') {
                     builder.Append('_');
+                } else if (c == '#') {
+                    builder.Append('-');
                 }
                 // Otherwise don't append anything and discard this char.
             }

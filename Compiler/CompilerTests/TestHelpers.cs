@@ -82,7 +82,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             }
             // Normalize the string to proper newlines, removed whitespace, and
             // a single newline before/after to make the test output readable.
-            var output = compiler.CompiledDatapack.ToString(skipInternal: true).Replace("\r\n", "\n");
+            var output = compiler.CompiledDatapack.ToString(skipInternal: true, skipMCMirror: true).Replace("\r\n", "\n");
             output = $"\n{output.Trim()}\n";
             return output;
         }

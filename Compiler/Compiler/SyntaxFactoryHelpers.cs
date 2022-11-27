@@ -1,11 +1,18 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
+    /// <para>
     /// Extension for <see cref="SyntaxFactory"/>.
+    /// </para>
+    /// <para>
+    /// These are often bare-bones and badly formatted. Since I don't care
+    /// about formatting, that is fine.
+    /// </para>
     /// </summary>
     public static class SyntaxFactoryHelpers {
 
@@ -14,6 +21,9 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static SingleVariableDesignationSyntax SingleVariableDesignation(string identifier)
             => SyntaxFactory.SingleVariableDesignation(Identifier(identifier));
+
+        public static ArgumentListSyntax ArgumentList(params ExpressionSyntax[] args)
+            => SyntaxFactory.ArgumentList(SeparatedList(from arg in args select Argument(arg)));
 
         // I don't like BinaryExpression(<syntaxkind>, ...), so variants here.
 
