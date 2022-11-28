@@ -41,13 +41,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             }
             var containingType = op.OperatorMethod.ContainingType;
             var methodName = NameOperatorsCategory.GetMethodName(node.OperatorToken.Text);
-            return base.Visit(InvocationExpression(
+            return InvocationExpression(
                 MethodName(containingType, methodName),
                 ArgumentList(
-                    node.Left,
-                    node.Right
+                    (ExpressionSyntax)Visit(node.Left),
+                    (ExpressionSyntax)Visit(node.Right)
                 )
-            ));
+            );
         }
 
         private readonly List<string> intAllowed = new() { "+=", "-=", "*=", "/=", "%=", "==", "!=", ">=", "<=", ">", "<" };
@@ -65,27 +65,36 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             var containingType = op.OperatorMethod.ContainingType;
             var methodName = NameOperatorsCategory.GetMethodName(node.OperatorToken.Text[0..^1]);
-            return base.VisitAssignmentExpression(
-                AssignmentExpression(
-                    SyntaxKind.SimpleAssignmentExpression,
-                    node.Left,
-                    InvocationExpression(
-                        MethodName(containingType, methodName),
-                        ArgumentList(
-                            node.Left,
-                            node.Right
-                        )
+            var left = (ExpressionSyntax)Visit(node.Left);
+            var right = (ExpressionSyntax)Visit(node.Right);
+            return AssignmentExpression(
+                SyntaxKind.SimpleAssignmentExpression,
+                left,
+                InvocationExpression(
+                    MethodName(containingType, methodName),
+                    ArgumentList(
+                        left,
+                        right
                     )
                 )
             );
         }
 
         public override SyntaxNode VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) {
+            // Alow literals like "-3".
+            if (node.Operand is LiteralExpressionSyntax literal
+                && literal.Kind() == SyntaxKind.NumericLiteralExpression)
+                return node;
+
             var op = (IUnaryOperation)CurrentSemantics.GetOperation(node);
             return HandleUnary(op, node.OperatorToken.Text, node.Operand);
         }
 
         public override SyntaxNode VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) {
+            if (node.Operand is LiteralExpressionSyntax literal
+                && literal.Kind() == SyntaxKind.NumericLiteralExpression)
+                return node;
+
             var op = (IUnaryOperation)CurrentSemantics.GetOperation(node);
             return HandleUnary(op, node.OperatorToken.Text, node.Operand);
         }
@@ -96,10 +105,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             var containingType = op.OperatorMethod.ContainingType;
             var methodName = NameOperatorsCategory.GetMethodName(opText);
-            return base.Visit(InvocationExpression(
+            return InvocationExpression(
                 MethodName(containingType, methodName),
-                ArgumentList(operand)
-            ));
+                ArgumentList(
+                    (ExpressionSyntax)Visit(operand)
+                )
+            );
         }
 
         static MemberAccessExpressionSyntax MethodName(INamedTypeSymbol type, string name)

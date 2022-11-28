@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -44,5 +45,16 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static LiteralExpressionSyntax NumericLiteralExpression(int value)
             => LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
+
+        public static InterpolatedStringTextSyntax InterpolatedStringText(string value)
+            => SyntaxFactory.InterpolatedStringText().WithTextToken(
+                Token(
+                    TriviaList(),
+                    SyntaxKind.InterpolatedStringTextToken,
+                    value,
+                    value,
+                    TriviaList()
+                )
+            );
     }
 }

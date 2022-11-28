@@ -219,7 +219,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             // add our entry points -- the models with their roots.
             roots.Clear();
             foreach (var model in models) {
-                AppendDiagnostics(model.GetDiagnostics());
+                var diagnostics = model.GetDiagnostics();
+                AppendDiagnostics(diagnostics);
                 roots.Add(model);
             }
             if (CompilationFailed)

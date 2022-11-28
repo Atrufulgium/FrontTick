@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace MCMirror.Internal {
+﻿namespace MCMirror.Internal {
     public static class RawMCFunction {
         /// <summary>
         /// Any compile-time constant argument code is pasted as-is in the
@@ -17,7 +15,7 @@ namespace MCMirror.Internal {
         /// an issue in the repo if it isn't there already! You should really
         /// only need this in case MCMirror is lacking some feature.
         /// </remarks>
-        // TODO: Allow support to insert variable names, and perhaps values.
+        // This is implemented in the "ProcessedToDatapackWalker" class.
 #pragma warning disable IDE0060 // Remove unused parameter
         [CustomCompiled("RunRaw")]
         public static void Run(string code) { }

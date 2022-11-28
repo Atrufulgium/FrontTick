@@ -70,6 +70,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public List<MCFunctionName> testFunctions = new();
 
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
+            // Don't do methods that aren't meant to be compiled.
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCMirror.Internal.CustomCompiledAttribute), out _))
+                return;
+
             currentNode = node;
             branchCounter = 0;
             gotoFunctionNames = new();
@@ -350,6 +354,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 HandleRunRaw(call);
                 return;
             }
+            // "VarName" has been processed already by
+            /// <see cref="VarNameMethodRewriter"/>
 
             // TODO: Currently ignoring in,out,ref.
             int i = 0;

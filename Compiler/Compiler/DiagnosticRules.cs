@@ -56,5 +56,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "Unsafe code is unsupported.",
                 messageFormat: "Everything associated with unsafe code, the keyword, pointers, spans, etc, is not supported."
             );
+
+        public static DiagnosticDescriptor VarNameArgMustBeIdentifier
+            => Create(
+                id: "FT0008",
+                title: "VarName(int) arguments must be identifiers.",
+                messageFormat: "Calling `MCMirror.Internal.CompileTime.VarName(int)` requires an argument that is just an identifier. No arithmetic, method calls etc."
+            );
     }
 }
