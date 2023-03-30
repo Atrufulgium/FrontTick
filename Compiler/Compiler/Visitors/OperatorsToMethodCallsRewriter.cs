@@ -24,7 +24,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // TODO: Don't give exceptional status to ints. Instead, implement MCInt and use RunRaw().
     public class OperatorsToMethodCallsRewriter : AbstractFullRewriter<CopyOperatorsToNamedRewriter> {
 
-        // ..attributes exist lol. Don't process those
+        // ..attributes exist lol. Don't process those, even though they may
+        // use `|` or something.
         public override SyntaxNode VisitAttribute(AttributeSyntax node) {
             return node;
         }
@@ -42,7 +43,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             var containingType = op.OperatorMethod.ContainingType;
             var methodName = NameOperatorsCategory.GetMethodName(node.OperatorToken.Text);
             return InvocationExpression(
-                MethodName(containingType, methodName),
+                MemberAccessExpression(containingType, methodName),
                 ArgumentList(
                     (ExpressionSyntax)Visit(node.Left),
                     (ExpressionSyntax)Visit(node.Right)
@@ -71,7 +72,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 SyntaxKind.SimpleAssignmentExpression,
                 left,
                 InvocationExpression(
-                    MethodName(containingType, methodName),
+                    MemberAccessExpression(containingType, methodName),
                     ArgumentList(
                         left,
                         right
@@ -106,18 +107,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             var containingType = op.OperatorMethod.ContainingType;
             var methodName = NameOperatorsCategory.GetMethodName(opText);
             return InvocationExpression(
-                MethodName(containingType, methodName),
+                MemberAccessExpression(containingType, methodName),
                 ArgumentList(
                     (ExpressionSyntax)Visit(operand)
                 )
             );
         }
-
-        static MemberAccessExpressionSyntax MethodName(INamedTypeSymbol type, string name)
-            => MemberAccessExpression(
-                SyntaxKind.SimpleMemberAccessExpression,
-                IdentifierName(type.Name),
-                IdentifierName(name)
-            );
     }
 }

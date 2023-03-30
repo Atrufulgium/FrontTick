@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-using System.Linq;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
@@ -14,7 +13,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// into code of the form
     /// <code>
     ///     public static T1 operator +(T2 a, T3 b) { .. }
-    ///     public static T1 operator #ADD(T2 a, T3 b) { .. }
+    ///     public static T1 #ADD(T2 a, T3 b) { .. }
     /// </code>
     /// with the same method body.
     /// </para>

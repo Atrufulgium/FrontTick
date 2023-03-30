@@ -56,5 +56,17 @@ namespace Atrufulgium.FrontTick.Compiler {
                     TriviaList()
                 )
             );
+
+        // Yes this shorthand is clearly necessary.
+
+        public static MemberAccessExpressionSyntax MemberAccessExpression(INamedTypeSymbol type, string name)
+            => MemberAccessExpression(type.Name, name);
+
+        public static MemberAccessExpressionSyntax MemberAccessExpression(string type, string name)
+            => SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                IdentifierName(type),
+                IdentifierName(name)
+            );
     }
 }

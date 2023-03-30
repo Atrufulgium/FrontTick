@@ -253,5 +253,8 @@ namespace Atrufulgium.FrontTick.Compiler {
 
             return block;
         }
+
+        public static bool IsImplicitConversion(this ConversionOperatorDeclarationSyntax op)
+            => op.ImplicitOrExplicitKeyword.Text == "implicit";
     }
 }
