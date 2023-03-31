@@ -68,5 +68,34 @@ namespace Atrufulgium.FrontTick.Compiler {
                 IdentifierName(type),
                 IdentifierName(name)
             );
+
+        public static TypeSyntax Type(ITypeSymbol type)
+            => ParseTypeName(type.ToDisplayString());
+
+        public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername)
+            => SyntaxFactory.LocalDeclarationStatement(
+                VariableDeclaration(
+                    Type(type),
+                    SeparatedList(new[] {
+                        VariableDeclarator(Identifier(identifiername))
+                    })
+                )
+            );
+
+        public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername, ExpressionSyntax value)
+            => SyntaxFactory.LocalDeclarationStatement(
+                VariableDeclaration(
+                    Type(type),
+                    SeparatedList(new[] {
+                        VariableDeclarator(
+                            Identifier(identifiername),
+                            default,
+                            EqualsValueClause(
+                                value
+                            )
+                        )
+                    })
+                )
+            );
     }
 }

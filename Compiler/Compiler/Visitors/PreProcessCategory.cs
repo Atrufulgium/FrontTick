@@ -10,8 +10,6 @@
         VarNameMethodRewriter,
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
-        IfTrueFalseRewriter,
-        ArithmeticFlattenRewriter,
-        ReturnRewriter
+        IfTrueFalseRewriter
         > { }
 }

@@ -62,7 +62,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 var returnType = CurrentSemantics.GetTypeInfo(op.Type).Type.Name;
                 var inType = CurrentSemantics.GetTypeInfo(op.ParameterList.Parameters[0].Type).Type.Name;
                 var plicity = op.IsImplicitConversion() ? "IMPLICIT" : "EXPLICIT";
-                string methodName = $"#CAST#{plicity}#{returnType}#{inType}";
+                string methodName = $"CAST-{plicity}-{returnType}-{inType}";
                 var methodDeclaration =
                     MethodDeclaration(
                         op.Type, Identifier(methodName)

@@ -18,7 +18,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // I "love" how this class is messy for the same reason every parser I've
     // ever written is messy, but the opposite way around.
     // Apologies for how interconnected all these methods are.
-    public class ProcessedToDatapackWalker : AbstractFullWalker<SetupCategory, PreProcessCategory, ReturnRewriter, GotoFlagifyRewriter> {
+    public class ProcessedToDatapackWalker : AbstractFullWalker<
+        SetupCategory,
+        PreProcessCategory,
+        FlattenNestedCallsRewriter,
+        ReturnRewriter,
+        GotoFlagifyRewriter
+    > {
         // TODO: ProcessedToDatapackWalker optimisation opportunities:
         // * Replace `operation += const` with `add const` (or `remove const` if negative)
         // * Replace `operation -= const` with `remove const` (or `add const` if negative)
@@ -33,7 +39,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // * Allow swap `><`
         // * Can extract all arithmetic processing to their own structs/classes like `MCInt` that use `Run(..)`
 
-        private GotoFlagifyRewriter GotoFlagifyRewriter => Dependency4;
+        private GotoFlagifyRewriter GotoFlagifyRewriter => Dependency5;
 
         /// <summary>
         /// <para>
