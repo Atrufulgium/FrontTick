@@ -10,6 +10,7 @@
         VarNameMethodRewriter,
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
-        IfTrueFalseRewriter
+        IfTrueFalseRewriter,
+        SimplifyIfConditionRewriter
         > { }
 }

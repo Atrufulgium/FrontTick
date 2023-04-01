@@ -25,6 +25,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// In other words, it ensures no call is contained in another.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// This is only partially implemented for conditions, but since those
+    /// aren't yet extracted if complicated anyways, they're untested.
+    /// So for if/while/for/etc this doesn't yet work.
+    /// </remarks>
     // Very annoying note: expressions are *everywhere* and extraction cannot
     // be handled uniformly. E.g. within statements calls should be handled
     // differently from while conditions.

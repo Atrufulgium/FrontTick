@@ -33,7 +33,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static CompilationException ToDatapackGotoMustBeLastBlockStatement
             => new("[To Datapack] In every block, goto must be the last statement -- nothing may follow, not even labels.");
         public static CompilationException ToDatapackIfConditionalMustBeIdentifierNotEqualToZero
-            => new("[To Datapack] The conditional of a if-statement must be of the form `identifier != 0`.");
+            => new("[To Datapack] The conditional of a if-statement must be of the form `identifier != 0` or `identifier == 0`.");
         public static CompilationException ToDatapackDeclarationsMayNotBeInitializers
             => new("[To Datapack] Declarations may not be initializers.");
         public static CompilationException ToDatapackDeclarationsMustBeInMethodRootScope
