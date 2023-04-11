@@ -256,5 +256,12 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static bool IsImplicitConversion(this ConversionOperatorDeclarationSyntax op)
             => op.ImplicitOrExplicitKeyword.Text == "implicit";
+
+        // no i don't like the name this way it pops up in autocomplete and I don't fuck up
+        public static T WithAdditionalMembers<T>(this TypeDeclarationSyntax declaration, params MemberDeclarationSyntax[] members) where T : TypeDeclarationSyntax
+            => (T) declaration.AddMembers(members);
+
+        public static T WithAdditionalMembers<T>(this TypeDeclarationSyntax declaration, IEnumerable<MemberDeclarationSyntax> members) where T : TypeDeclarationSyntax
+            => (T)declaration.AddMembers(members.ToArray());
     }
 }

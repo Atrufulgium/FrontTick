@@ -226,8 +226,9 @@ namespace Atrufulgium.FrontTick.Compiler {
             if (CompilationFailed)
                 return false;
 
+            int phaseID = 1;
             foreach(var phase in compilationPhases) {
-                Console.WriteLine($"[{DateTime.Now.TimeOfDay}] Phase {phase.GetType().Name}");
+                Console.WriteLine($"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3} - {phase.GetType().Name}");
                 phase.SetCompiler(this);
                 phase.FullVisit();
                 AppendDiagnostics(phase.CustomDiagnostics);

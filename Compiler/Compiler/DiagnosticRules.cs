@@ -8,6 +8,13 @@ namespace Atrufulgium.FrontTick.Compiler {
         static DiagnosticDescriptor Create(string id, string title, string messageFormat)
             => new DiagnosticDescriptor(id, title, messageFormat, category: "", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
+        public static DiagnosticDescriptor Unsupported
+            => Create(
+                id: "FT0000",
+                title: "Unsupported or unimplemented code.",
+                messageFormat: "Feature '{0}' is (currently) unsupported.\nReason: {1}"
+            );
+
         public static DiagnosticDescriptor MCFunctionAttributeIncorrect
             => Create(
                 id: "FT0001",

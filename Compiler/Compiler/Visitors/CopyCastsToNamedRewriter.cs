@@ -13,7 +13,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// into code of the form
     /// <code>
     ///     public static implicit operator T1(T2 a) { .. }
-    ///     public static T1 #CAST#IMPLICIT#T1#T2(T2 a) { .. }
+    ///     public static T1 CAST-IMPLICIT-T1#-2(T2 a) { .. }
     /// </code>
     /// with the same method body, and the same for explicit casts.
     /// </para>

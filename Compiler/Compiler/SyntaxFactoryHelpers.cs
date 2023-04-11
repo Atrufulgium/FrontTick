@@ -74,28 +74,39 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername)
             => SyntaxFactory.LocalDeclarationStatement(
-                VariableDeclaration(
-                    Type(type),
-                    SeparatedList(new[] {
-                        VariableDeclarator(Identifier(identifiername))
-                    })
-                )
+                VariableDeclaration(type, identifiername)
             );
 
         public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername, ExpressionSyntax value)
             => SyntaxFactory.LocalDeclarationStatement(
-                VariableDeclaration(
-                    Type(type),
-                    SeparatedList(new[] {
-                        VariableDeclarator(
-                            Identifier(identifiername),
-                            default,
-                            EqualsValueClause(
-                                value
-                            )
+                VariableDeclaration(type, identifiername, value)
+            );
+
+        public static VariableDeclarationSyntax VariableDeclaration(ITypeSymbol type, string identifiername)
+            => SyntaxFactory.VariableDeclaration(
+                Type(type),
+                SeparatedList(new[] {
+                    VariableDeclarator(Identifier(identifiername))
+                })
+            );
+
+        public static VariableDeclarationSyntax VariableDeclaration(ITypeSymbol type, string identifiername, ExpressionSyntax value)
+            => SyntaxFactory.VariableDeclaration(
+                Type(type),
+                SeparatedList(new[] {
+                    VariableDeclarator(
+                        Identifier(identifiername),
+                        default,
+                        EqualsValueClause(
+                            value
                         )
-                    })
-                )
+                    )
+                })
+            );
+
+        public static ParameterListSyntax ParameterList(params ParameterSyntax[] parameters)
+            => SyntaxFactory.ParameterList(
+                SeparatedList(parameters)
             );
     }
 }
