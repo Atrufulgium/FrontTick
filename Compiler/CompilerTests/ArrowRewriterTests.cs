@@ -55,7 +55,7 @@ public class Test {
 }
 ", @"
 public class Test {
-    public static int RandomNumber { get => { return 4;} }
+    public static int RandomNumber { get { return 4; } }
 }
 ");
     }

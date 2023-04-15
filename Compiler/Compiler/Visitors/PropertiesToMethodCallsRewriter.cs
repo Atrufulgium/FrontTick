@@ -31,13 +31,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             // At this point, we're Property ∘= Expression.
             // Comes down to writing code in the form `Set(Get op RHS)`.
-            var op = AssignmentToOperator(node.Left.Kind());
+            var op = AssignmentToOperator(node.Kind());
             return InvocationExpression(
                 MemberAccessExpression(containingType, setMethodName),
                 ArgumentList(
                     BinaryExpression(
                         op,
-                        MemberAccessExpression(containingType, getMethodName),
+                        InvocationExpression(
+                            MemberAccessExpression(containingType, getMethodName)
+                        ),
                         (ExpressionSyntax)base.Visit(node.Right)
                     )
                 )

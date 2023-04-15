@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Linq;
 using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -48,6 +49,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             List<MethodDeclarationSyntax> newMethods = new();
             foreach(var prop in properties) {
                 var typeSyntax = prop.Type;
+                var globalModifiers = prop.Modifiers;
 
                 foreach (var accessor in prop.AccessorList.Accessors) {
                     TypeSyntax retType;
@@ -79,7 +81,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         MethodDeclaration(
                             retType, Identifier(methodName)
                         ).WithAttributeLists(accessor.AttributeLists)
-                         .WithModifiers(accessor.Modifiers)
+                         .WithModifiers(new(accessor.Modifiers.Union(globalModifiers))) // This can introduce `public private` or something, but Roslyn doesn't seem to mind.
                          .WithParameterList(parameters)
                          .WithBody(accessor.Body);
                     newMethods.Add(methodDeclaration);
