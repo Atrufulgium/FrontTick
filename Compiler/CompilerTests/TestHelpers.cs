@@ -7,7 +7,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             => TestCompilationSucceeds(new[] { source }, output, compilationPhases);
 
         public static void TestCompilationSucceeds(string[] sources, string output, IEnumerable<IFullVisitor>? compilationPhases = null) {
-            string actual = CompileToString(sources, compilationPhases, out Compiler compiler);
+            string actual = CompileToString(sources, compilationPhases, out Compiler compiler, post: new NamePostProcessors.Identity());
             // Normalize the string to proper newlines, removed whitespace, and
             // a single newline before/after to make the test output readable.
             output = output.Replace("\r\n", "\n").Trim();
@@ -48,8 +48,8 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             IEnumerable<IFullVisitor>? compilationPhases1 = null,
             IEnumerable<IFullVisitor>? compilationPhases2 = null
         ) {
-            string out1 = CompileToString(sources1, compilationPhases1, out Compiler compiler1, "There were compilation errors in sources1:");
-            string out2 = CompileToString(sources2, compilationPhases2, out Compiler compiler2, "There were compilation errors in sources2:");
+            string out1 = CompileToString(sources1, compilationPhases1, out Compiler compiler1, "There were compilation errors in sources1:", new NamePostProcessors.ConvenientTests());
+            string out2 = CompileToString(sources2, compilationPhases2, out Compiler compiler2, "There were compilation errors in sources2:", new NamePostProcessors.ConvenientTests());
             try {
                 Assert.AreEqual(out1, out2);
             } catch (AssertFailedException e) {
@@ -65,9 +65,10 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             string[] sources,
             IEnumerable<IFullVisitor>? compilationPhases,
             out Compiler compiler,
-            string failTitle = "There were compilation errors:"
+            string failTitle = "There were compilation errors:",
+            INameManagerPostProcessor? post = null
         ) {
-            compiler = new();
+            compiler = new(nameManagerPostProcessor: post);
             if (compilationPhases != null)
                 compiler.SetCompilationPhases(compilationPhases);
             compiler.Compile(sources.Concat(GetMCMirrorCode()));

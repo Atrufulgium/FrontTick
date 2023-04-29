@@ -8,7 +8,15 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </summary>
     public interface INameManagerPostProcessor {
         // TODO: this is a bad abstraction, just create something for (selector, scoreboard) pairs
-        public string PostProcess(string name);
+        /// <summary>
+        /// Post processes all variable names.
+        /// </summary>
+        public string PostProcessVariable(string name);
+        /// <summary>
+        /// Post processes all file names. This implicitely assumes that the
+        /// output is a valid datapack file name if the input is.
+        /// </summary>
+        public string PostProcessFunction(string name);
     }
 
     public class NamePostProcessors {
@@ -17,11 +25,13 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Leaves the output intact. Good for debug builds.
         /// </summary>
         public class Identity : INameManagerPostProcessor {
-            public string PostProcess(string name) => name;
+            public string PostProcessVariable(string name) => name;
+            public string PostProcessFunction(string name) => name;
         }
 
         /// <summary>
         /// Minimises the output. Good for release builds.
+        /// Leaves functions intact currently because NameManager is *bad*.
         /// </summary>
         public class Minify : INameManagerPostProcessor {
             static readonly Dictionary<string, string> minification = new();
@@ -30,7 +40,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             static readonly int numberBase = chars.Length;
             static readonly StringBuilder builder = new(capacity: 6); // prefix + 5 chars => 14M options
 
-            public string PostProcess(string name) {
+            public string PostProcessVariable(string name) {
                 if (minification.TryGetValue(name, out string ret))
                     return ret;
 
@@ -46,6 +56,8 @@ namespace Atrufulgium.FrontTick.Compiler {
                 return ret;
             }
 
+            public string PostProcessFunction(string name) => name;
+
             /// <summary>
             /// Resets the minification table, which will introduce garbage
             /// if done at any time *during* the compilation.
@@ -53,6 +65,17 @@ namespace Atrufulgium.FrontTick.Compiler {
             public static void Reset() {
                 minification.Clear();
             }
+        }
+
+        /// <summary>
+        /// Removes # and - from variable and method names so comparison of
+        /// generated code to regular code can be done.
+        /// </summary>
+        public class ConvenientTests : INameManagerPostProcessor {
+            public string PostProcessVariable(string name)
+                => name.Replace("#", "").Replace("-", "");
+            public string PostProcessFunction(string name)
+                => name.Replace("#", "").Replace("-", "");
         }
     }
 }

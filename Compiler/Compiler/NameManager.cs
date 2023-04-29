@@ -66,7 +66,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             string path = name;
             if (prefixNamespace)
                 path = $"{manespace}:{path}";
-            var mcFunctionName = new MCFunctionName(path);
+            var mcFunctionName = new MCFunctionName(postProcessor.PostProcessFunction(path));
 
             if (methodNames.TryGetValue(fullyQualifiedName, out MCFunctionName registeredPath)) {
                 if (registeredPath != path)
@@ -222,14 +222,14 @@ namespace Atrufulgium.FrontTick.Compiler {
             ICustomDiagnosable diagnosticsOutput
         ) {
             if (variable is IdentifierNameSyntax id)
-                return postProcessor.PostProcess(GetVariableName(semantics, id, diagnosticsOutput));
+                return postProcessor.PostProcessVariable(GetVariableName(semantics, id, diagnosticsOutput));
             else if (variable is MemberAccessExpressionSyntax member)
-                return postProcessor.PostProcess(GetVariableName(semantics, member, diagnosticsOutput));
+                return postProcessor.PostProcessVariable(GetVariableName(semantics, member, diagnosticsOutput));
             throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
         }
 
         public string GetCombinedName(string prefix, string suffix)
-            => postProcessor.PostProcess($"{prefix}#{suffix}");
+            => postProcessor.PostProcessVariable($"{prefix}#{suffix}");
 
         /// <summary>
         /// This regex matches all strings ending in <tt>##ALLCAPS</tt>, and
@@ -296,18 +296,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </remarks>
         public string GetConstName(int value) {
             constants.Add(value);
-            return postProcessor.PostProcess($"#CONST#{value}");
+            return postProcessor.PostProcessVariable($"#CONST#{value}");
         }
 
         public string GetArgumentName(MCFunctionName mcfunctionname, int index) {
-            return postProcessor.PostProcess($"#{mcfunctionname}##arg{index}");
+            return postProcessor.PostProcessVariable($"#{mcfunctionname}##arg{index}");
         }
 
         /// <summary>
         /// Gives the name of a unified return variable callees should store
         /// their results in, and callers should read the result form.
         /// </summary>
-        public string GetRetName() => postProcessor.PostProcess("#RET");
+        public string GetRetName() => postProcessor.PostProcessVariable("#RET");
 
         /// <summary>
         /// Gives the name of the label at the end of a method where the method

@@ -8,7 +8,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
 
         [TestMethod]
         public void IfTest1()
-            => TestCompilationSucceeds(@"
+            => TestCompilationSucceedsTheSame(@"
 internal struct Test {
     static void TestMethod(int i, int j) {
         if (Sum(i,j) == 3) {
@@ -21,16 +21,19 @@ internal struct Test {
     }
 }
 ", @"
-# (File compiled:internal/test.sum.mcfunction)
-scoreboard players operation #compiled:internal/test.sum##arg0 _ += #compiled:internal/test.sum##arg1 _
-scoreboard players operation #RET _ = #compiled:internal/test.sum##arg0 _
-
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.sum##arg0 _ = #compiled:internal/test.testmethod##arg0 _
-scoreboard players operation #compiled:internal/test.sum##arg1 _ = #compiled:internal/test.testmethod##arg1 _
-function compiled:internal/test.sum
-scoreboard players operation #compiled:internal/test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:internal/test.testmethod##IFTEMP0 _ matches 3 run scoreboard players set #compiled:internal/test.testmethod##arg0 _ 4
+internal struct Test {
+    static void TestMethod(int i, int j) {
+        int IFTEMP0;
+        IFTEMP0 = Sum(i,j);
+        if (IFTEMP0 == 3) {
+            i = 4;
+        }
+    }
+    static int Sum(int i, int j) {
+        i += j;
+        return i;
+    }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
     }

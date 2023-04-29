@@ -8,8 +8,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
 
         [TestMethod]
         public void CastTest1()
-            => TestCompilationSucceeds(@"
-using MCMirror;
+            => TestCompilationSucceedsTheSame(@"
 internal struct Test {
     int val;
 
@@ -20,19 +19,20 @@ internal struct Test {
     public static explicit operator int(Test t) { return t.val; }
 }
 ", @"
-# (File compiled:internal/test.cast-explicit-int32-test.mcfunction)
-scoreboard players operation #RET _ = #compiled:internal/test.cast-explicit-int32-test##arg0#val _
+internal struct Test {
+    int val;
 
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.cast-explicit-int32-test##arg0#val _ = #compiled:internal/test.testmethod##arg0#val _
-function compiled:internal/test.cast-explicit-int32-test
-scoreboard players operation #compiled:internal/test.testmethod##arg1 _ = #RET _
+    static void TestMethod(Test t, int i) {
+        i = CASTEXPLICITInt32Test(t);
+    }
+
+    public static int CASTEXPLICITInt32Test(Test t) { return t.val; }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void CastTest2()
-            => TestCompilationSucceeds(@"
-using MCMirror;
+            => TestCompilationSucceedsTheSame(@"
 internal struct Test {
     int val;
 
@@ -43,13 +43,15 @@ internal struct Test {
     public static implicit operator int(Test t) { return t.val; }
 }
 ", @"
-# (File compiled:internal/test.cast-implicit-int32-test.mcfunction)
-scoreboard players operation #RET _ = #compiled:internal/test.cast-implicit-int32-test##arg0#val _
+internal struct Test {
+    int val;
 
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.cast-implicit-int32-test##arg0#val _ = #compiled:internal/test.testmethod##arg0#val _
-function compiled:internal/test.cast-implicit-int32-test
-scoreboard players operation #compiled:internal/test.testmethod##arg1 _ = #RET _
+    static void TestMethod(Test t, int i) {
+        i = CASTIMPLICITInt32Test(t);
+    }
+
+    public static int CASTIMPLICITInt32Test(Test t) { return t.val; }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
     }

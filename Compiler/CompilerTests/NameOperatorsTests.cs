@@ -7,8 +7,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
 
         [TestMethod]
         public void OperatorTest1()
-            => TestCompilationSucceeds(@"
-using MCMirror;
+            => TestCompilationSucceedsTheSame(@"
 public class Test {
     public static void TestMethod(Struct a, Struct b) {
         Struct c;
@@ -24,15 +23,19 @@ public struct Struct {
     }
 }
 ", @"
-# (File compiled:internal/struct.operator-add.mcfunction)
-scoreboard players operation #compiled:internal/struct.operator-add##arg0#val _ += #compiled:internal/struct.operator-add##arg1#val _
-scoreboard players operation #RET#val _ = #compiled:internal/struct.operator-add##arg0#val _
+public class Test {
+    public static void TestMethod(Struct a, Struct b) {
+        Struct c;
+        c = Struct.OPERATORADD(a, b);
+    }
+}
 
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/struct.operator-add##arg0#val _ = #compiled:internal/test.testmethod##arg0#val _
-scoreboard players operation #compiled:internal/struct.operator-add##arg1#val _ = #compiled:internal/test.testmethod##arg1#val _
-function compiled:internal/struct.operator-add
-scoreboard players operation #compiled:internal/test.testmethod#c#val _ = #RET#val _
-");
+public struct Struct {
+    public int val;
+    public static Struct OPERATORADD(Struct a, Struct b) {
+        a.val += b.val;
+        return a;
+    }
+}");
     }
 }

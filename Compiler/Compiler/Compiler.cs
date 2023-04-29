@@ -101,14 +101,22 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// depend on. The <c>System</c> and <c>MCMirror</c> references are
         /// automatically included.
         /// </param>
+        /// <param name="nameManagerPostProcessor">
+        /// How to post-process all function and variable names. If null, uses
+        /// <see cref="NamePostProcessors.Identity"/>.
+        /// </param>
         public Compiler(
             string manespace = "compiled",
-            ICollection<MetadataReference> references = null
+            ICollection<MetadataReference> references = null,
+            INameManagerPostProcessor nameManagerPostProcessor = null
         ) {
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
 
-            nameManager = new(manespace, new NamePostProcessors.Identity());
+            if (nameManagerPostProcessor == null)
+                nameManagerPostProcessor = new NamePostProcessors.Identity();
+
+            nameManager = new(manespace, nameManagerPostProcessor);
             this.references = ReferenceManager.GetReferences(references);
 
             SetCompilationPhases(CompilationPhases.BasicCompilationPhases);
