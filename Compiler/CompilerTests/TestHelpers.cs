@@ -1,12 +1,30 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Atrufulgium.FrontTick.Compiler.Tests {
+    /// <summary>
+    /// A class for easier compiler testing.
+    /// No need to include the MCMirror code anywhere explicitely, it is
+    /// automatically included from its project in this solution.
+    /// </summary>
     internal static class TestHelpers {
 
-        public static void TestCompilationSucceeds(string source, string output, IEnumerable<IFullVisitor>? compilationPhases = null)
-            => TestCompilationSucceeds(new[] { source }, output, compilationPhases);
+        /// <summary>
+        /// <para>
+        /// Whether the compiled code gives a specific output. This output is
+        /// very dependent on the compiler itself, and it would be much better
+        /// to use <see cref="TestCompilationSucceedsRaw(string, string, IEnumerable{IFullVisitor}?)"/>
+        /// instead.
+        /// </para>
+        /// <para>
+        /// To make it clear that a test result depends on the compiler output,
+        /// please append <tt>Raw</tt> to any test using this method.
+        /// </para>
+        /// </summary>
+        public static void TestCompilationSucceedsRaw(string source, string output, IEnumerable<IFullVisitor>? compilationPhases = null)
+            => TestCompilationSucceedsRaw(new[] { source }, output, compilationPhases);
 
-        public static void TestCompilationSucceeds(string[] sources, string output, IEnumerable<IFullVisitor>? compilationPhases = null) {
+        /// <inheritdoc cref="TestCompilationSucceedsRaw(string, string, IEnumerable{IFullVisitor}?)"/>
+        public static void TestCompilationSucceedsRaw(string[] sources, string output, IEnumerable<IFullVisitor>? compilationPhases = null) {
             string actual = CompileToString(sources, compilationPhases, out Compiler compiler, post: new NamePostProcessors.Identity());
             // Normalize the string to proper newlines, removed whitespace, and
             // a single newline before/after to make the test output readable.

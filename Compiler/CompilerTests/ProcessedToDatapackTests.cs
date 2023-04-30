@@ -7,9 +7,10 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
     public class ProcessedToDatapackTests {
 
         #region declaration tests
+        // Raw to test the output format only.
         [TestMethod]
-        public void DeclarationTest1()
-            => TestCompilationSucceeds(@"
+        public void DeclarationTest1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -22,7 +23,7 @@ public class Test {
 
         [TestMethod]
         public void DeclarationTest2()
-            => TestCompilationSucceeds(@"
+            => TestCompilationSucceedsTheSame(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -31,8 +32,15 @@ public class Test {
         int k;
     }
 }
-", "# (File compiled:test.testmethod.mcfunction)\n# (Empty)",
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+", @"
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+    }
+}
+",              new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void DeclarationTestWrong1()
@@ -80,9 +88,10 @@ public class Test {
         #endregion
 
         #region assignment tests
+        // Raw to test ∘= const.
         [TestMethod]
-        public void AssignmentTest1()
-            => TestCompilationSucceeds(@"
+        public void AssignmentTest1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -106,8 +115,9 @@ scoreboard players operation #compiled:test.testmethod#i _ %= #CONST#5 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void AssignmentTest2()
-            => TestCompilationSucceeds(@"
+        // Raw to test ∘= var.
+        public void AssignmentTest2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -133,9 +143,10 @@ scoreboard players operation #compiled:test.testmethod#i _ %= #compiled:test.tes
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // (This test also depends on "return" working properly.)
+        // Raw to test ∘= call.
         [TestMethod]
-        public void AssignmentTest3()
-            => TestCompilationSucceeds(@"
+        public void AssignmentTest3Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -158,7 +169,7 @@ scoreboard players operation #compiled:test.testmethod#i _ -= #RET _
 
         [TestMethod]
         public void AssignmentTest4()
-            => TestCompilationSucceeds(@"
+            => TestCompilationSucceedsTheSame(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -169,9 +180,15 @@ public class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 3
-scoreboard players operation #compiled:test.testmethod#i _ += #CONST#-3 _
+using MCMirror;
+public class Test {
+    [MCFunction]
+    public static void TestMethod() {
+        int i;
+        i = 3;
+        i += -3;
+    }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -251,9 +268,11 @@ public class Test {
         // A lot of the relevant tests are already done in
         /// <see cref="MCFunctionAttributeTests"/>
         // so here is just testing the remaining diagnostics and exceptions.
+
+        // Raw to test generated function call.
         [TestMethod]
-        public void TestCall1()
-            => TestCompilationSucceeds(@"
+        public void TestCall1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -306,9 +325,10 @@ public class Test {
         #endregion
 
         #region if-else tests
+        // Raw to output of "unless" branches.
         [TestMethod]
-        public void TestBranching1()
-            => TestCompilationSucceeds(@"
+        public void TestBranching1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -326,16 +346,17 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test output of "if" branches.
         [TestMethod]
-        public void TestBranching2()
-            => TestCompilationSucceeds(@"
+        public void TestBranching2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
     static void TestMethod() {
         int i;
         i = 0;
-        if (i != 0) {
+        if (i == 0) {
             i = 1;
         }
     }
@@ -343,12 +364,13 @@ internal class Test {
 ", @"
 # (File compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestBranching3()
-            => TestCompilationSucceeds(@"
+        // Raw to test output of larger block bodies.
+        public void TestBranching3Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -371,9 +393,10 @@ scoreboard players set #compiled:test.testmethod#i _ 1
 scoreboard players set #compiled:test.testmethod#i _ 2
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test the output when having both if and else.
         [TestMethod]
-        public void TestBranching4()
-            => TestCompilationSucceeds(@"
+        public void TestBranching4Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -396,9 +419,10 @@ execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard play
 execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 2
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test both large bodies and having both if and else, and also using the same variable in both.
         [TestMethod]
-        public void TestBranching5()
-            => TestCompilationSucceeds(@"
+        public void TestBranching5Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -425,9 +449,10 @@ scoreboard players set #compiled:test.testmethod#i _ 2
 scoreboard players set #compiled:test.testmethod#i _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to.. test variable names in branches I guess?
         [TestMethod]
-        public void TestBranching6()
-            => TestCompilationSucceeds(@"
+        public void TestBranching6Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static void TestMethod(int i, int j) {
@@ -449,59 +474,11 @@ scoreboard players set #compiled:internal/test.testmethod##arg1 _ 2
 scoreboard players set #compiled:internal/test.testmethod##arg1 _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // The "let's throw against the wall and see what sticks" test.
+        // Raw because it's chaos.
         [TestMethod]
-        public void TestBranching7()
-            => TestCompilationSucceeds(@"
-using MCMirror;
-internal class Test {
-    static void TestMethod(int i) {
-        if (i != 0) {
-            i = 1;
-        } else {
-            i = 2;
-        }
-    }
-}
-", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation conditionIdentifier-2 _ = #compiled:internal/test.testmethod##arg0 _
-execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg0 _ 1
-execute if score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg0 _ 2
-", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestBranching8()
-            => TestCompilationSucceeds(@"
-using MCMirror;
-internal class Test {
-    [MCFunction]
-    static void TestMethod() {
-        int i, j;
-        i = 0;
-        j = 0;
-        if (i != 0) {
-            j = 1;
-        } else {
-            j = 2;
-            j = 3;
-        }
-    }
-}
-", @"
-# (File compiled:test.testmethod.mcfunction)
-scoreboard players set #compiled:test.testmethod#i _ 0
-scoreboard players set #compiled:test.testmethod#j _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
-execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
-
-# (File compiled:test.testmethod-1-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#j _ 2
-scoreboard players set #compiled:test.testmethod#j _ 3
-", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestBranching9()
-            => TestCompilationSucceeds(@"
+        public void TestBranching9Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -568,9 +545,10 @@ scoreboard players set #compiled:test.testmethod#j _ 5
 scoreboard players set #compiled:test.testmethod#j _ 5
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test chained conditionals.
         [TestMethod]
-        public void TestBranching10()
-            => TestCompilationSucceeds(@"
+        public void TestBranching10Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -596,9 +574,10 @@ scoreboard players set #compiled:test.testmethod#k _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compiled:test.testmethod#j _ matches 0 unless score #compiled:test.testmethod#k _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test a non-1 variable???'s !=
         [TestMethod]
-        public void TestBranching11()
-            => TestCompilationSucceeds(@"
+        public void TestBranching11Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -616,9 +595,10 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // ANd a raw to test a non-1 variable's ==
         [TestMethod]
-        public void TestBranching12()
-            => TestCompilationSucceeds(@"
+        public void TestBranching12Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     [MCFunction]
@@ -670,9 +650,10 @@ internal class Test {
         #endregion
 
         #region return tests
+        // Raw for return const
         [TestMethod]
-        public void TestReturn1()
-            => TestCompilationSucceeds(@"
+        public void TestReturn1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod() {
@@ -684,9 +665,10 @@ internal class Test {
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for return variable
         [TestMethod]
-        public void TestReturn2()
-            => TestCompilationSucceeds(@"
+        public void TestReturn2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod() {
@@ -701,9 +683,10 @@ scoreboard players set #compiled:internal/test.testmethod#i _ 3
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod#i _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for return call, including not setting an unneeded #RET.
         [TestMethod]
-        public void TestReturn3()
-            => TestCompilationSucceeds(@"
+        public void TestReturn3Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod() {
@@ -723,9 +706,10 @@ scoreboard players set #RET _ 3
 
         // TODO: Regression: final return trees now result in nested function calls instead of just assignment.
         // It _works_ but is *far* from optimal and I'd really like the old behaviour.
+        // Raw for no reason in particular, this could very well be a SucceedsTheSame.
         [TestMethod]
-        public void TestReturn4()
-            => TestCompilationSucceeds(@"
+        public void TestReturn4Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod() {
@@ -768,9 +752,10 @@ scoreboard players set #RET _ 2
 scoreboard players set #GOTOFLAG _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for label name format I guess
         [TestMethod]
-        public void TestReturnLabeled()
-            => TestCompilationSucceeds(@"
+        public void TestReturnLabeledRaw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod() {
@@ -832,9 +817,10 @@ internal class Test {
         #endregion
 
         #region variable name tests
+        // Raw for name format
         [TestMethod]
-        public void TestNames1()
-            => TestCompilationSucceeds(@"
+        public void TestNames1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod(int i) {
@@ -846,9 +832,10 @@ internal class Test {
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for name format II
         [TestMethod]
-        public void TestNames2()
-            => TestCompilationSucceeds(@"
+        public void TestNames2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int nUmBeR;
@@ -861,9 +848,10 @@ internal class Test {
 scoreboard players operation #RET _ = #compiled:test#nUmBeR _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for complex names in statements
         [TestMethod]
-        public void TestNames3()
-            => TestCompilationSucceeds(@"
+        public void TestNames3Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 namespace TestSpace {
     internal class Test {
@@ -882,9 +870,10 @@ scoreboard players set #compiled:internal/testspace.test.innerclass.testmethod#n
 scoreboard players operation #RET _ = #compiled:internal/testspace.test.innerclass.testmethod#nUmBeR _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for.. some reason
         [TestMethod]
-        public void TestNames4()
-            => TestCompilationSucceeds(@"
+        public void TestNames4Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static void TestMethod() {
@@ -910,9 +899,10 @@ scoreboard players set #RET _ 3
         #endregion
 
         #region struct tests
+        // Raw for struct format
         [TestMethod]
-        public void StructAccessTest1()
-            => TestCompilationSucceeds(@"
+        public void StructAccessTest1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static void TestMethod(int i) {
@@ -930,8 +920,9 @@ scoreboard players set #compiled:internal/test.testmethod#pos#z _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void StructAccessTest2()
-            => TestCompilationSucceeds(@"
+        // Raw for yet more struct format
+        public void StructAccessTest2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int TestMethod(int3 pos) {
@@ -943,9 +934,10 @@ internal class Test {
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0#z _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw for very nested struct format
         [TestMethod]
-        public void StructAssignTest1()
-            => TestCompilationSucceeds(@"
+        public void StructAssignTest1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static void TestMethod(Lorem a, Lorem b) {
@@ -977,9 +969,10 @@ scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAm
 scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#w _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#w _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test struct member assignment
         [TestMethod]
-        public void StructAssignTest2()
-            => TestCompilationSucceeds(@"
+        public void StructAssignTest2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int3 TestMethod() {
@@ -1000,9 +993,10 @@ scoreboard players operation #RET#y _ = #compiled:internal/test.testmethod#pos#y
 scoreboard players operation #RET#z _ = #compiled:internal/test.testmethod#pos#z _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test method+partial struct assignment
         [TestMethod]
-        public void StructAssignTest3()
-            => TestCompilationSucceeds(@"
+        public void StructAssignTest3Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static int3 TestMethod() {
@@ -1036,9 +1030,10 @@ scoreboard players operation #compiled:internal/test.testmethod2#pos#z _ = #RET#
 scoreboard players set #compiled:internal/test.testmethod2#pos#z _ 4
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // Raw to test non-= asignment
         [TestMethod]
-        public void StructAssignTest4()
-            => TestCompilationSucceeds(@"
+        public void StructAssignTest4Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 internal class Test {
     static void TestMethod(int3 a) {
@@ -1073,9 +1068,10 @@ struct Wrong2 {
         #endregion
 
         #region run raw tests
+        // Raw because there's no way to get this mcfunction code otherwise
         [TestMethod]
-        public void TestRunRaw1()
-            => TestCompilationSucceeds(@"
+        public void TestRunRaw1Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 using static MCMirror.Internal.RawMCFunction;
 internal class Test {
@@ -1090,7 +1086,7 @@ say hoi
 
         [TestMethod]
         public void TestRunRaw2()
-            => TestCompilationSucceeds(@"
+            => TestCompilationSucceedsTheSame(@"
 using MCMirror;
 using static MCMirror.Internal.RawMCFunction;
 internal class Test {
@@ -1099,8 +1095,13 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-say hoi
+using MCMirror;
+using static MCMirror.Internal.RawMCFunction;
+internal class Test {
+    static void TestMethod() {
+        Run(""say hoi"");
+    }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -1132,8 +1133,7 @@ internal class Test {
         #region [NoCompile] tests
         [TestMethod]
         public void TestNoCompile1()
-            => TestCompilationSucceeds(@"
-using MCMirror;
+            => TestCompilationSucceedsTheSame(@"
 using MCMirror.Internal;
 internal class Test {
     [NoCompile]
@@ -1150,14 +1150,16 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod2.mcfunction)
-scoreboard players set #RET _ 2
+internal class Test {
+    static int TestMethod2() {
+        return 2;
+    }
+}
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void TestNoCompile2()
-            => TestCompilationSucceeds(@"
-using MCMirror;
+            => TestCompilationSucceedsTheSame(@"
 using MCMirror.Internal;
 [NoCompile]
 internal class Test {
@@ -1174,7 +1176,6 @@ internal class Test {
     }
 }
 ", @"
-
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
     }
