@@ -268,6 +268,7 @@ public class Test {
         // A lot of the relevant tests are already done in
         /// <see cref="MCFunctionAttributeTests"/>
         // so here is just testing the remaining diagnostics and exceptions.
+        // Also `in`, `out`, `ref`
 
         // Raw to test generated function call.
         [TestMethod]
@@ -317,6 +318,35 @@ public class Test {
     }
 }
 ", "FT0004", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestCallInRefOut()
+            => TestCompilationSucceedsRaw(@"
+public class Test {
+    public static void TestMethod(int i, int j, int k, int l) {
+        CalledMethod(i, in j, out k, ref l);
+    }
+
+    public static void CalledMethod(int i, in int j, out int k, ref int l) {
+        i = j;
+        k = 3;
+        l = 4;
+    }
+}
+", @"
+# (File compiled:internal/test.calledmethod.mcfunction)
+scoreboard players operation #compiled:internal/test.calledmethod##arg0 _ = #compiled:internal/test.calledmethod##arg1 _
+scoreboard players set #compiled:internal/test.calledmethod##arg2 _ 3
+scoreboard players set #compiled:internal/test.calledmethod##arg3 _ 4
+
+# (File compiled:internal/test.testmethod.mcfunction)
+scoreboard players operation #compiled:internal/test.calledmethod##arg0 _ = #compiled:internal/test.testmethod##arg0 _
+scoreboard players operation #compiled:internal/test.calledmethod##arg1 _ = #compiled:internal/test.testmethod##arg1 _
+scoreboard players operation #compiled:internal/test.calledmethod##arg3 _ = #compiled:internal/test.testmethod##arg3 _
+function compiled:internal/test.calledmethod
+scoreboard players operation #compiled:internal/test.testmethod##arg2 _ = #compiled:internal/test.calledmethod##arg2 _
+scoreboard players operation #compiled:internal/test.testmethod##arg3 _ = #compiled:internal/test.calledmethod##arg3 _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // TODO: It is currently impossible to test for staticness as there's
         // no support for objects/custom structs/built-in methods.

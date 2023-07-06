@@ -363,9 +363,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // "VarName" has been processed already by
             /// <see cref="VarNameMethodRewriter"/>
 
-            // TODO: Currently ignoring in,out,ref.
-            int i = 0;
-            foreach(var arg in call.ArgumentList.Arguments) {
+            // Note: Copied somewhat below.
+            for (int i = 0; i < call.ArgumentList.Arguments.Count; i++) {
+                var arg = call.ArgumentList.Arguments[i];
+                // No need to copy in on an `out`.
+                if (arg.ChildTokensContain(SyntaxKind.OutKeyword))
+                    continue;
+
                 string argName = nameManager.GetArgumentName(methodName, i);
                 // Too copypastay of the statement case, this code's the sketch anyway
                 if (TryGetIntegerLiteral(arg.Expression, out int literal)) {
@@ -377,10 +381,25 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 } else {
                     throw CompilationException.ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals;
                 }
-                i++;
             }
 
             AddCode($"function {methodName}");
+
+            // Copy back variables on `out` and `ref`.
+            // Copy of prior code with only the variable case.
+            for (int i = 0; i < call.ArgumentList.Arguments.Count; i++) {
+                var arg = call.ArgumentList.Arguments[i];
+                // No need to copy out on `in` and nothing.
+                if (!(arg.ChildTokensContain(SyntaxKind.OutKeyword)
+                    || arg.ChildTokensContain(SyntaxKind.RefKeyword)))
+                    continue;
+
+                string argName = nameManager.GetArgumentName(methodName, i);
+                // By C# guarantees, we are not an integer literal, so by our
+                // own guarantees, we are an identifiername or member access.
+                string rhsName = nameManager.GetVariableName(CurrentSemantics, arg.Expression, this);
+                AddAssignment(rhsName, argName, "=", CurrentSemantics.GetTypeInfo(arg.Expression).Type);
+            }
         }
 
         private void HandleRunRaw(InvocationExpressionSyntax call) {
@@ -505,8 +524,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// <summary>
         /// <para>
         /// Adds code to the currently considered datapack file for any
-        /// assignment. It takes into account the multiple values that need to
-        /// be copied for larger structs.
+        /// assignment <tt>lhs op rhs</tt>. It takes into account the
+        /// multiple values that need to be copied for larger structs.
         /// </para>
         /// </summary>
         private void AddAssignment(string lhs, string rhs, string op, ITypeSymbol type) {
