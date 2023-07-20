@@ -263,5 +263,11 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static T WithAdditionalMembers<T>(this TypeDeclarationSyntax declaration, IEnumerable<MemberDeclarationSyntax> members) where T : TypeDeclarationSyntax
             => (T)declaration.AddMembers(members.ToArray());
+
+        public static ParameterListSyntax WithPrependedArguments(this ParameterListSyntax list, params ParameterSyntax[] items)
+            => list.WithParameters(list.Parameters.InsertRange(0, items));
+
+        public static ArgumentListSyntax WithPrependedArguments(this ArgumentListSyntax list, params ArgumentSyntax[] items)
+            => list.WithArguments(list.Arguments.InsertRange(0, items));
     }
 }

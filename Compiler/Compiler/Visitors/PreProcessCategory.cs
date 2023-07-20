@@ -8,6 +8,7 @@
         PropertyCategory,
         NameCastsCategory,
         NameOperatorsCategory,
+        StaticifyInstanceCategory,
         VarNameMethodRewriter,
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,

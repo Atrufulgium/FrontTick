@@ -349,6 +349,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         private void HandleInvocation(InvocationExpressionSyntax call) {
+            // Note to future self: This may be null if the `call` is malformed.
             var method = (IMethodSymbol)CurrentSemantics.GetSymbolInfo(call).Symbol;
             if (!method.IsStatic)
                 throw CompilationException.ToDatapackMethodCallsMustBeStatic;

@@ -104,6 +104,10 @@ namespace Atrufulgium.FrontTick.Compiler {
                 })
             );
 
+        public static ParameterSyntax Parameter(ITypeSymbol type, string identifiername)
+            => SyntaxFactory.Parameter(Identifier(identifiername))
+                .WithType(Type(type));
+
         public static ParameterListSyntax ParameterList(params ParameterSyntax[] parameters)
             => SyntaxFactory.ParameterList(
                 SeparatedList(parameters)
