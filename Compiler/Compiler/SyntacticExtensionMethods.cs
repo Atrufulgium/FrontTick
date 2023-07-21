@@ -22,6 +22,12 @@ namespace Atrufulgium.FrontTick.Compiler {
             => method.ReturnType.ChildTokensContain(SyntaxKind.VoidKeyword);
 
         /// <summary>
+        /// Whether or not a method definition is extern.
+        /// </summary>
+        public static bool IsExtern(this BaseMethodDeclarationSyntax method)
+            => method.ChildTokensContain(SyntaxKind.ExternKeyword);
+
+        /// <summary>
         /// The property <see cref="MethodDeclarationSyntax.Arity"/> is used to
         /// get the number of generic type parameters (resulting in 0 for non-
         /// generic methods). This method gives the *actual* arity: the number

@@ -10,22 +10,25 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <para>
     /// This rewriter turns code of the form
     /// <code>
-    ///     a = Method1(Method2(a,Method3(b)),c,Method4(d));
+    ///     => expression;
     /// </code>
     /// into code of the form
     /// <code>
     ///     {
-    ///         var temp0 = Method3(b);
-    ///         var temp1 = Method2(a, temp0);
-    ///         var temp2 = Method4(d);
-    ///         a = Method1(temp1, c, temp2);
+    ///         return expression;
     ///     }
     /// </code>
-    /// In other words, it ensures no call is contained in another.
+    /// or
+    /// <code>
+    ///     {
+    ///         expression;
+    ///     }
+    /// </code>
+    /// depending on which is applicable.
     /// </para>
     /// </summary>
     /// <remarks>
-    /// This is not yet implemented for indexers and properties.
+    /// This is not yet implemented for indexers.
     /// </remarks>
     // In actuality it is more thorough than the above, as a block can't be cast
     // to be a method body unfortunately.
@@ -55,13 +58,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // this is awkward.
         SyntaxNode VisitEasyCase<T>(T node, Func<T, SyntaxNode> baseCall, bool isVoid)
             where T : BaseMethodDeclarationSyntax
-            => node.Body == null ? node.WithBody(
-                                        ArrowToBlock(
-                                           node.ExpressionBody,
-                                           isVoid
-                                        )
-                                    ).WithExpressionBody(default)
-                                 : baseCall(node);
+            => node.Body == null && !node.IsExtern()
+            ? node.WithBody(
+                ArrowToBlock(
+                    node.ExpressionBody,
+                    isVoid
+                )
+            ).WithExpressionBody(default)
+            : baseCall(node);
 
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
             => VisitEasyCase(node, base.VisitConstructorDeclaration, isVoid: false); // Imagine if constructors didn't return anything
@@ -127,7 +131,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </para>
         /// </summary>
         BlockSyntax ArrowToBlock(ArrowExpressionClauseSyntax node, bool isVoid) {
-            var retType = CurrentSemantics.GetTypeInfo(node.Expression).Type;
             if (isVoid) {
                 // A setter
                 return (BlockSyntax)Visit(

@@ -80,6 +80,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // "active" goto jump.
 
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+            if (node.IsExtern())
+                return node;
+
             // Skip the method if there's nothing. Otherwise add a flag declaration.
             var gotos = ContainedGotoStatements(node.Body);
             if (gotos.IsEmpty())

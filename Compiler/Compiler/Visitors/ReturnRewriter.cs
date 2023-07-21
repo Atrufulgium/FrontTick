@@ -20,6 +20,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         bool isVoid;
 
         public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+            if (node.IsExtern())
+                return node;
+
             isVoid = node.ReturnsVoid();
 
             node = (MethodDeclarationSyntax) base.VisitMethodDeclaration(node);
