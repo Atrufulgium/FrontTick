@@ -56,5 +56,32 @@ public class Test {
     }
 }
 ");
+
+        [TestMethod]
+        public void PropertyTest3()
+            => TestCompilationSucceedsTheSame(@"
+public class Test {
+    public static void TestMethod(int i) {
+        i = Other.Val;
+        Other.Val = 4;
+    }
+}
+public class Other {
+    static int val;
+    public static int Val { get { return val; } set { val = value; } }
+}
+", @"
+public class Test {
+    public static void TestMethod(int i) {
+        i = Other.GETVal();
+        Other.SETVal(4);
+    }
+}
+public class Other {
+    static int val;
+    public static int GETVal() { return val; }
+    public static void SETVal(int value) { val = value; }
+}
+");
     }
 }
