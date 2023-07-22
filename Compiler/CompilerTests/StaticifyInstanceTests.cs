@@ -70,5 +70,86 @@ internal struct Test {
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        [TestMethod]
+        public void StaticifyTest4()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    int val;
+
+    int InstanceProperty { get => this.val; set => this.val = value; }
+}
+", @"
+internal struct Test {
+    int val;
+    
+    static int StaticGetInstanceProperty(ref Test t) => t.val;
+    static void StaticSetInstanceProperty(ref Test t, int value) => t.val = value;
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void ThisTest1()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    int val;
+
+    int InstanceMethod() {
+        return val;
+    }
+}
+", @"
+internal struct Test {
+    int val;
+
+    int InstanceMethod() {
+        return this.val;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void ThisTest2()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    int val;
+
+    int InstanceMethod() {
+        return InstanceMethod();
+    }
+}
+", @"
+internal struct Test {
+    int val;
+
+    int InstanceMethod() {
+        return this.InstanceMethod();
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void ThisTest3()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    int val;
+
+    int InstanceProperty { get => val; set => val = value; }
+
+    int InstanceMethod() {
+        return InstanceProperty;
+    }
+}
+", @"
+internal struct Test {
+    int val;
+
+    int InstanceProperty { get => val; set => val = value; }
+
+    int InstanceMethod() {
+        return this.InstanceProperty;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
     }
 }

@@ -5,6 +5,7 @@
     /// </para>
     /// </summary>
     public class StaticifyInstanceCategory : AbstractFullRewriter<
+        ThisRewriter,
         CopyInstanceToStaticCallsRewriter,
         InstanceToStaticCallRewriter,
         RemoveInstanceCallsRewriter
