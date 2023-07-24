@@ -4,6 +4,7 @@
     /// obnoxious methods.
     /// </summary>
     public class MethodifyCategory : AbstractFullWalker<
+        NameConstructorsCategory,
         PropertyCategory,
         NameCastsCategory,
         NameOperatorsCategory,

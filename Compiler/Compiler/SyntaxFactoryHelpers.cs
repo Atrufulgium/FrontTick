@@ -72,12 +72,25 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static TypeSyntax Type(ITypeSymbol type)
             => ParseTypeName(type.ToDisplayString());
 
+        public static TypeSyntax Type(string type)
+            => ParseTypeName(type);
+
         public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername)
             => SyntaxFactory.LocalDeclarationStatement(
                 VariableDeclaration(type, identifiername)
             );
 
+        public static LocalDeclarationStatementSyntax LocalDeclarationStatement(TypeSyntax type, string identifiername)
+            => SyntaxFactory.LocalDeclarationStatement(
+                VariableDeclaration(type, identifiername)
+            );
+
         public static LocalDeclarationStatementSyntax LocalDeclarationStatement(ITypeSymbol type, string identifiername, ExpressionSyntax value)
+            => SyntaxFactory.LocalDeclarationStatement(
+                VariableDeclaration(type, identifiername, value)
+            );
+
+        public static LocalDeclarationStatementSyntax LocalDeclarationStatement(TypeSyntax type, string identifiername, ExpressionSyntax value)
             => SyntaxFactory.LocalDeclarationStatement(
                 VariableDeclaration(type, identifiername, value)
             );
@@ -90,9 +103,31 @@ namespace Atrufulgium.FrontTick.Compiler {
                 })
             );
 
+        public static VariableDeclarationSyntax VariableDeclaration(TypeSyntax type, string identifiername)
+            => SyntaxFactory.VariableDeclaration(
+                type,
+                SeparatedList(new[] {
+                    VariableDeclarator(Identifier(identifiername))
+                })
+            );
+
         public static VariableDeclarationSyntax VariableDeclaration(ITypeSymbol type, string identifiername, ExpressionSyntax value)
             => SyntaxFactory.VariableDeclaration(
                 Type(type),
+                SeparatedList(new[] {
+                    VariableDeclarator(
+                        Identifier(identifiername),
+                        default,
+                        EqualsValueClause(
+                            value
+                        )
+                    )
+                })
+            );
+
+        public static VariableDeclarationSyntax VariableDeclaration(TypeSyntax type, string identifiername, ExpressionSyntax value)
+            => SyntaxFactory.VariableDeclaration(
+                type,
                 SeparatedList(new[] {
                     VariableDeclarator(
                         Identifier(identifiername),
