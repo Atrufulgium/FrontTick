@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MCMirror.Internal;
+using System;
 
 namespace MCMirror {
     /// <summary>
@@ -15,6 +16,7 @@ namespace MCMirror {
     /// This attribute is only valid on <c>static void</c> methods without arguments.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [NoCompile]
     public class MCFunctionAttribute : Attribute {
         public readonly string name;
         public MCFunctionAttribute() {

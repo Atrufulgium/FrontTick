@@ -4,7 +4,6 @@
     /// dependencies.
     /// </summary>
     public class SetupCategory : AbstractFullWalker<
-        ApplyNoCompileAttributeRewriter,
         RegisterMethodsWalker
         > { }
 }

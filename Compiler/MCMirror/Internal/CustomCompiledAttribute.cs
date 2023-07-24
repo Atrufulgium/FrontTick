@@ -14,6 +14,7 @@ namespace MCMirror.Internal {
     /// </para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [NoCompile]
     public class CustomCompiledAttribute : Attribute {
         public readonly string name;
         public CustomCompiledAttribute() {

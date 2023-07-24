@@ -79,6 +79,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Don't do methods that aren't meant to be compiled.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCMirror.Internal.CustomCompiledAttribute), out _))
                 return;
+            if (node.ChildTokensContain(SyntaxKind.ExternKeyword))
+                return;
 
             currentNode = node;
             branchCounter = 0;

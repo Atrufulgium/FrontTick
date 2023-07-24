@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MCMirror.Internal;
+using System;
 
 namespace MCMirror {
     /// <summary>
@@ -16,6 +17,7 @@ namespace MCMirror {
     /// </para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [NoCompile]
     public class MCTestAttribute : Attribute {
 
         public readonly int value;

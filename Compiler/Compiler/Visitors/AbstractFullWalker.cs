@@ -1,5 +1,7 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using MCMirror.Internal;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -39,6 +41,25 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public virtual void SetCompiler(Compiler compiler) {
             this.compiler = compiler;
             nameManager = compiler.nameManager;
+        }
+
+        // Do not handle any [NoCompile] code.
+        public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
+            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+                return;
+            base.VisitMethodDeclaration(node);
+        }
+
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node) {
+            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+                return;
+            base.VisitClassDeclaration(node);
+        }
+
+        public override void VisitStructDeclaration(StructDeclarationSyntax node) {
+            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+                return;
+            base.VisitStructDeclaration(node);
         }
 
         public void FullVisit() {

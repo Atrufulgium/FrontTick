@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MCMirror.Internal;
+using System;
 
 namespace MCMirror {
     /// <summary>
@@ -7,6 +8,7 @@ namespace MCMirror {
     /// </summary>
     // "Method" arguably makes sense for write-only.
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    [NoCompile]
     public class NBTAttribute : Attribute {
 
         public readonly string path;
