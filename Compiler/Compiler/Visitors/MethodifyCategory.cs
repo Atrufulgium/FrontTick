@@ -4,8 +4,10 @@
     /// obnoxious methods.
     /// </summary>
     public class MethodifyCategory : AbstractFullWalker<
-        NameConstructorsCategory,
         PropertyCategory,
+        // Constructors need to take into account `Property {get; set;} = value`.
+        // It's better if those are processed already.
+        NameConstructorsCategory,
         NameCastsCategory,
         NameOperatorsCategory,
         StaticifyInstanceCategory

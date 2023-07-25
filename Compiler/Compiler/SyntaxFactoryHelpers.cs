@@ -69,6 +69,13 @@ namespace Atrufulgium.FrontTick.Compiler {
                 IdentifierName(name)
             );
 
+        public static MemberAccessExpressionSyntax ThisAccessExpression(string name)
+            => SyntaxFactory.MemberAccessExpression(
+                SyntaxKind.SimpleMemberAccessExpression,
+                ThisExpression(),
+                IdentifierName(name)
+            );
+
         public static TypeSyntax Type(ITypeSymbol type)
             => ParseTypeName(type.ToDisplayString());
 

@@ -7,7 +7,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
     public class NameConstructorsTests {
 
         [TestMethod]
-        public void StaticifyTest1()
+        public void NameConstructorTest1()
             => TestCompilationSucceedsTheSame(@"
 internal struct Test {
     int val;
@@ -32,6 +32,24 @@ internal struct Test {
 
     static Test TestMethod() {
         return Test.CONSTRUCT(230);
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void NameConstructorTest2()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    int val = 3;
+
+    public Test() {}
+}
+", @"
+internal struct Test {
+    int val;
+
+    public Test() {
+        val = 3;
     }
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
