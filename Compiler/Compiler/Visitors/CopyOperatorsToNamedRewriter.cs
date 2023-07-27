@@ -27,18 +27,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<OperatorDeclarationSyntax> ops = new();
 
-        string currentTypeName;
-
         public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
             ops.Clear();
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
             return AddOps(node);
         }
 
         public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
             ops.Clear();
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
             return AddOps(node);
         }
@@ -55,11 +51,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                      .WithBody(op.Body)
                      .WithParameterList(op.ParameterList);
                 newMethods.Add(methodDeclaration);
-                // Don't forget to register with the namemanager!
-                string fullyQualifiedName = $"{currentTypeName}.{methodName}";
-                string name = $"internal/{fullyQualifiedName}";
-                name = NameManager.NormalizeFunctionName(name);
-                nameManager.RegisterMethodname(CurrentSemantics, methodDeclaration, name, this, fullyQualifiedName: fullyQualifiedName);
             }
             node = node.AddMembers(newMethods.ToArray());
             return node;

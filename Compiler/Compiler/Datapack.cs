@@ -24,6 +24,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             foreach (var file in files)
                 if (NameManager.IsValidDatapackName(file.Path))
                     this.files.Add(file);
+                else
+                    throw new ArgumentException($"Found file with invalid datapack file name: {file.Path}");
         }
 
         /// <summary>
@@ -114,7 +116,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </para>
         /// </remarks>
         // These are found via the `<namespace>-internal:function` name.
-        public string ToString(bool skipInternal = false, bool skipMCMirror = false) {
+        public string ToString(bool skipInternal, bool skipMCMirror) {
             if (!skipInternal && !skipMCMirror)
                 return ToString();
 

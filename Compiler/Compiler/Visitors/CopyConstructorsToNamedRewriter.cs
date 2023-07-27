@@ -25,14 +25,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     public class CopyConstructorsToNamedRewriter : AbstractFullRewriter<ThisRewriter> {
 
         TypeSyntax currentType;
-        string currentTypeName = null;
-
+        
         readonly List<ConstructorDeclarationSyntax> ops = new();
 
         public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
             ops.Clear();
             currentType = Type(node.Identifier.Text);
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
             return AddConstructors(node);
         }
@@ -40,7 +38,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
             ops.Clear();
             currentType = Type(node.Identifier.Text);
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
             return AddConstructors(node);
         }
@@ -57,12 +54,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                      .WithBody((BlockSyntax) new ConstructorRewriter(currentType).Visit(op.Body))
                      .WithParameterList(op.ParameterList);
                 newMethods.Add(methodDeclaration);
-
-                // Don't forget to register with the namemanager!
-                string fullyQualifiedName = $"{currentTypeName}.{methodName}";
-                string name = $"internal/{fullyQualifiedName}";
-                name = NameManager.NormalizeFunctionName(name);
-                nameManager.RegisterMethodname(CurrentSemantics, methodDeclaration, name, this, fullyQualifiedName: fullyQualifiedName);
             }
             node = node.AddMembers(newMethods.ToArray());
             return node;

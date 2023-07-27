@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,9 +16,10 @@ namespace Atrufulgium.FrontTick.Compiler {
         // and CopyOperatorsToNamedRewriter.
 
         /// <summary>
-        /// A dictionary converting fully qualified name c# => mcfunction name.
+        /// A dictionary converting a method's data => mcfunction name.
         /// </summary>
-        readonly Dictionary<string, MCFunctionName> methodNames = new();
+        [SuppressMessage("MicrosoftCodeAnalysisCorrectness", "RS1024:Symbols should be compared for equality", Justification = "See the comment in the SymbolNameComparer's source.")]
+        readonly Dictionary<IMethodSymbol, MCFunctionName> methodNames = new(new SymbolNameComparer());
         /// <summary>
         /// The mcfunction namespace all functions live in.
         /// </summary>
@@ -47,28 +49,64 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
+        /// <para>
         /// Register a method declaration for future use. This returns whether
         /// the declaration results in a legal name.
+        /// </para>
+        /// <para>
+        /// When <paramref name="name"/> is null, the method name will be the
+        /// fully qualified name. Otherwise, it's its value.
+        /// </para>
         /// </summary>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
+        /// <remarks>
+        /// <para>
+        /// This does not work for modified trees as it uses semantics. This
+        /// means that using it in Rewriters is mostly questionable, but in
+        /// Walkers it's perfectly fine.
+        /// </para>
+        /// </remarks>
         public bool RegisterMethodname(
             SemanticModel semantics, 
             MethodDeclarationSyntax method, 
-            string name, 
             ICustomDiagnosable diagnosticsOutput, 
+            string name = null,
+            bool isInternal = false,
             bool prefixNamespace = true,
-            string fullyQualifiedName = null
+            bool suffixParams = true
         ) {
-            if (fullyQualifiedName == null)
-                fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
+            string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
 
-            string path = name;
+            string path = name ?? fullyQualifiedName;
+            if (isInternal)
+                path = $"internal/{NormalizeFunctionName(path)}";
             if (prefixNamespace)
-                path = $"{manespace}:{path}";
+                path = $"{manespace}:{NormalizeFunctionName(path)}";
+
+            // To support method overloading, simply add for every param
+            // its type to the call name.
+            // You may also overload via "no modifier" and "any of ref/in/out"
+            // so `-mod-param` would be sufficient, but eh. This is nicer.
+            var methodSymbol = semantics.GetDeclaredSymbol(method);
+            if (suffixParams) {
+                foreach (var param in methodSymbol.Parameters) {
+                    switch (param.RefKind) {
+                        case RefKind.Ref:
+                            path += "-ref";
+                            break;
+                        case RefKind.Out:
+                            path += "-out";
+                            break;
+                        case RefKind.In:
+                            path += "-in";
+                            break;
+                    }
+                    path += $"-{NormalizeFunctionName(param.Type.Name)}";
+                }
+            }
+
             var mcFunctionName = new MCFunctionName(postProcessor.PostProcessFunction(path));
 
-            if (methodNames.TryGetValue(fullyQualifiedName, out MCFunctionName registeredPath)) {
+            if (methodNames.TryGetValue(methodSymbol, out MCFunctionName registeredPath)) {
                 if (registeredPath != path)
                     throw new ArgumentException($"This method {fullyQualifiedName} is already registered with a different mcfunction name. That should not be possible.\n This:\n{path}\nExisting:\n{registeredPath}");
             }
@@ -79,7 +117,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                     from keyvalue in methodNames
                     where keyvalue.Value == mcFunctionName
                     select keyvalue.Key
-                    ).First();
+                    ).First().Name;
                 diagnosticsOutput.AddCustomDiagnostic(
                     DiagnosticRules.MCFunctionMethodNameClash,
                     method,
@@ -88,7 +126,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                 return false;
             }
 
-            methodNames.Add(fullyQualifiedName, mcFunctionName);
+            methodNames.Add(methodSymbol, mcFunctionName);
             return true;
         }
 
@@ -101,37 +139,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </param>
         public MCFunctionName GetMethodName(
             SemanticModel semantics,
-            MethodDeclarationSyntax method,
-            ICustomDiagnosable diagnosticsOutput,
-            string scopeSuffix = ""
-        ) {
-            string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
-        }
-
-        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax, ICustomDiagnosable, string)"/>
-        public MCFunctionName GetMethodName(
-            SemanticModel semantics,
-            InvocationExpressionSyntax method,
-            ICustomDiagnosable diagnosticsOutput,
-            string scopeSuffix = ""
-        ) {
-            string fullyQualifiedName = GetFullyQualifiedMethodName(semantics, method);
-            return GetMethodName(fullyQualifiedName, method, diagnosticsOutput, scopeSuffix);
-        }
-
-        /// <inheritdoc cref="GetMethodName(SemanticModel, MethodDeclarationSyntax, ICustomDiagnosable, string)"/>
-        private MCFunctionName GetMethodName(
-            string fullyQualifiedName,
             SyntaxNode method,
             ICustomDiagnosable diagnosticsOutput,
             string scopeSuffix = ""
         ) {
-            if (!methodNames.TryGetValue(fullyQualifiedName, out MCFunctionName name)) {
+            var methodSymbol = (IMethodSymbol)semantics.GetSymbolInfo(method).Symbol;
+            if (methodSymbol == null)
+                methodSymbol = (IMethodSymbol)semantics.GetDeclaredSymbol(method);
+            if (!methodNames.TryGetValue(methodSymbol, out MCFunctionName name)) {
                 diagnosticsOutput.AddCustomDiagnostic(
                     DiagnosticRules.MCFunctionMethodNameNotRegistered,
                     method,
-                    fullyQualifiedName
+                    methodSymbol.Name
                 );
                 return new MCFunctionName("#UNKNOWN:#UNKNOWN");
             }
@@ -266,6 +285,12 @@ namespace Atrufulgium.FrontTick.Compiler {
             // to require a bunch of annoying branches. The copypasta of those
             // two two lines is nicer than going through the effort to get it
             // outside.
+            SyntaxNode containingMethod = identifier;
+            while (containingMethod != null) {
+                containingMethod = containingMethod.Parent;
+                if (containingMethod is MethodDeclarationSyntax)
+                    break;
+            }
             if (symbolInfo is IFieldSymbol fieldSymbol) {
                 string context = NormalizeFunctionName(fieldSymbol.ContainingType.ToString());
                 // *Want* to manually mirror the way MCFunctions look for some
@@ -273,12 +298,10 @@ namespace Atrufulgium.FrontTick.Compiler {
                 // but the name after that can be anything.
                 return $"#{manespace}:{context}#{fieldSymbol.Name}";
             } else if (symbolInfo is ILocalSymbol localSymbol) {
-                string fullyQualifiedName = GetFullyQualifiedMethodName((IMethodSymbol)localSymbol.ContainingSymbol);
-                MCFunctionName context = GetMethodName(fullyQualifiedName, identifier, diagnosticsOutput);
+                MCFunctionName context = GetMethodName(semantics, containingMethod, diagnosticsOutput);
                 return $"#{context}#{localSymbol.Name}";
             } else if (symbolInfo is IParameterSymbol paramSymbol) {
-                string fullyQualifiedName = GetFullyQualifiedMethodName((IMethodSymbol)paramSymbol.ContainingSymbol);
-                MCFunctionName context = GetMethodName(fullyQualifiedName, identifier, diagnosticsOutput);
+                MCFunctionName context = GetMethodName(semantics, containingMethod, diagnosticsOutput);
                 return GetArgumentName(context, paramSymbol.Ordinal);
             } else {
                 throw CompilationException.ToDatapackVariablesFieldLocalOrParams;

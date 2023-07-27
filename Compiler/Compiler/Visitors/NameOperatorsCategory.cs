@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
@@ -9,6 +10,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </summary>
     public class NameOperatorsCategory : AbstractFullWalker<
         CopyOperatorsToNamedRewriter,
+        RegisterOperatorsCategory,
         OperatorsToMethodCallsRewriter,
         RemoveOperatorRewriter
         > {
@@ -42,5 +44,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             => GetMethodName(op.OperatorToken.Text);
         /// <inheritdoc cref="GetMethodName(OperatorDeclarationSyntax)"/>
         public static string GetMethodName(string op) => supportedConversions[op];
+    }
+
+    public class RegisterOperatorsCategory : AbstractRegisterMethodsByPrefixWalker {
+        public override string[] CharacteristicString => new[] { "OPERATOR-" };
+    }
+
+    /// <summary> Removes any method that is an operator declaration. </summary>
+    public class RemoveOperatorRewriter : AbstractFullRewriter {
+        public override SyntaxNode VisitOperatorDeclaration(OperatorDeclarationSyntax node) => null;
     }
 }

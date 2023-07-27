@@ -72,19 +72,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                      .WithParameterList(op.ParameterList);
                 newMethods.Add(methodDeclaration);
 
-                // Don't forget to register with the namemanager!
-                string fullyQualifiedName = $"{currentTypeName}.{methodName}";
-                string name = $"internal/{fullyQualifiedName}";
-                name = NameManager.NormalizeFunctionName(name);
-                nameManager.RegisterMethodname(CurrentSemantics, methodDeclaration, name, this, fullyQualifiedName: fullyQualifiedName);
-
                 // We need to access these method names later.
                 // This is a fully qualified name but we need the type and method
-                // separately. So split them.
-                int i = fullyQualifiedName.LastIndexOf('.');
+                // separately.
                 castMethodNames.Add(
                     (returnType, inType),
-                    (type: fullyQualifiedName[..i], name: fullyQualifiedName[(i + 1)..])
+                    (type: currentTypeName, name: methodName)
                 );
             }
             node = node.AddMembers(newMethods.ToArray());

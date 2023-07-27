@@ -334,18 +334,43 @@ public class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.calledmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.calledmethod##arg0 _ = #compiled:internal/test.calledmethod##arg1 _
-scoreboard players set #compiled:internal/test.calledmethod##arg2 _ 3
-scoreboard players set #compiled:internal/test.calledmethod##arg3 _ 4
+# (File compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32.mcfunction)
+scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg0 _ = #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg1 _
+scoreboard players set #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg2 _ 3
+scoreboard players set #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg3 _ 4
 
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.calledmethod##arg0 _ = #compiled:internal/test.testmethod##arg0 _
-scoreboard players operation #compiled:internal/test.calledmethod##arg1 _ = #compiled:internal/test.testmethod##arg1 _
-scoreboard players operation #compiled:internal/test.calledmethod##arg3 _ = #compiled:internal/test.testmethod##arg3 _
-function compiled:internal/test.calledmethod
-scoreboard players operation #compiled:internal/test.testmethod##arg2 _ = #compiled:internal/test.calledmethod##arg2 _
-scoreboard players operation #compiled:internal/test.testmethod##arg3 _ = #compiled:internal/test.calledmethod##arg3 _
+# (File compiled:internal/test.testmethod-int32-int32-int32-int32.mcfunction)
+scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg0 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg0 _
+scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg1 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg1 _
+scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg3 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg3 _
+function compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32
+scoreboard players operation #compiled:internal/test.testmethod-int32-int32-int32-int32##arg2 _ = #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg2 _
+scoreboard players operation #compiled:internal/test.testmethod-int32-int32-int32-int32##arg3 _ = #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg3 _
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void TestOverloads()
+            => TestCompilationSucceedsRaw(@"
+public class Test {
+    public static void TestMethod(int i) {
+        Called();
+        Called(i);
+    }
+
+    public static void Called() {}
+    public static void Called(int i) {}
+}
+", @"
+# (File compiled:internal/test.called.mcfunction)
+# (Empty)
+
+# (File compiled:internal/test.called-int32.mcfunction)
+# (Empty)
+
+# (File compiled:internal/test.testmethod-int32.mcfunction)
+function compiled:internal/test.called
+scoreboard players operation #compiled:internal/test.called-int32##arg0 _ = #compiled:internal/test.testmethod-int32##arg0 _
+function compiled:internal/test.called-int32
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // TODO: It is currently impossible to test for staticness as there's
@@ -495,13 +520,13 @@ internal class Test {
     }
 }
 ", @"
- # (File compiled:internal/test.testmethod.mcfunction)
-execute unless score #compiled:internal/test.testmethod##arg0 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod##arg1 _ 1
-execute if score #compiled:internal/test.testmethod##arg0 _ matches 0 run function compiled:internal/test.testmethod-1-else-branch
+ # (File compiled:internal/test.testmethod-int32-int32.mcfunction)
+execute unless score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
+execute if score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run function compiled:internal/test.testmethod-int32-int32-1-else-branch
 
-# (File compiled:internal/test.testmethod-1-else-branch.mcfunction)
-scoreboard players set #compiled:internal/test.testmethod##arg1 _ 2
-scoreboard players set #compiled:internal/test.testmethod##arg1 _ 3
+# (File compiled:internal/test.testmethod-int32-int32-1-else-branch.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 2
+scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // The "let's throw against the wall and see what sticks" test.
@@ -858,8 +883,8 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0 _
+# (File compiled:internal/test.testmethod-int32.mcfunction)
+scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int32##arg0 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw for name format II
@@ -918,12 +943,12 @@ internal class Test {
 ", @"
 # (File compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#i _ 3
-scoreboard players operation #compiled:internal/test.testmethod2##arg0 _ = #compiled:internal/test.testmethod#i _
-function compiled:internal/test.testmethod2
-scoreboard players set #compiled:internal/test.testmethod2##arg0 _ 3
-function compiled:internal/test.testmethod2
+scoreboard players operation #compiled:internal/test.testmethod2-int32##arg0 _ = #compiled:internal/test.testmethod#i _
+function compiled:internal/test.testmethod2-int32
+scoreboard players set #compiled:internal/test.testmethod2-int32##arg0 _ 3
+function compiled:internal/test.testmethod2-int32
 
-# (File compiled:internal/test.testmethod2.mcfunction)
+# (File compiled:internal/test.testmethod2-int32.mcfunction)
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
@@ -943,10 +968,10 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players set #compiled:internal/test.testmethod#pos#x _ 2
-scoreboard players operation #compiled:internal/test.testmethod#pos#y _ = #compiled:internal/test.testmethod##arg0 _
-scoreboard players set #compiled:internal/test.testmethod#pos#z _ 0
+# (File compiled:internal/test.testmethod-int32.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod-int32#pos#x _ 2
+scoreboard players operation #compiled:internal/test.testmethod-int32#pos#y _ = #compiled:internal/test.testmethod-int32##arg0 _
+scoreboard players set #compiled:internal/test.testmethod-int32#pos#z _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -960,8 +985,8 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #RET _ = #compiled:internal/test.testmethod##arg0#z _
+# (File compiled:internal/test.testmethod-int3.mcfunction)
+scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int3##arg0#z _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw for very nested struct format
@@ -987,16 +1012,16 @@ struct DolorSitAmet {
     int w;
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#x _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#x _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#y _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#y _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#pos#z _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#pos#z _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#ipsum#dolorSitAmet2#w _ = #compiled:internal/test.testmethod##arg1#ipsum#dolorSitAmet2#w _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#val _ = #compiled:internal/test.testmethod##arg1#val _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#x _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#x _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#y _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#y _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#pos#z _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#pos#z _
-scoreboard players operation #compiled:internal/test.testmethod##arg0#dolorSitAmet#w _ = #compiled:internal/test.testmethod##arg1#dolorSitAmet#w _
+# (File compiled:internal/test.testmethod-lorem-lorem.mcfunction)
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#x _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#x _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#y _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#y _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#z _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#z _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#w _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#w _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#val _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#val _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#dolorSitAmet#pos#x _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#dolorSitAmet#pos#x _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#dolorSitAmet#pos#y _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#dolorSitAmet#pos#y _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#dolorSitAmet#pos#z _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#dolorSitAmet#pos#z _
+scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#dolorSitAmet#w _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#dolorSitAmet#w _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test struct member assignment
@@ -1072,9 +1097,9 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
-scoreboard players set #compiled:internal/test.testmethod##arg0#x _ 24
-scoreboard players operation #compiled:internal/test.testmethod##arg0#y _ += #CONST#23 _
+# (File compiled:internal/test.testmethod-int3.mcfunction)
+scoreboard players set #compiled:internal/test.testmethod-int3##arg0#x _ 24
+scoreboard players operation #compiled:internal/test.testmethod-int3##arg0#y _ += #CONST#23 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -1188,8 +1213,8 @@ internal class Test {
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestNoCompile2()
-            => TestCompilationSucceedsTheSame(@"
+        public void TestNoCompile2Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror.Internal;
 [NoCompile]
 internal class Test {

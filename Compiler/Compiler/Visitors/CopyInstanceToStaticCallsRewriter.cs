@@ -63,12 +63,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                      .WithBody((BlockSyntax) bodyRewriter.Visit(method.Body)) // note that this updates the thises
                      .WithParameterList(inList);
                 newMethods.Add(methodDeclaration);
-
-                // Don't forget to register with the namemanager!
-                string fullyQualifiedName = $"{currentType}.{methodName}";
-                string name = $"internal/{fullyQualifiedName}";
-                name = NameManager.NormalizeFunctionName(name);
-                nameManager.RegisterMethodname(CurrentSemantics, methodDeclaration, name, this, fullyQualifiedName: fullyQualifiedName);
             }
             node = node.AddMembers(newMethods.ToArray());
             return node;

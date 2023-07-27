@@ -29,23 +29,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<PropertyDeclarationSyntax> properties = new();
 
-        string currentTypeName;
-
         public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
             properties.Clear();
-            currentTypeName = (CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
-            return AddCasts(node);
+            return AddProperties(node);
         }
 
         public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
             properties.Clear();
-            currentTypeName = (CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
-            return AddCasts(node);
+            return AddProperties(node);
         }
 
-        SyntaxNode AddCasts(TypeDeclarationSyntax node) {
+        SyntaxNode AddProperties(TypeDeclarationSyntax node) {
             List<MethodDeclarationSyntax> newMethods = new();
             foreach(var prop in properties) {
                 var typeSyntax = prop.Type;
@@ -85,12 +81,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                          .WithParameterList(parameters)
                          .WithBody(accessor.Body);
                     newMethods.Add(methodDeclaration);
-
-                    // Don't forget to register with the namemanager!
-                    string fullyQualifiedName = $"{currentTypeName}.{methodName}";
-                    string name = $"internal/{fullyQualifiedName}";
-                    name = NameManager.NormalizeFunctionName(name);
-                    nameManager.RegisterMethodname(CurrentSemantics, methodDeclaration, name, this, fullyQualifiedName: fullyQualifiedName);
                 }
             }
             node = node.AddMembers(newMethods.ToArray());

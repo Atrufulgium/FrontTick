@@ -68,7 +68,10 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
         ) {
             string out1 = CompileToString(sources1, compilationPhases1, out Compiler compiler1, "There were compilation errors in sources1:", new NamePostProcessors.ConvenientTests());
             string out2 = CompileToString(sources2, compilationPhases2, out Compiler compiler2, "There were compilation errors in sources2:", new NamePostProcessors.ConvenientTests());
+            
             try {
+                if (out1.Trim() == "" || out2.Trim() == "")
+                    Assert.Fail("Empty compiled results will fail `TestCompilationSucceedsTheSame` tests.");
                 Assert.AreEqual(out1, out2);
             } catch (AssertFailedException e) {
                 Console.WriteLine("First code in tree-form:");

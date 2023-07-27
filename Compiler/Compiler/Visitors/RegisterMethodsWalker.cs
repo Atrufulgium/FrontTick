@@ -18,18 +18,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
             base.VisitMethodDeclaration(method);
             
-            string name;
+            string name = null;
+            bool isInternal = false;
 
             // Before doing the normal path, check first if it's a custom compiled method.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
                 // No error checking this branch whatsoever because really, I'm me.
+                // Note that this doesn't get the "isInternal" true prefix because the results aren't stored
+                // to a datapack, because this is custom compilation.
                 name = (string)attrib.ConstructorArguments[0].Value;
-                nameManager.RegisterMethodname(CurrentSemantics, method, name, this, prefixNamespace: false);
+                nameManager.RegisterMethodname(CurrentSemantics, method, this, name: name, prefixNamespace: false, suffixParams: false);
                 return;
             }
 
             // Try whether the sig is correct, and then store the method into here.
-            string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, method);
 
             if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
                 // Check whether the signature is correct.
@@ -43,10 +45,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         method.Identifier.Text
                     );
                 }
-                if (attrib.ConstructorArguments.Length == 0) {
-                    name = fullyQualifiedName;
-                    name = NameManager.NormalizeFunctionName(name);
-                } else {
+                // Null defaults to the fully qualified name.
+                // Otherwise, custom name.
+                if (attrib.ConstructorArguments.Length != 0) {
                     // Check whether the custom name is legal as mcfunction
                     name = (string)attrib.ConstructorArguments[0].Value;
                     if (name != NameManager.NormalizeFunctionName(name) || name == "") {
@@ -59,10 +60,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     }
                 }
             } else {
-                name = "internal/" + fullyQualifiedName;
-                name = NameManager.NormalizeFunctionName(name);
+                isInternal = true;
             }
-            nameManager.RegisterMethodname(CurrentSemantics, method, name, this);
+            nameManager.RegisterMethodname(CurrentSemantics, method, this, name: name, isInternal: isInternal);
         }
     }
 }
