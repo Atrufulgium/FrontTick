@@ -1,4 +1,4 @@
-﻿using MCMirror;
+﻿using MCMirror.Internal;
 
 namespace MinecraftTests {
     internal class BranchTests {

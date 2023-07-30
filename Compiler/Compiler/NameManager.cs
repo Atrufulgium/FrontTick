@@ -131,8 +131,10 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
+        /// <para>
         /// Get a registered method's mcfunction name, including namespace. If
         /// this is not found, it instead returns <tt>#UNKNOWN:#UNKNOWN</tt>.
+        /// </para>
         /// </summary>
         /// <param name="scopeSuffix">
         /// What to attach to the MCFunction name
@@ -160,6 +162,29 @@ namespace Atrufulgium.FrontTick.Compiler {
                 return new MCFunctionName(name + scopeSuffix);
             }
             return name;
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="GetMethodName(SemanticModel, SyntaxNode, ICustomDiagnosable, string)"/>
+        /// <para>
+        /// TODO: This method is a bunch slower because we call the other
+        /// overload by recovering the syntax node. This can be a lot better
+        /// but I don't care currently.
+        /// </para>
+        /// </summary>
+        /// <param name="semantics"></param>
+        /// <param name="method"></param>
+        /// <param name="diagnosticsOutput"></param>
+        /// <param name="scopeSuffix"></param>
+        /// <returns></returns>
+        public MCFunctionName GetMethodName(
+            SemanticModel semantics,
+            IMethodSymbol method,
+            ICustomDiagnosable diagnosticsOutput,
+            string scopeSuffix = ""
+        ) {
+            SyntaxNode methodNode = method.DeclaringSyntaxReferences.First().GetSyntax();
+            return GetMethodName(semantics, methodNode, diagnosticsOutput, scopeSuffix);
         }
 
         /// <summary>
@@ -354,9 +379,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// Whether the given string is valid as the name of a function file.
         /// </summary>
-        public static bool IsValidDatapackName(MCFunctionName name) {
+        public static bool IsValidDatapackName(string name) {
             // There is exactly one : in there, but ignore :'s in general.
-            string check = name.name.Replace(":", "");
+            string check = name.Replace(":", "");
             return check == NormalizeFunctionName(check);
         }
 

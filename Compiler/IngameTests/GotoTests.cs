@@ -1,4 +1,4 @@
-﻿using MCMirror;
+﻿using MCMirror.Internal;
 
 namespace MinecraftTests {
     // These are written in the very specific subset of c# that

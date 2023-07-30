@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Atrufulgium.FrontTick.Compiler.Datapack;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,8 @@ using System.Linq;
 // In my case, the commandline arguments are currently
 //    -c ./IngameTests -m ./MCMirror -w FrontTick
 // with working directory the parent directory of the projects.
-namespace Atrufulgium.FrontTick.Compiler {
+namespace Atrufulgium.FrontTick.Compiler
+{
     internal class Program {
         // Everything here is very temporary.
         static int Main(string[] args) {
@@ -106,11 +108,11 @@ namespace Atrufulgium.FrontTick.Compiler {
                         Console.WriteLine(diagnostic);
                     return 1;
                 }
-                Datapack datapack = compiler.CompiledDatapack;
+                FullDatapack datapack = compiler.CompiledDatapack;
                 string datapackPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 var slash = Path.DirectorySeparatorChar;
                 datapackPath += $"{slash}.minecraft{slash}saves{slash}{outputWorld}{slash}datapacks{slash}{manespace}";
-                datapack.WriteToFilesystem(datapackPath, manespace);
+                datapack.WriteToFilesystem(datapackPath);
                 Console.WriteLine("\nCompilation succesful!");
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Don't forget to /reload in-game!");

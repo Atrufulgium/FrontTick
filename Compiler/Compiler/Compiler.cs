@@ -1,4 +1,5 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Collections;
+using Atrufulgium.FrontTick.Compiler.Datapack;
 using Atrufulgium.FrontTick.Compiler.Visitors;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -7,7 +8,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace Atrufulgium.FrontTick.Compiler {
+namespace Atrufulgium.FrontTick.Compiler
+{
     /// <summary>
     /// <para>
     /// A compiler for turning a bunch of c# files into a Minecraft datapack. 
@@ -30,7 +32,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// Check whether compilation succeeded with <see cref="CompilationSucceeded"/>
     /// (or its opposite, <see cref="CompilationFailed"/>). If it succeeded,
     /// you can use the resulting <see cref="CompiledDatapack"/> for instance
-    /// via <see cref="Datapack.WriteToFilesystem(string)"/>. Otherwise, check
+    /// via <see cref="FullDatapack.WriteToFilesystem(string)"/>. Otherwise, check
     /// the problems with <see cref="ErrorDiagnostics"/>. In either case, the
     /// warnings <see cref="WarningDiagnostics"/> may be of interest.
     /// </description></item>
@@ -43,9 +45,10 @@ namespace Atrufulgium.FrontTick.Compiler {
     /// </summary>
     public class Compiler {
 
-        public Datapack CompiledDatapack => new(finishedCompilation, nameManager) {
-            testFunctions = appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions
-        };
+        public FullDatapack CompiledDatapack => new(
+            finishedCompilation,
+            new[] { appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions }
+        );
 
         public bool CompilationSucceeded => ErrorDiagnostics.Count == 0;
         public bool CompilationFailed => !CompilationSucceeded;
@@ -68,7 +71,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// All work that is done so far.
         /// </summary>
-        internal readonly List<DatapackFile> finishedCompilation = new();
+        internal readonly List<MCFunctionFile> finishedCompilation = new();
         /// <summary>
         /// All applied transformations on the syntax tree so far.
         /// </summary>
@@ -246,7 +249,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             }
 
             // Now add the setup file with constants and such
-            DatapackFile setupFile = new(nameManager.SetupFileName);
+            MCFunctionFile setupFile = new(nameManager.SetupFileName);
             setupFile.code.Add("scoreboard objectives add _ dummy");
             setupFile.code.Add("scoreboard players set #GOTOFLAG _ 0");
             // Maintain this setting across reloads.
@@ -265,7 +268,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             finishedCompilation.Add(setupFile);
 
             // Also the test post processing file.
-            DatapackFile postTestFile = new(nameManager.TestPostProcessName);
+            MCFunctionFile postTestFile = new(nameManager.TestPostProcessName);
             postTestFile.code.Add("tellraw @a [{\"text\":\"Testing complete.\",\"color\":\"white\"},{\"text\":\"\\n  Successes: \",\"color\":\"green\"},{\"score\":{\"name\":\"#TESTSUCCESSES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_green\"},{\"text\":\"\\n  Failures: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTFAILURES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
             postTestFile.code.Add("execute unless score #TESTSSKIPPED _ matches 0 run tellraw @a [{\"text\":\"  Skipped: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTSSKIPPED\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
             postTestFile.code.Add("execute if score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To hide subsequent successes, click here.)\",\"color\":\"dark_gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 1\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display off.\"]}}");

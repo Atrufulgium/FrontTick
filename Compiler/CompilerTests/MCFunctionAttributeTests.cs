@@ -13,7 +13,7 @@ public class Test {
     [MCFunction]
     public static void TestMethod() { }
 }
-", "# (File compiled:test.testmethod.mcfunction)\n# (Empty)");
+", "# (File (functions) compiled:test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void MCFunctionTagTest2Raw()
@@ -36,16 +36,16 @@ public class InAnotherFile {
     public static void AnotherFileTestMethod() { }
 }
 " },
-@"# (File compiled:anothertest.yetanothertestmethod.mcfunction)
+@"# (File (functions) compiled:anothertest.yetanothertestmethod.mcfunction)
 # (Empty)
 
-# (File compiled:inanotherfile.anotherfiletestmethod.mcfunction)
+# (File (functions) compiled:inanotherfile.anotherfiletestmethod.mcfunction)
 # (Empty)
 
-# (File compiled:test.anothertestmethod.mcfunction)
+# (File (functions) compiled:test.anothertestmethod.mcfunction)
 # (Empty)
 
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 # (Empty)
 ");
 
@@ -57,7 +57,7 @@ public class Test {
     [MCFunction(""do-test"")]
     public static void TestMethod() { }
 }
-", "# (File compiled:do-test.mcfunction)\n# (Empty)");
+", "# (File (functions) compiled:do-test.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void MCFunctionTagTest4()
@@ -80,7 +80,7 @@ public class Test {
 public class Test {
     public static void TestMethod() { }
 }
-", "# (File compiled:internal/test.testmethod.mcfunction)\n# (Empty)");
+", "# (File (functions) compiled:internal/test.testmethod.mcfunction)\n# (Empty)");
 
         [TestMethod]
         public void NoMCFunctionTagTest2()

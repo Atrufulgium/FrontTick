@@ -2,30 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Text;
 
-namespace Atrufulgium.FrontTick.Compiler {
+namespace Atrufulgium.FrontTick.Compiler.Datapack {
     /// <summary>
+    /// <para>
     /// Represents the full codebase of a Minecraft datapack.
+    /// </para>
+    /// <para>
+    /// This is NOT mutable. Please prepare all relavant data beforehand.
+    /// </para>
     /// </summary>
-    public class Datapack {
+    public class FullDatapack {
         // Keep them sorted alphabetically by path to keep the string output
         // consistent. Maybe it even helps with the filesystem output.
-        private readonly SortedSet<DatapackFile> files = new(Comparer<DatapackFile>.Create((a,b) => a.Path.CompareTo(b.Path)));
-        public List<MCFunctionName> testFunctions = new();
+        private readonly SortedSet<IDatapackFile> files = new(DatapackFileComparer.Comparer);
 
-        private NameManager nameManager;
-
-        public Datapack(NameManager nameManager) {
-            this.nameManager = nameManager;
-        }
-        public Datapack(IEnumerable<DatapackFile> files, NameManager nameManager) : this(nameManager) {
+        public FullDatapack(params IEnumerable<IDatapackFile>[] files) {
             // Only add datapacks that are intended to be valid -- exactly the
             // ones with a valid name.
-            foreach (var file in files)
-                if (NameManager.IsValidDatapackName(file.Path))
-                    this.files.Add(file);
-                else
-                    throw new ArgumentException($"Found file with invalid datapack file name: {file.Path}");
+            foreach (var filelist in files)
+                foreach (var file in filelist)
+                    if (NameManager.IsValidDatapackName(file.Subpath))
+                        this.files.Add(file);
+                    else
+                        throw new ArgumentException($"Found file with invalid datapack file name: {file.Subpath}");
         }
 
         /// <summary>
@@ -35,7 +36,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// The path to a datapack's directory, inside a minecraft world's
         /// datapack directory.
         /// </param>
-        public void WriteToFilesystem(string rootPath, string manespace) {
+        public void WriteToFilesystem(string rootPath) {
             char slash = Path.DirectorySeparatorChar;
             // TODO: Temp safeguard while I'm writing stuff still.
             if (!(rootPath.Contains(".minecraft") && rootPath.Contains("saves") && rootPath.Contains("datapacks")))
@@ -51,40 +52,9 @@ namespace Atrufulgium.FrontTick.Compiler {
   }
 }");
             }
-            // Also do the internal load and tick functions into their respective tags.
-            // TODO: When needing tick functions, do them here.
-            string minecraftFunctionTagsDirectory
-                = $"{rootPath}{slash}data{slash}minecraft{slash}tags{slash}functions";
-            Directory.CreateDirectory(minecraftFunctionTagsDirectory);
-            using (var load = File.CreateText($"{minecraftFunctionTagsDirectory}{slash}load.json")) {
-                load.Write($"{{\"values\":[\"{nameManager.SetupFileName}\"]}}");
-            }
-            if (testFunctions.Count != 0) {
-                // Also put all test functions in their own tag.
-                string packFunctionTagsDirectory
-                    = $"{rootPath}{slash}data{slash}{manespace}{slash}tags{slash}functions";
-                Directory.CreateDirectory(packFunctionTagsDirectory);
-                using (var test = File.CreateText($"{packFunctionTagsDirectory}{slash}test.json")) {
-                    test.WriteLine("{\"values\":[");
-                    foreach (var t in testFunctions)
-                        test.WriteLine($"  \"{t}\",");
-                    test.WriteLine($"  \"{nameManager.TestPostProcessName}\"");
-                    test.WriteLine("]}");
-                }
-            }
 
-            foreach (DatapackFile file in files) {
-                string[] parts = ((string)file.Path).Split(':');
-                string fileManespace = parts[0];
-                string path = parts[1];
-                string fullPath = $"{rootPath}{slash}data{slash}{fileManespace}{slash}functions{slash}{path}.mcfunction";
-                // Now extract the directory from the filepath and create it.
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-                using (var function = File.CreateText(fullPath)) {
-                    function.Write(file.GetContent());
-                }
-            }
-
+            foreach (var file in files)
+                file.WriteToFilesystem(rootPath);
         }
 
         /// <summary>
@@ -99,7 +69,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </code>
         /// </summary>
         public override string ToString()
-            => string.Join("\n\n", files);
+            => ToString(false, false);
 
         /// <summary>
         /// <inheritdoc cref="ToString"/>
@@ -116,19 +86,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </para>
         /// </remarks>
         // These are found via the `<namespace>-internal:function` name.
-        public string ToString(bool skipInternal, bool skipMCMirror) {
-            if (!skipInternal && !skipMCMirror)
-                return ToString();
-
-            string result = "";
+        public string ToString(bool skipInternal = false, bool skipMCMirror = false) {
+            StringBuilder result = new();
             foreach (var f in files) {
-                if (skipInternal && f.Path.name.Contains("-internal:"))
+                if (skipInternal && f.Namespace.Contains("-internal"))
                     continue;
-                if (skipMCMirror && f.Path.name.Contains("internal/mcmirror"))
+                if (skipInternal && f is FunctionTag tag && tag.Subpath == "test.json")
                     continue;
-                result += $"{f}\n\n";
+                if (skipMCMirror && f.Subpath.Contains($"internal/mcmirror"))
+                    continue;
+                result.Append($"# (File ({(string)f.DatapackLocation}) {f.Namespace}:{f.Subpath})\n{f.GetFileContents()}\n\n");
             }
-            return result;
+            return result.ToString();
         }
 
         /// <summary>
@@ -154,37 +123,46 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// the calling functions name, instead of being printed at root.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This is to be used purely for debugging purposes and not for
         /// checking whether tests work as expected. For that, use
         /// <see cref="ToString"/>.
+        /// </para>
+        /// <para>
+        /// In particular, this returns <i>only</i> the function files in the
+        /// pack, and not anything else.
+        /// </para>
         /// </remarks>
         public string ToTreeString(bool skipInternal = true, bool skipMCFunction = true) {
             string result = "";
             processedFunctions = new();
-            functionsByName = files.ToDictionary(file => file.Path, file => file);
+            var functionFiles = files.OfType<MCFunctionFile>();
+            functionsByName = functionFiles.ToDictionary(file => file.Path, file => file);
 
             // Pre-emptively mark all files to skip as "processed".
-            foreach (var file in files) {
-                if (skipInternal && file.Path.name.Contains("-internal:"))
+            foreach (var file in functionFiles) {
+                if (skipInternal && file.Path.name.Contains("-internal"))
                     processedFunctions.Add(file.Path);
                 if (skipMCFunction && file.Path.name.Contains("internal/mcmirror"))
                     processedFunctions.Add(file.Path);
             }
 
             foreach (var file in files) {
-                if (!processedFunctions.Contains(file.Path))
-                    result += $"\n{GetTreeFunctionAtDepth(file, file.Path, 0)}";
+                if (file is MCFunctionFile functionFile) {
+                    if (!processedFunctions.Contains(functionFile.Path))
+                        result += $"\n{GetTreeFunctionAtDepth(functionFile, functionFile.Path, 0)}";
+                }
             }
             return result.Trim();
         }
 
         HashSet<MCFunctionName> processedFunctions;
-        Dictionary<MCFunctionName, DatapackFile> functionsByName;
-        private string GetTreeFunctionAtDepth(DatapackFile file, MCFunctionName topName, int depth) {
+        Dictionary<MCFunctionName, MCFunctionFile> functionsByName;
+        private string GetTreeFunctionAtDepth(MCFunctionFile file, MCFunctionName topName, int depth) {
             processedFunctions.Add(file.Path);
             var indent = new string(' ', 4 * depth);
             // Header structure copypasta'd from
-            /// <see cref="DatapackFile.ToString"/>
+            /// <see cref="MCFunctionFile.ToString"/>
             var result = $"\n{indent}# (File {file.Path}.mcfunction)";
             if (file.code.Count == 0)
                 result += $"\n{indent}# (Empty)";

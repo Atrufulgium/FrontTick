@@ -18,7 +18,7 @@ public class Test {
         int i;
     }
 }
-", "# (File compiled:test.testmethod.mcfunction)\n# (Empty)",
+", "# (File (functions) compiled:test.testmethod.mcfunction)\n# (Empty)",
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -105,7 +105,7 @@ public class Test {
         i %= 5;
     }
 }
-", @"# (File compiled:test.testmethod.mcfunction)
+", @"# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:test.testmethod#i _ += #CONST#1 _
 scoreboard players operation #compiled:test.testmethod#i _ -= #CONST#2 _
@@ -132,7 +132,7 @@ public class Test {
         i %= j;
     }
 }
-", @"# (File compiled:test.testmethod.mcfunction)
+", @"# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players operation #compiled:test.testmethod#i _ = #compiled:test.testmethod#j _
 scoreboard players operation #compiled:test.testmethod#i _ += #compiled:test.testmethod#j _
@@ -158,10 +158,10 @@ public class Test {
     public static int GetThree() { return 3; }
 }
 ", @"
-# (File compiled:internal/test.getthree.mcfunction)
+# (File (functions) compiled:internal/test.getthree.mcfunction)
 scoreboard players set #RET _ 3
 
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 3
 function compiled:internal/test.getthree
 scoreboard players operation #compiled:test.testmethod#i _ -= #RET _
@@ -284,10 +284,10 @@ public class Test {
     public static void CalledMethod() { }
 }
 ", @"
-# (File compiled:internal/test.calledmethod.mcfunction)
+# (File (functions) compiled:internal/test.calledmethod.mcfunction)
 # (Empty)
 
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 function compiled:internal/test.calledmethod
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -334,12 +334,12 @@ public class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32.mcfunction)
+# (File (functions) compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32.mcfunction)
 scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg0 _ = #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg1 _
 scoreboard players set #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg2 _ 3
 scoreboard players set #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg3 _ 4
 
-# (File compiled:internal/test.testmethod-int32-int32-int32-int32.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32-int32-int32-int32.mcfunction)
 scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg0 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg0 _
 scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg1 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg1 _
 scoreboard players operation #compiled:internal/test.calledmethod-int32-in-int32-out-int32-ref-int32##arg3 _ = #compiled:internal/test.testmethod-int32-int32-int32-int32##arg3 _
@@ -361,13 +361,13 @@ public class Test {
     public static void Called(int i) {}
 }
 ", @"
-# (File compiled:internal/test.called.mcfunction)
+# (File (functions) compiled:internal/test.called.mcfunction)
 # (Empty)
 
-# (File compiled:internal/test.called-int32.mcfunction)
+# (File (functions) compiled:internal/test.called-int32.mcfunction)
 # (Empty)
 
-# (File compiled:internal/test.testmethod-int32.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32.mcfunction)
 function compiled:internal/test.called
 scoreboard players operation #compiled:internal/test.called-int32##arg0 _ = #compiled:internal/test.testmethod-int32##arg0 _
 function compiled:internal/test.called-int32
@@ -396,7 +396,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -417,7 +417,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -439,11 +439,11 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
 
-# (File compiled:test.testmethod-0-if-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 1
 scoreboard players set #compiled:test.testmethod#i _ 2
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -467,7 +467,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
@@ -493,13 +493,13 @@ internal class Test {
     }
 }
 ", @"
- # (File compiled:test.testmethod.mcfunction)
+ # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation conditionIdentifier-2 _ = #compiled:test.testmethod#i _
 execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 execute if score conditionIdentifier-2 _ matches 0 run function compiled:test.testmethod-1-else-branch
 
-# (File compiled:test.testmethod-1-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-1-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 2
 scoreboard players set #compiled:test.testmethod#i _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -520,11 +520,11 @@ internal class Test {
     }
 }
 ", @"
- # (File compiled:internal/test.testmethod-int32-int32.mcfunction)
+ # (File (functions) compiled:internal/test.testmethod-int32-int32.mcfunction)
 execute unless score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
 execute if score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run function compiled:internal/test.testmethod-int32-int32-1-else-branch
 
-# (File compiled:internal/test.testmethod-int32-int32-1-else-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32-int32-1-else-branch.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 2
 scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -565,37 +565,37 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
 
-# (File compiled:test.testmethod-0-if-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-2-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-3-else-branch
 scoreboard players set #compiled:test.testmethod#j _ 0
 
-# (File compiled:test.testmethod-1-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-1-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 1
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-4-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-5-else-branch
 scoreboard players set #compiled:test.testmethod#j _ 1
 
-# (File compiled:test.testmethod-2-if-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-2-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 2
 scoreboard players set #compiled:test.testmethod#j _ 2
 
-# (File compiled:test.testmethod-3-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-3-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 3
 scoreboard players set #compiled:test.testmethod#j _ 3
 
-# (File compiled:test.testmethod-4-if-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-4-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 4
 scoreboard players set #compiled:test.testmethod#j _ 4
 
-# (File compiled:test.testmethod-5-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-5-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 5
 scoreboard players set #compiled:test.testmethod#j _ 5
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -622,7 +622,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players set #compiled:test.testmethod#k _ 0
@@ -645,7 +645,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -666,7 +666,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute if score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -716,7 +716,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -733,7 +733,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#i _ 3
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod#i _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -752,10 +752,10 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 function compiled:internal/test.testmethod2
 
-# (File compiled:internal/test.testmethod2.mcfunction)
+# (File (functions) compiled:internal/test.testmethod2.mcfunction)
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -783,26 +783,26 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#i _ 0
 scoreboard players set #compiled:internal/test.testmethod#j _ 0
 execute unless score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-0-if-branch
 execute if score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-1-else-branch
 execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 
-# (File compiled:internal/test.testmethod-0-if-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-0-if-branch.mcfunction)
 execute unless score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-2-if-branch
 execute if score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-3-else-branch
 
-# (File compiled:internal/test.testmethod-1-else-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-1-else-branch.mcfunction)
 scoreboard players set #RET _ 3
 scoreboard players set #GOTOFLAG _ 1
 
-# (File compiled:internal/test.testmethod-2-if-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-2-if-branch.mcfunction)
 scoreboard players set #RET _ 1
 scoreboard players set #GOTOFLAG _ 1
 
-# (File compiled:internal/test.testmethod-3-else-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-3-else-branch.mcfunction)
 scoreboard players set #RET _ 2
 scoreboard players set #GOTOFLAG _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -819,10 +819,10 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #RET _ 0
 
-# (File compiled:internal/test.testmethod-0-goto-label-1.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-0-goto-label-1.mcfunction)
 scoreboard players set #RET _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -883,7 +883,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod-int32.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32.mcfunction)
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int32##arg0 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -899,7 +899,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players operation #RET _ = #compiled:test#nUmBeR _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -920,7 +920,7 @@ namespace TestSpace {
     }
 }
 ", @"
-# (File compiled:internal/testspace.test.innerclass.testmethod.mcfunction)
+# (File (functions) compiled:internal/testspace.test.innerclass.testmethod.mcfunction)
 scoreboard players set #compiled:internal/testspace.test.innerclass.testmethod#nUmBeR _ 3
 scoreboard players operation #RET _ = #compiled:internal/testspace.test.innerclass.testmethod#nUmBeR _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -941,14 +941,14 @@ internal class Test {
     static int TestMethod2(int number) { return 3; }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#i _ 3
 scoreboard players operation #compiled:internal/test.testmethod2-int32##arg0 _ = #compiled:internal/test.testmethod#i _
 function compiled:internal/test.testmethod2-int32
 scoreboard players set #compiled:internal/test.testmethod2-int32##arg0 _ 3
 function compiled:internal/test.testmethod2-int32
 
-# (File compiled:internal/test.testmethod2-int32.mcfunction)
+# (File (functions) compiled:internal/test.testmethod2-int32.mcfunction)
 scoreboard players set #RET _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
@@ -968,7 +968,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod-int32.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int32#pos#x _ 2
 scoreboard players operation #compiled:internal/test.testmethod-int32#pos#y _ = #compiled:internal/test.testmethod-int32##arg0 _
 scoreboard players set #compiled:internal/test.testmethod-int32#pos#z _ 0
@@ -985,7 +985,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod-int3.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int3.mcfunction)
 scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int3##arg0#z _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -1012,7 +1012,7 @@ struct DolorSitAmet {
     int w;
 }
 ", @"
-# (File compiled:internal/test.testmethod-lorem-lorem.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-lorem-lorem.mcfunction)
 scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#x _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#x _
 scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#y _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#y _
 scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#z _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#z _
@@ -1039,7 +1039,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#pos#x _ 1
 scoreboard players set #compiled:internal/test.testmethod#pos#y _ 2
 scoreboard players set #compiled:internal/test.testmethod#pos#z _ 3
@@ -1069,7 +1069,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#pos#x _ 1
 scoreboard players set #compiled:internal/test.testmethod#pos#y _ 2
 scoreboard players set #compiled:internal/test.testmethod#pos#z _ 3
@@ -1077,7 +1077,7 @@ scoreboard players operation #RET#x _ = #compiled:internal/test.testmethod#pos#x
 scoreboard players operation #RET#y _ = #compiled:internal/test.testmethod#pos#y _
 scoreboard players operation #RET#z _ = #compiled:internal/test.testmethod#pos#z _
 
-# (File compiled:internal/test.testmethod2.mcfunction)
+# (File (functions) compiled:internal/test.testmethod2.mcfunction)
 function compiled:internal/test.testmethod
 scoreboard players operation #compiled:internal/test.testmethod2#pos#x _ = #RET#x _
 scoreboard players operation #compiled:internal/test.testmethod2#pos#y _ = #RET#y _
@@ -1097,7 +1097,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod-int3.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int3.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int3##arg0#x _ 24
 scoreboard players operation #compiled:internal/test.testmethod-int3##arg0#y _ += #CONST#23 _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -1135,7 +1135,7 @@ internal class Test {
     }
 }
 ", @"
-# (File compiled:internal/test.testmethod.mcfunction)
+# (File (functions) compiled:internal/test.testmethod.mcfunction)
 say hoi
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 

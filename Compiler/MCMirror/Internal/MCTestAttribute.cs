@@ -1,7 +1,6 @@
-﻿using MCMirror.Internal;
-using System;
+﻿using System;
 
-namespace MCMirror {
+namespace MCMirror.Internal {
     /// <summary>
     /// <para>
     /// This attribute signifies that a method is a test method to be run

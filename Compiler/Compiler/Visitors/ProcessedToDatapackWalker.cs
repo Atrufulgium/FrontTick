@@ -1,12 +1,14 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Atrufulgium.FrontTick.Compiler.Datapack;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MCMirror;
+using MCMirror.Internal;
 
-namespace Atrufulgium.FrontTick.Compiler.Visitors {
+namespace Atrufulgium.FrontTick.Compiler.Visitors
+{
     /// <summary>
     /// A walker for turning the tree, fully processed into suitable form,
     /// into the actual datapack.
@@ -52,7 +54,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// remove from this.
         /// </para>
         /// </summary>
-        readonly Stack<DatapackFile> wipFiles = new();
+        readonly Stack<MCFunctionFile> wipFiles = new();
         // We're at root scope if we aren't in a branch.
         // However, gotos can introduce wipFiles.
         // As such, we're only at root scope if no wipFiles are branchy.
@@ -70,10 +72,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         Dictionary<int, MCFunctionName> gotoFunctionNames;
 
         /// <summary>
-        /// All methods with a [MCTest(int)] attribute. To be collected to be
-        /// put into a minecraft function tag at a later stage.
+        /// All methods with a [MCTest(int)] attribute.
         /// </summary>
-        public List<MCFunctionName> testFunctions = new();
+        public FunctionTag testFunctions;
+
+        public override void GlobalPreProcess() {
+            testFunctions = new(nameManager.manespace, "test.json", sorted: false);
+        }
+        public override void GlobalPostProcess() {
+            testFunctions.AddToTag(nameManager.TestPostProcessName);
+        }
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
@@ -452,7 +460,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             AddCode($"execute unless score #RET _ matches {expected} run scoreboard players add #TESTFAILURES _ 1");
             AddCode("scoreboard players remove #TESTSSKIPPED _ 1");
 
-            testFunctions.Add(nameManager.GetMethodName(CurrentSemantics, node, this));
+            testFunctions.AddToTag(nameManager.GetMethodName(CurrentSemantics, node, this));
         }
 
         /// <summary>
