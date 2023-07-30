@@ -25,7 +25,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         PreProcessCategory,
         FlattenNestedCallsRewriter,
         ReturnRewriter,
-        GotoFlagifyRewriter
+        GotoFlagifyRewriter,
+        LoadTickWalker
     > {
         // TODO: ProcessedToDatapackWalker optimisation opportunities:
         // * Replace `operation += const` with `add const` (or `remove const` if negative)

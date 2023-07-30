@@ -47,7 +47,8 @@ namespace Atrufulgium.FrontTick.Compiler
 
         public FullDatapack CompiledDatapack => new(
             finishedCompilation,
-            new[] { appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions }
+            new[] { appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions },
+            appliedWalkers.Get<LoadTickWalker>().GeneratedFiles
         );
 
         public bool CompilationSucceeded => ErrorDiagnostics.Count == 0;
