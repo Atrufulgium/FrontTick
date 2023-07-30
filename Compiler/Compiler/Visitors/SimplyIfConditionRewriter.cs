@@ -29,9 +29,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         int tempCounter = 0;
         string GetTempName() => $"#IFTEMP{tempCounter++}";
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             tempCounter = 0;
-            return base.VisitMethodDeclaration(node);
+            return base.VisitMethodDeclarationRespectingNoCompile(node);
         }
 
         public override SyntaxNode VisitIfStatement(IfStatementSyntax node) {

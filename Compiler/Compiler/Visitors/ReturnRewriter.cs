@@ -19,13 +19,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         bool isVoid;
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (node.IsExtern())
                 return node;
 
             isVoid = node.ReturnsVoid();
 
-            node = (MethodDeclarationSyntax) base.VisitMethodDeclaration(node);
+            node = (MethodDeclarationSyntax) base.VisitMethodDeclarationRespectingNoCompile(node);
 
             var newBody = node.Body;
             if (!isVoid) {

@@ -68,11 +68,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         int tempCounter = 0;
         readonly List<StatementSyntax> priorDeclarations = new();
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // We need uniqueness of variables inside a method, and for consistency,
             // start all methods by counting from zero.
             tempCounter = 0;
-            return base.VisitMethodDeclaration(node);
+            return base.VisitMethodDeclarationRespectingNoCompile(node);
         }
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node) {

@@ -73,8 +73,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             => VisitEasyCase(node, base.VisitConversionOperatorDeclaration, isVoid: false); // Nonvoid by CS0590
         public override SyntaxNode VisitDestructorDeclaration(DestructorDeclarationSyntax node)
             => VisitEasyCase(node, base.VisitDestructorDeclaration, isVoid: true); // These aren't even supported
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node)
-            => VisitEasyCase(node, base.VisitMethodDeclaration, isVoid: node.ReturnsVoid());
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node)
+            => VisitEasyCase(node, base.VisitMethodDeclarationRespectingNoCompile, isVoid: node.ReturnsVoid());
         public override SyntaxNode VisitOperatorDeclaration(OperatorDeclarationSyntax node)
             => VisitEasyCase(node, base.VisitOperatorDeclaration, isVoid: false); // Nonvoid by CS0590
 

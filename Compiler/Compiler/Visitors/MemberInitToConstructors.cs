@@ -20,11 +20,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <para>
     /// Assumes multiple declarators (like <tt>int a,b</tt>) are no more.
     /// </para>
-    /// <para>
-    /// Note: This does NOT yet create empty constructors. That is locked
-    /// behind the overload-gate.
-    /// (When updating this, also update the corresponding comment below)
-    /// </para>
     /// </remarks>
     // (This also handles auto-properties if their backing field is implemented
     //  before this pass)
@@ -37,14 +32,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         string currentTypeName;
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             HandleMembers(node.Members);
             return node.WithMembers(List(newMembers));
             
         }
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
             HandleMembers(node.Members);
             return node.WithMembers(List(newMembers));
@@ -55,9 +50,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         /// <summary>
+        /// <para>
         /// Goes through all members and puts no-init versions into the
         /// <see cref="newMembers"/> list. All to-copy initializers end up in
         /// <see cref="constructorAssignments"/>.
+        /// </para>
+        /// <para>
+        /// Const members are ignored.
+        /// </para>
         /// </summary>
         void HandleMembers(IEnumerable<MemberDeclarationSyntax> members) {
             newMembers.Clear();
@@ -71,6 +71,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         foundEmptyConstructor = true;
                 }
                 if (m is not FieldDeclarationSyntax f) {
+                    newMembers.Add(m);
+                    continue;
+                }
+                if (f.ChildTokensContain(SyntaxKind.ConstKeyword)) {
                     newMembers.Add(m);
                     continue;
                 }
@@ -95,9 +99,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 }
             }
 
-            // TODO: Uncomment once method overloading is allowed. Also remove the corresponding remark.
-            //if (!foundEmptyConstructor && constructorAssignments.Count > 0)
-            //    newMembers.Add(ConstructorDeclaration(Identifier(currentTypeName)));
+            if (!foundEmptyConstructor && constructorAssignments.Count > 0)
+                newMembers.Add(ConstructorDeclaration(Identifier(currentTypeName)));
 
             // Now go through the new members again, and update all
             // constructors to have the prepended statements.

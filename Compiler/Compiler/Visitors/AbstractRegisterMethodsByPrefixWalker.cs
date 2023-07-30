@@ -13,15 +13,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public abstract string[] CharacteristicString { get; }
         public virtual bool IsInternal { get => true; }
 
-        public override void VisitStructDeclaration(StructDeclarationSyntax node) {
-            base.VisitStructDeclaration(node);
-        }
-
-        public override void VisitClassDeclaration(ClassDeclarationSyntax node) {
-            base.VisitClassDeclaration(node);
-        }
-
-        public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
+        public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax method) {
             string methodName = method.Identifier.Text;
             foreach (var s in CharacteristicString)
                 if (methodName.Contains(s))

@@ -52,23 +52,62 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         // Do not handle any [NoCompile] code.
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        /// <summary>
+        /// <para>
+        /// In order to support <see cref="NoCompileAttribute"/>, execution
+        /// needs to be stopped before reaching the relevant node. This is
+        /// relevant for:
+        /// <list type="bullet">
+        /// <item> <see cref="MethodDeclarationSyntax"/> </item>
+        /// <item> <see cref="ClassDeclarationSyntax"/> </item>
+        /// <item> <see cref="StructDeclarationSyntax"/> </item>
+        /// <item> Other MemberDeclarationSyntaxes I may support. </item>
+        /// </list>
+        /// In order to achieve this, we need a <tt>RespectingNoCompile</tt>
+        /// variant for each visitor that is influenced by the attribute. These
+        /// variants are used in exactly the same way as any Roslyn
+        /// <tt>VisitXSyntax</tt> method is used.
+        /// </para>
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>WARNING</b>: Do <b>NOT</b> call the original base methods. Instead
+        /// call the <tt>RespectingNoCompile</tt> base variants. Otherwise this
+        /// causes an infinite recursion, and the resulting stackoverflow is
+        /// silently ignored by the testing suite.
+        /// </para>
+        /// <para>
+        /// (I'd <i>love</i> to not have this footgun, but I can't figure out how.)
+        /// </para>
+        /// </remarks>
+        public sealed override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
-                return null;
-            return base.VisitMethodDeclaration(node);
+                return node;
+            return VisitMethodDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node)
+            => base.VisitMethodDeclaration(node);
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
-                return null;
-            return base.VisitClassDeclaration(node);
+                return node;
+            return VisitClassDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node)
+            => base.VisitClassDeclaration(node);
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
-                return null;
-            return base.VisitStructDeclaration(node);
+                return node;
+            return VisitStructDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node)
+            => base.VisitStructDeclaration(node);
 
         public void FullVisit() {
             // We will be modifying the compiler roots because of updates,

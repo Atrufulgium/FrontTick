@@ -75,7 +75,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         public List<MCFunctionName> testFunctions = new();
 
-        public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCMirror.Internal.CustomCompiledAttribute), out _))
                 return;

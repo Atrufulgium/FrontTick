@@ -29,15 +29,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<PropertyDeclarationSyntax> properties = new();
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             properties.Clear();
-            node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
+            node = (StructDeclarationSyntax)base.VisitStructDeclarationRespectingNoCompile(node);
             return AddProperties(node);
         }
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             properties.Clear();
-            node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
+            node = (ClassDeclarationSyntax)base.VisitClassDeclarationRespectingNoCompile(node);
             return AddProperties(node);
         }
 

@@ -79,7 +79,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // reset after every jump, with the flag specifying the currently
         // "active" goto jump.
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (node.IsExtern())
                 return node;
 
@@ -98,7 +98,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     )
                 )
             );
-            return base.VisitMethodDeclaration(node);
+            return base.VisitMethodDeclarationRespectingNoCompile(node);
         }
 
         public override SyntaxNode VisitBlock(BlockSyntax node) {

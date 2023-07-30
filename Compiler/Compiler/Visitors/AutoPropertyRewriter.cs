@@ -23,10 +23,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<MemberDeclarationSyntax> introducedFields = new();
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node)
-            => VisitTypeDeclarationSyntax(node, base.VisitClassDeclaration);
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node)
-            => VisitTypeDeclarationSyntax(node, base.VisitStructDeclaration);
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node)
+            => VisitTypeDeclarationSyntax(node, base.VisitClassDeclarationRespectingNoCompile);
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node)
+            => VisitTypeDeclarationSyntax(node, base.VisitStructDeclarationRespectingNoCompile);
 
         SyntaxNode VisitTypeDeclarationSyntax<T>(T node, Func<T, SyntaxNode> baseCall)
             where T : TypeDeclarationSyntax {

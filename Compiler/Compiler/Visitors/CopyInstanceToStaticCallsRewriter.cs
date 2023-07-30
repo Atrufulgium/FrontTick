@@ -30,17 +30,17 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         private static readonly string instancePrefix = "#instance";
         internal static readonly string staticPrefix = "STATIC-";
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             instanceMethods.Clear();
             currentType = CurrentSemantics.GetDeclaredSymbol(node);
-            node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
+            node = (StructDeclarationSyntax)base.VisitStructDeclarationRespectingNoCompile(node);
             return HandleType(node);
         }
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             instanceMethods.Clear();
             currentType = CurrentSemantics.GetDeclaredSymbol(node);
-            node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
+            node = (ClassDeclarationSyntax)base.VisitClassDeclarationRespectingNoCompile(node);
             return HandleType(node);
         }
 
@@ -68,10 +68,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             return node;
         }
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (!node.ChildTokensContain(SyntaxKind.StaticKeyword))
                 instanceMethods.Add(node);
-            return base.VisitMethodDeclaration(node);
+            return base.VisitMethodDeclarationRespectingNoCompile(node);
         }
 
         /// <summary>

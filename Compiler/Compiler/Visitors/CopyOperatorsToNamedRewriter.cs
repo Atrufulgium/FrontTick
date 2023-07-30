@@ -27,15 +27,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<OperatorDeclarationSyntax> ops = new();
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             ops.Clear();
-            node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
+            node = (StructDeclarationSyntax)base.VisitStructDeclarationRespectingNoCompile(node);
             return AddOps(node);
         }
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             ops.Clear();
-            node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
+            node = (ClassDeclarationSyntax)base.VisitClassDeclarationRespectingNoCompile(node);
             return AddOps(node);
         }
 

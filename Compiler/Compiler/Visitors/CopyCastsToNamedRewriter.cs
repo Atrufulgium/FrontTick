@@ -42,17 +42,17 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             throw new System.ArgumentException($"There is no cast from {inType.Name} to {outType.Name}. Are these built-in?");
         }
 
-        public override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
+        public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             ops.Clear();
             currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
-            node = (StructDeclarationSyntax)base.VisitStructDeclaration(node);
+            node = (StructDeclarationSyntax)base.VisitStructDeclarationRespectingNoCompile(node);
             return AddCasts(node);
         }
 
-        public override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
+        public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             ops.Clear();
             currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
-            node = (ClassDeclarationSyntax)base.VisitClassDeclaration(node);
+            node = (ClassDeclarationSyntax)base.VisitClassDeclarationRespectingNoCompile(node);
             return AddCasts(node);
         }
 

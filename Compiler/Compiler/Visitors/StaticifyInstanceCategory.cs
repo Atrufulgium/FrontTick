@@ -30,10 +30,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </summary>
     public class RemoveInstanceCallsRewriter : AbstractFullRewriter {
 
-        public override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (!node.ChildTokensContain(SyntaxKind.StaticKeyword))
                 return null;
-            return base.VisitMethodDeclaration(node);
+            return base.VisitMethodDeclarationRespectingNoCompile(node);
         }
     }
 }

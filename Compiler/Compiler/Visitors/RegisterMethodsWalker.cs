@@ -15,8 +15,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // custom compiled methods certainly are illegally named.
     public class RegisterMethodsWalker : AbstractFullWalker {
 
-        public override void VisitMethodDeclaration(MethodDeclarationSyntax method) {
-            base.VisitMethodDeclaration(method);
+        public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax method) {
+            base.VisitMethodDeclarationRespectingNoCompile(method);
             
             string name = null;
             bool isInternal = false;

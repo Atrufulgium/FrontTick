@@ -44,23 +44,35 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         // Do not handle any [NoCompile] code.
-        public override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
                 return;
-            base.VisitMethodDeclaration(node);
+            VisitMethodDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node)
+            => base.VisitMethodDeclaration(node);
 
-        public override void VisitClassDeclaration(ClassDeclarationSyntax node) {
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override void VisitClassDeclaration(ClassDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
                 return;
-            base.VisitClassDeclaration(node);
+            VisitClassDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual void VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node)
+            => base.VisitClassDeclaration(node);
 
-        public override void VisitStructDeclaration(StructDeclarationSyntax node) {
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override void VisitStructDeclaration(StructDeclarationSyntax node) {
             if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
                 return;
-            base.VisitStructDeclaration(node);
+            VisitStructDeclarationRespectingNoCompile(node);
         }
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual void VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node)
+            => base.VisitStructDeclaration(node);
 
         public void FullVisit() {
             GlobalPreProcess();
