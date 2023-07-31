@@ -85,5 +85,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "String interpolation values must be constant.",
                 messageFormat: "When writing any a string interpolation ($\"{interpolation}\"), `interpolation` must be a constant value."
             );
+
+        public static DiagnosticDescriptor TickRateMustBePositive
+            => Create(
+                id: "FT0011",
+                title: "[Tick(n)] value must be positive.",
+                messageFormat: "The argument in the [Tick(n)] attribute represents how many 0.05s ticks to wait each call. This must be at least one increment, but {0} < 1."
+            );
     }
 }

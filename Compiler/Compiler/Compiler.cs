@@ -262,6 +262,12 @@ namespace Atrufulgium.FrontTick.Compiler
             // returns -- it is always set when read.
             foreach (var (num, name) in nameManager.GetAllConstantNames())
                 setupFile.code.Add($"scoreboard players set {name} _ {num}");
+            // Add a call to all >1-tick function tags
+            foreach (var (tickrate, index) in appliedWalkers.Get<LoadTickWalker>().ActiveLongerTickPairs) {
+                // +1 to ensure none are run on the load frame.
+                // (Also because a schedule of 0 throws an error and I'm too lazy to differentiate cases)
+                setupFile.code.Add($"schedule function #{nameManager.manespace}:{LoadTickWalker.GetTickName(tickrate, index)} {index + 1}t");
+            }
             // On my machine, I can get ~125k (fast) commands / tick.
             // Then 2 seconds worth of commands seems like a reasonable limit,
             // especially for just 1 tick.
@@ -278,6 +284,19 @@ namespace Atrufulgium.FrontTick.Compiler
             postTestFile.code.Add("scoreboard players set #TESTFAILURES _ 0");
             postTestFile.code.Add("scoreboard players set #TESTSSKIPPED _ 0");
             finishedCompilation.Add(postTestFile);
+
+            // Also (as mentioned in LoadTickWalker.cs), add all "reschedule
+            // own tick" methods that already exist in the tag.
+            foreach(var (tickrate, index) in appliedWalkers.Get<LoadTickWalker>().ActiveLongerTickPairs) {
+                // Same name as over there, same mcfunctionname violation as over there
+                string functionName = $"{nameManager.manespace}:{LoadTickWalker.GetTickName(tickrate, index)}";
+                MCFunctionFile rescheduleFile = new(new(functionName));
+                // Note that scheduled functions *persist through reloads*.
+                // Fortunately, the default schedule function replaces, so it
+                // doesn't matter.
+                rescheduleFile.code.Add($"schedule function #{functionName} {tickrate}t");
+                finishedCompilation.Add(rescheduleFile);
+            }
 
             return true;
         }

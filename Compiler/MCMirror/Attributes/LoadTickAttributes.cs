@@ -59,9 +59,10 @@ namespace MCMirror {
     /// <inheritdoc cref="LoadAttribute"/>
     /// <para>
     /// Note that there is no guarantee methods with the same argument get run
-    /// the same time, or in what order. The compiler interleaves larger waits
-    /// to reduce lagspikes. For more control, use one method with this
-    /// attribute that calls a bunch more methods.
+    /// the same time, or in what order. The compiler interleaves larger delays
+    /// to reduce lagspikes. Due to this spread, not all such tick methods
+    /// start at the load tick. (In fact, none do.) For more control, use one
+    /// method with this attribute that calls a bunch more methods. 
     /// </para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
@@ -75,7 +76,7 @@ namespace MCMirror {
 
         /// <param name="value">
         /// How many ticks to wait between each call. Defaults to <tt>1</tt>.
-        /// Twenty ticks form a second.
+        /// Twenty ticks a second.
         /// </param>
         public TickAttribute(int value) {
             this.value = value;
