@@ -1169,7 +1169,7 @@ internal class Test {
         Run($""{i}"");
     }
 }
-", "FT0005", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+", "FT0010", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void TestRunRawWrong2()

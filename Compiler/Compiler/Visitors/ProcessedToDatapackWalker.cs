@@ -368,12 +368,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             MCFunctionName methodName = nameManager.GetMethodName(CurrentSemantics, call, this);
             // Handle all compiler-known custom names.
             // This may also need a better system if there's more than one.
-            if (methodName == "RunRaw") {
+            if (methodName == "CompileTime/RunRaw") {
                 HandleRunRaw(call);
                 return;
             }
-            // "VarName" has been processed already by
-            /// <see cref="VarNameMethodRewriter"/>
+            // Note that a lot of these have been handled already by
+            /// <see cref="CompiletimeClassRewriter"/>
+            // At this point, any left are an error.
+            if (methodName.name.StartsWith("CompileTime/"))
+                throw new ArgumentException("Unhandled compile time function remaining!");
 
             // Note: Copied somewhat below.
             for (int i = 0; i < call.ArgumentList.Arguments.Count; i++) {

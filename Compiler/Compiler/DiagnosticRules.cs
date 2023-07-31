@@ -70,5 +70,20 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "VarName(int) arguments must be identifiers.",
                 messageFormat: "Calling `MCMirror.Internal.CompileTime.VarName(int)` requires an argument that is just an identifier. No arithmetic, method calls etc."
             );
+
+        // of the *method* Internal.CompileTime.MethodName
+        public static DiagnosticDescriptor MethodNameArgMustBeIdentifier
+            => Create(
+                id: "FT0009",
+                title: "MethodName(Delegate) arguments must be identifiers.",
+                messageFormat: "Calling `MCMirror.Internal.CompileTime.MethodName(Delegate)` requires an argument that is just an identifier."
+            );
+
+        public static DiagnosticDescriptor StringInterpolationsMustBeConstant
+            => Create(
+                id: "FT0010",
+                title: "String interpolation values must be constant.",
+                messageFormat: "When writing any a string interpolation ($\"{interpolation}\"), `interpolation` must be a constant value."
+            );
     }
 }

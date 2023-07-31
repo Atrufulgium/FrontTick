@@ -35,8 +35,9 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         public string Subpath { get; init; }
 
         public string GetFileContents() {
+            // (Note: Minecraft complains if there is no `values` key)
             if (taggedFunctions.Count == 0)
-                return @"{""//empty"": """"}";
+                return @"{""// (Empty)"": """", ""values"": []}";
 
             // yeh yeh i know handwriting json is taboo. meh.
             StringBuilder ret = new(32);

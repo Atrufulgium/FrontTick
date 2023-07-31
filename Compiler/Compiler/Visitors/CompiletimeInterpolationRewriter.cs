@@ -8,16 +8,11 @@ using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
 namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <summary>
     /// <para>
-    /// Turns any function call to <see cref="MCMirror.Internal.CompileTime.VarName(int)"/>
-    /// into a literal string. If contained in an interpolated string, embeds
-    /// it literally.
+    /// Turns all string interpolations into full strings. Non-compiletime
+    /// string interpolations result in an error.
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// This should later be replaced with a more general framework for
-    /// compile-time manipulations.
-    /// </remarks>
-    public class VarNameMethodRewriter : AbstractFullRewriter {
+    public class CompiletimeInterpolationRewriter : AbstractFullRewriter<CompiletimeClassRewriter> {
 
         // Note:
         // InterpolatedStringExpression is the full `$" .. "`
@@ -74,20 +69,23 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public override SyntaxNode VisitInterpolation(InterpolationSyntax node) {
-            if (node.Expression is InvocationExpressionSyntax call) {
-                MCFunctionName methodName = nameManager.GetMethodName(CurrentSemantics, call, this);
-                if (methodName == "VarName") {
-                    ExpressionSyntax arg = call.ArgumentList.Arguments[0].Expression;
-                    if (arg is IdentifierNameSyntax or MemberAccessExpressionSyntax)
-                        return LiteralExpression(
-                            SyntaxKind.StringLiteralExpression,
-                            Literal(nameManager.GetVariableName(CurrentSemantics, arg, this))
-                        );
-                    AddCustomDiagnostic(DiagnosticRules.VarNameArgMustBeIdentifier, node.GetLocation());
-                    return null;
-                }
+            // The good case
+            if (node.Expression is LiteralExpressionSyntax lit) {
+                if (lit.Kind() == SyntaxKind.StringLiteralExpression)
+                    return lit;
+                else
+                    return StringLiteralExpression(lit.Token.Value.ToString());
             }
-            return base.VisitInterpolation(node);
+
+            // The medium case: we may be constant, but don't know the
+            // resulting value because it depends on semantics.
+            var symbol = CurrentSemantics.GetSymbolInfo(node.Expression).Symbol;
+            if (symbol is IFieldSymbol field && field.IsConst)
+                return StringLiteralExpression(field.ConstantValue.ToString());
+
+            // The bad case: not constant and we should throw an error.
+            AddCustomDiagnostic(DiagnosticRules.StringInterpolationsMustBeConstant, node.GetLocation());
+            return StringLiteralExpression("(non-constant string)");
         }
     }
 }

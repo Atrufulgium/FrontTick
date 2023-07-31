@@ -29,14 +29,14 @@ namespace Atrufulgium.FrontTick.Compiler {
         // I don't like BinaryExpression(<syntaxkind>, ...), so variants here.
 
         public static BinaryExpressionSyntax BinaryEqualsExpression(ExpressionSyntax left, ExpressionSyntax right)
-            => BinaryExpression(SyntaxKind.EqualsExpression, left, right);
+            => SyntaxFactory.BinaryExpression(SyntaxKind.EqualsExpression, left, right);
 
         // I hate `ExpressionStatement([..]ExpressionSyntax)`, so I'm adding these shortcuts as needed.
         // I could autogen these but I'm *lazy*.
 
         public static StatementSyntax AssignmentStatement(
             SyntaxKind kind, ExpressionSyntax left, ExpressionSyntax right
-        ) => ExpressionStatement(AssignmentExpression(kind, left, right));
+        ) => SyntaxFactory.ExpressionStatement(AssignmentExpression(kind, left, right));
 
         public static StatementSyntax SimpleAssignmentStatement(ExpressionSyntax left, ExpressionSyntax right)
             => AssignmentStatement(SyntaxKind.SimpleAssignmentExpression, left, right);
@@ -44,7 +44,10 @@ namespace Atrufulgium.FrontTick.Compiler {
         // Also, literals are ew
 
         public static LiteralExpressionSyntax NumericLiteralExpression(int value)
-            => LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
+            => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
+
+        public static LiteralExpressionSyntax StringLiteralExpression(string str)
+            => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(str));
 
         public static InterpolatedStringTextSyntax InterpolatedStringText(string value)
             => SyntaxFactory.InterpolatedStringText().WithTextToken(

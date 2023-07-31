@@ -89,10 +89,13 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         public string ToString(bool skipInternal = false, bool skipMCMirror = false) {
             StringBuilder result = new();
             foreach (var f in files) {
-                if (skipInternal && f.Namespace.Contains("-internal"))
+                if (skipInternal && f.Subpath.Contains("internal/--"))
                     continue;
-                if (skipInternal && f is FunctionTag tag && tag.Subpath == "test.json")
-                    continue;
+                if (skipInternal && f is FunctionTag tag)
+                    if (tag.Subpath == "test.json"
+                        || (tag.Namespace == "minecraft" && tag.Subpath == "load.json")
+                        || (tag.Namespace == "minecraft" && tag.Subpath == "tick.json"))
+                        continue;
                 if (skipMCMirror && f.Subpath.Contains($"internal/mcmirror"))
                     continue;
                 result.Append($"# (File ({(string)f.DatapackLocation}) {f.Namespace}:{f.Subpath})\n{f.GetFileContents()}\n\n");

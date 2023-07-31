@@ -24,5 +24,10 @@ namespace MinecraftTests {
         public static void TickMethod() {
             Run("execute if score test_load_tick _ matches 1 run say tick");
         }
+
+        [TrueLoad]
+        public static void TrueLoadMethod() {
+            Run("execute if score test_load_tick _ matches 1 run say trueload");
+        }
     }
 }

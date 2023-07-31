@@ -39,6 +39,11 @@ namespace MCMirror {
     /// </summary>
     /// <remarks>
     /// <inheritdoc cref="LoadAttribute"/>
+    /// <para>
+    /// Note that this method gets rerun on updated (i.e. recompiled) versions
+    /// again. For even more "run only once", consider using Minecraft's
+    /// storage.
+    /// </para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     [NoCompile]

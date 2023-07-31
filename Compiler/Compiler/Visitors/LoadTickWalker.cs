@@ -1,5 +1,6 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Datapack;
 using MCMirror;
+using MCMirror.Internal;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 
@@ -19,7 +20,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override void GlobalPreProcess() {
             loadTag = new("minecraft", "load.json");
             tickTag = new("minecraft", "tick.json");
-            trueLoadTag = new(nameManager.manespace, "internal/trueload.json");
+            trueLoadTag = new(nameManager.manespace, $"{TrueLoadManager.TrueLoadTagname}.json");
         }
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax method) {

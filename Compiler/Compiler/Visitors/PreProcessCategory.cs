@@ -6,7 +6,7 @@
     /// </summary>
     public class PreProcessCategory : AbstractFullWalker<
         MethodifyCategory,
-        VarNameMethodRewriter,
+        CompiletimeInterpolationRewriter,
         GuaranteeBlockRewriter,
         LoopsToGotoCategory,
         IfTrueFalseRewriter,
