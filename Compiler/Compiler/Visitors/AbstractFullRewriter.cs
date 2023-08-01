@@ -71,10 +71,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>WARNING</b>: Do <b>NOT</b> call the original base methods. Instead
-        /// call the <tt>RespectingNoCompile</tt> base variants. Otherwise this
-        /// causes an infinite recursion, and the resulting stackoverflow is
-        /// silently ignored by the testing suite.
+        /// <b>WARNING</b>: Do <b>NOT</b> call the original base methods such
+        /// as <tt>base.VisitMethodDeclaration()</tt>. Instead call the base
+        /// <tt>RespectingNoCompile</tt> variants. Otherwise this causes an
+        /// infinite recursion, and the resulting stackoverflow is silently
+        /// ignored by the testing suite.
         /// </para>
         /// <para>
         /// (I'd <i>love</i> to not have this footgun, but I can't figure out how.)

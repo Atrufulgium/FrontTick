@@ -92,5 +92,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "[Tick(n)] value must be positive.",
                 messageFormat: "The argument in the [Tick(n)] attribute represents how many 0.05s ticks to wait each call. This must be at least one increment, but {0} < 1."
             );
+
+        public static DiagnosticDescriptor FunctionTagAttributeMustBeStaticVoidVoid
+            => Create(
+                id: "FT0012",
+                title: "Methods attributed [Tick()], [Load], or [TrueLoad] must have signature static void(void).",
+                messageFormat: "Make sure that [Tick()], [Load], or [TrueLoad]-attributed '{0}' is static, returns nothing, and has no arguments."
+            );
     }
 }

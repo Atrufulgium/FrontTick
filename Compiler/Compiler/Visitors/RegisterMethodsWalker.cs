@@ -31,13 +31,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 return;
             }
 
-            // Try whether the sig is correct, and then store the method into here.
+            bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
+            bool voidIn = method.ArityOfArguments() == 0;
+            bool voidOut = method.ReturnsVoid();
+
+            // First the special methods with their signature checks
+
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(LoadAttribute), out _)
+                || CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TrueLoadAttribute), out _)
+                || CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TickAttribute), out _)) {
+                if (!(hasStatic && voidIn && voidOut))
+                    this.AddCustomDiagnostic(DiagnosticRules.FunctionTagAttributeMustBeStaticVoidVoid, method, method.Identifier.Text);
+            }
 
             if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
-                // Check whether the signature is correct.
-                bool hasStatic = method.Modifiers.Any(SyntaxKind.StaticKeyword);
-                bool voidIn = method.ArityOfArguments() == 0;
-                bool voidOut = method.ReturnsVoid();
                 if (!(hasStatic && voidIn && voidOut)) {
                     this.AddCustomDiagnostic(
                         DiagnosticRules.MCFunctionAttributeIncorrect,
@@ -62,6 +69,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             } else {
                 isInternal = true;
             }
+
+            // Everything's fine and custom cases are handled, finalize.
+
             nameManager.RegisterMethodname(CurrentSemantics, method, this, name: name, isInternal: isInternal);
         }
     }
