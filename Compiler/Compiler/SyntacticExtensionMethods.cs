@@ -4,6 +4,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -275,5 +277,42 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static ArgumentListSyntax WithPrependedArguments(this ArgumentListSyntax list, params ArgumentSyntax[] items)
             => list.WithArguments(list.Arguments.InsertRange(0, items));
+
+        public static MethodDeclarationSyntax WithAddedAttribute(this MethodDeclarationSyntax method, AttributeSyntax attribute) {
+            var attributeLists = method.AttributeLists;
+            attributeLists = attributeLists.Add(AttributeList(SeparatedList(new[] { attribute } )));
+            return method.WithAttributeLists(attributeLists);
+        }
+
+        /// <summary>
+        /// Tries to add an attribute to the method. Note that this can easily
+        /// fail if the argument attribute does not exist in the compilation,
+        /// or if the overload is not found. There is no checking whether
+        /// everything makes sense.
+        /// </summary>
+        public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method) where T : Attribute
+            => method.WithAddedAttribute(Attribute(IdentifierName(typeof(T).FullName.Replace("Attribute", ""))));
+
+        /// <inheritdoc cref="WithAddedAttribute{T}(MethodDeclarationSyntax)"/>
+        public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method, params object[] constructorArgs) {
+            List<AttributeArgumentSyntax> args = new(constructorArgs.Length);
+            for (int i = 0; i < constructorArgs.Length; i++) {
+                var param = constructorArgs[i];
+                ExpressionSyntax expr = null;
+                if (param is string str)
+                    expr = StringLiteralExpression(str);
+                else if (param is int ii)
+                    expr = NumericLiteralExpression(ii);
+                else
+                    throw new ArgumentException("Given constructor argument is not a supported type. Be sure not to pass in syntax nodes, but raw values.", nameof(constructorArgs));
+                args.Add(AttributeArgument(expr));
+            }
+            return method.WithAddedAttribute(
+                Attribute(
+                    IdentifierName(typeof(T).FullName),
+                    AttributeArgumentList(SeparatedList(args))
+                )
+            );
+        }
     }
 }

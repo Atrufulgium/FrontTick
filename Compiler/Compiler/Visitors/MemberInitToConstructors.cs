@@ -13,7 +13,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </para>
     /// <para>
     /// This is including the argument-less constructor, which gets created if
-    /// it does not yet exist.
+    /// it does not yet exist. This is <i>also</i> including the static
+    /// constructor for static member initializers.
     /// </para>
     /// </summary>
     /// <remarks>
@@ -29,6 +30,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         readonly List<MemberDeclarationSyntax> newMembers = new();
         readonly List<StatementSyntax> constructorAssignments = new();
+        readonly List<StatementSyntax> staticConstructorAssignments = new();
 
         string currentTypeName;
 
@@ -62,13 +64,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         void HandleMembers(IEnumerable<MemberDeclarationSyntax> members) {
             newMembers.Clear();
             constructorAssignments.Clear();
+            staticConstructorAssignments.Clear();
 
-            bool foundEmptyConstructor = false;
+            bool foundEmptyConstructor = false; // T() with no args
+            bool foundStaticConstructor = false; // static T() (always no args)
 
             foreach (var m in members) {
                 if (!foundEmptyConstructor && m is ConstructorDeclarationSyntax c) {
-                    if (c.ParameterList == null || c.ParameterList.Parameters.Count == 0)
-                        foundEmptyConstructor = true;
+                    if (c.ParameterList == null || c.ParameterList.Parameters.Count == 0) {
+                        if (c.ChildTokensContain(SyntaxKind.StaticKeyword))
+                            foundStaticConstructor = true;
+                        else
+                            foundEmptyConstructor = true;
+                    }
                 }
                 if (m is not FieldDeclarationSyntax f) {
                     newMembers.Add(m);
@@ -87,26 +95,53 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
                 // If this variable has an initializer, add it to the constructor list.
                 var init = variable.Initializer;
+                bool isStatic = f.ChildTokensContain(SyntaxKind.StaticKeyword);
                 if (init != null) {
                     var rhs = init.Value;
-                    constructorAssignments.Add(
-                        AssignmentStatement(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            ThisAccessExpression(variable.Identifier.Text),
-                            rhs
-                        )
+                    var assignment = AssignmentStatement(
+                        SyntaxKind.SimpleAssignmentExpression,
+                        ThisAccessExpression(variable.Identifier.Text),
+                        rhs
                     );
+                    if (isStatic)
+                        staticConstructorAssignments.Add(
+                            AssignmentStatement(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(variable.Identifier.Text),
+                                rhs
+                            )
+                        );
+                    else
+                        constructorAssignments.Add(
+                            AssignmentStatement(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                ThisAccessExpression(variable.Identifier.Text),
+                                rhs
+                            )
+                        );
                 }
             }
 
             if (!foundEmptyConstructor && constructorAssignments.Count > 0)
-                newMembers.Add(ConstructorDeclaration(Identifier(currentTypeName)));
+                newMembers.Add(
+                    ConstructorDeclaration(Identifier(currentTypeName))
+                    .WithBody(Block())
+                );
+            if (!foundStaticConstructor && staticConstructorAssignments.Count > 0)
+                newMembers.Add(
+                    ConstructorDeclaration(Identifier(currentTypeName))
+                    .WithModifiers(TokenList(Token(SyntaxKind.StaticKeyword)))
+                    .WithBody(Block())
+                );
 
             // Now go through the new members again, and update all
             // constructors to have the prepended statements.
             for (int i = 0; i < newMembers.Count; i++) {
                 if (newMembers[i] is ConstructorDeclarationSyntax c) {
-                    newMembers[i] = c.WithBody(c.Body.WithPrependedStatement(constructorAssignments));
+                    if (c.ChildTokensContain(SyntaxKind.StaticKeyword))
+                        newMembers[i] = c.WithBody(c.Body.WithPrependedStatement(staticConstructorAssignments));
+                    else
+                        newMembers[i] = c.WithBody(c.Body.WithPrependedStatement(constructorAssignments));
                 }
             }
         }

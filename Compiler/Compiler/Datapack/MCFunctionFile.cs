@@ -34,9 +34,11 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         /// </code>
         /// </summary>
         public string GetContent() {
-            if (code.Count == 0)
-                return "# (Empty)";
-            return string.Join("\n", code);
+            // The file is empty if no line contains code
+            bool isEmpty = code.TrueForAll(s => s.Trim() == "" || s.Trim().StartsWith("#"));
+            if (isEmpty)
+                return $"# (Empty)\n{string.Join('\n', code)}".Trim();
+            return string.Join('\n', code).Trim();
         }
 
         DatapackLocation IDatapackFile.DatapackLocation => DatapackLocation.Functions;

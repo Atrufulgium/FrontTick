@@ -251,7 +251,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             }
             accesses.Add(access.Name.Identifier.Text);
             if (access.Expression is not IdentifierNameSyntax identifier)
-                throw new ArgumentException("Malformed access in the syntax tree!");
+                throw new ArgumentException("Malformed namemanager variable name access in the syntax tree, not an identifier!");
 
             string prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
             // No datapack-normalisation necessary as ingame scoreboards handle like everything.

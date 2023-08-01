@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using MCMirror;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
@@ -21,6 +22,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// created at the top, and returned at the end.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// This includes static constructors. Those get prefixed with the
+    /// <see cref="TrueLoadAttribute"/> attribute.
     /// </remarks>
     public class CopyConstructorsToNamedRewriter : AbstractFullRewriter<ThisRewriter> {
 
@@ -45,14 +49,32 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         SyntaxNode AddConstructors(TypeDeclarationSyntax node) {
             List<MethodDeclarationSyntax> newMethods = new();
             foreach(var op in ops) {
-                string methodName = $"-CONSTRUCT-";
-                var methodDeclaration =
-                    MethodDeclaration(
-                        currentType, Identifier(methodName)
-                    ).WithAttributeLists(op.AttributeLists)
-                     .WithModifiers(op.Modifiers.Add(Token(SyntaxKind.StaticKeyword)))
-                     .WithBody((BlockSyntax) new ConstructorRewriter(currentType).Visit(op.Body))
-                     .WithParameterList(op.ParameterList);
+                // Static constructor handling and normal constructor handling is
+                // quite different. Static constructors do not need their bodies
+                // or arguments rewritten and are already static, but do need the
+                // [TrueLoad] attribute added.
+                bool isStatic = op.ChildTokensContain(SyntaxKind.StaticKeyword);
+
+                MethodDeclarationSyntax methodDeclaration;
+                if (isStatic)
+                    methodDeclaration = MethodDeclaration(
+                            PredefinedType(Token(SyntaxKind.VoidKeyword)),
+                            Identifier("-CONSTRUCTSTATIC-")
+                        ).WithAttributeLists(op.AttributeLists)
+                         .WithAddedAttribute<TrueLoadAttribute>()
+                         .WithModifiers(op.Modifiers)
+                         .WithBody(op.Body)
+                         .WithParameterList(op.ParameterList); // should be empty, but if not, throws later
+                else
+                    methodDeclaration =
+                        MethodDeclaration(
+                            currentType,
+                            Identifier("-CONSTRUCT-")
+                        ).WithAttributeLists(op.AttributeLists)
+                         .WithModifiers(op.Modifiers.Add(Token(SyntaxKind.StaticKeyword)))
+                         .WithBody((BlockSyntax) new ConstructorRewriter(currentType).Visit(op.Body))
+                         .WithParameterList(op.ParameterList);
+
                 newMethods.Add(methodDeclaration);
             }
             node = node.AddMembers(newMethods.ToArray());

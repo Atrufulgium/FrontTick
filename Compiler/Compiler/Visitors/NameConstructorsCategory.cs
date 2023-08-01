@@ -19,7 +19,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     > { }
 
     public class RegisterConstructorsWalker : AbstractRegisterMethodsByPrefixWalker {
-        public override string[] CharacteristicString => new[] { "-CONSTRUCT-" };
+        public override string[] CharacteristicString => new[] { "-CONSTRUCT-", "-CONSTRUCTSTATIC-" };
     }
 
     /// <summary> Removes any constructor. </summary>

@@ -18,7 +18,7 @@ public class Test {
         int i;
     }
 }
-", "# (File (functions) compiled:test.testmethod.mcfunction)\n# (Empty)",
+", "# (File (functions) compiled:test.testmethod.mcfunction)\n# (Empty)\n\n# Method Attributes:\n#   [MCFunction]",
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -112,6 +112,9 @@ scoreboard players operation #compiled:test.testmethod#i _ -= #CONST#2 _
 scoreboard players operation #compiled:test.testmethod#i _ *= #CONST#3 _
 scoreboard players operation #compiled:test.testmethod#i _ /= #CONST#4 _
 scoreboard players operation #compiled:test.testmethod#i _ %= #CONST#5 _
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -140,6 +143,9 @@ scoreboard players operation #compiled:test.testmethod#i _ -= #compiled:test.tes
 scoreboard players operation #compiled:test.testmethod#i _ *= #compiled:test.testmethod#j _
 scoreboard players operation #compiled:test.testmethod#i _ /= #compiled:test.testmethod#j _
 scoreboard players operation #compiled:test.testmethod#i _ %= #compiled:test.testmethod#j _
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // (This test also depends on "return" working properly.)
@@ -165,6 +171,9 @@ scoreboard players set #RET _ 3
 scoreboard players set #compiled:test.testmethod#i _ 3
 function compiled:internal/test.getthree
 scoreboard players operation #compiled:test.testmethod#i _ -= #RET _
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -289,6 +298,9 @@ public class Test {
 
 # (File (functions) compiled:test.testmethod.mcfunction)
 function compiled:internal/test.calledmethod
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -399,6 +411,9 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test output of "if" branches.
@@ -420,6 +435,9 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -442,6 +460,9 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
+
+# Method Attributes:
+#   [MCFunction]
 
 # (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 1
@@ -472,6 +493,9 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
 execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 2
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test both large bodies and having both if and else, and also using the same variable in both.
@@ -498,6 +522,9 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation conditionIdentifier-2 _ = #compiled:test.testmethod#i _
 execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
 execute if score conditionIdentifier-2 _ matches 0 run function compiled:test.testmethod-1-else-branch
+
+# Method Attributes:
+#   [MCFunction]
 
 # (File (functions) compiled:test.testmethod-1-else-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 2
@@ -571,6 +598,9 @@ scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
 execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
 
+# Method Attributes:
+#   [MCFunction]
+
 # (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-2-if-branch
@@ -627,6 +657,9 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players set #compiled:test.testmethod#k _ 0
 execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compiled:test.testmethod#j _ matches 0 unless score #compiled:test.testmethod#k _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test a non-1 variable???'s !=
@@ -648,6 +681,9 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // ANd a raw to test a non-1 variable's ==
@@ -669,6 +705,9 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 execute if score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+
+# Method Attributes:
+#   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]

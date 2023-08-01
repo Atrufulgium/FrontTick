@@ -86,7 +86,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCMirror.Internal.CustomCompiledAttribute), out _))
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(CustomCompiledAttribute), out _))
                 return;
             if (node.ChildTokensContain(SyntaxKind.ExternKeyword))
                 return;
@@ -104,6 +104,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             // the mcfunction.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCTestAttribute), out var attrib))
                 HandleMCTestMethod(node, attrib);
+
+            // Add some debug stats
+            List<string> attributes = new();
+            foreach (var attribute in node.AttributeLists.SelectMany(al => al.Attributes))
+                attributes.Add($"#   [{attribute}]");
+            if (attributes.Count > 0)
+                AddCode($"\n# Method Attributes:\n{string.Join('\n', attributes)}");
 
             compiler.finishedCompilation.Add(wipFiles.Pop());
         }

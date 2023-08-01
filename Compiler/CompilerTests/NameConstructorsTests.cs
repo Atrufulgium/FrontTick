@@ -54,5 +54,105 @@ internal struct Test {
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        [TestMethod]
+        public void NameStaticConstructorTest1()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    static int val;
+
+    static Test() {
+        val = 3;
+    }
+}
+", @"
+internal struct Test {
+    static int val;
+
+    [MCMirror.TrueLoad]
+    static void CONSTRUCTSTATIC() {
+        val = 3;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void NameStaticConstructorTest2()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    static int val = 3;
+}
+", @"
+internal struct Test {
+    static int val;
+
+    static Test() {
+        val = 3;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void NameStaticConstructorTest3()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    static int val1 = 10;
+    static int val2;
+
+    static Test() {
+        val2 = 20;
+    }
+}
+", @"
+internal struct Test {
+    static int val1;
+    static int val2;
+
+    static Test() {
+        val1 = 10;
+        val2 = 20;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        [TestMethod]
+        public void NameStaticAndNormalConstructorTest1()
+            => TestCompilationSucceedsTheSame(@"
+internal struct Test {
+    static int val1 = 10;
+    static int val2;
+    int val3 = 30;
+    int val4;
+
+    static Test() {
+        val2 = 20;
+    }
+
+    Test(int i) {
+        val4 = i;
+    }
+}
+", @"
+internal struct Test {
+    static int val1;
+    static int val2;
+    int val3;
+    int val4;
+
+    static Test() {
+        val1 = 10;
+        val2 = 20;
+    }
+
+    Test(int i) {
+        val3 = 30;
+        val4 = i;
+    }
+
+    public Test() {
+        val3 = 30;
+    }
+}
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
     }
 }

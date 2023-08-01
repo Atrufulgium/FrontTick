@@ -13,7 +13,13 @@ public class Test {
     [MCFunction]
     public static void TestMethod() { }
 }
-", "# (File (functions) compiled:test.testmethod.mcfunction)\n# (Empty)");
+", @"
+# (File (functions) compiled:test.testmethod.mcfunction)
+# (Empty)
+
+# Method Attributes:
+#   [MCFunction]
+");
 
         [TestMethod]
         public void MCFunctionTagTest2Raw()
@@ -39,14 +45,26 @@ public class InAnotherFile {
 @"# (File (functions) compiled:anothertest.yetanothertestmethod.mcfunction)
 # (Empty)
 
+# Method Attributes:
+#   [MCFunction]
+
 # (File (functions) compiled:inanotherfile.anotherfiletestmethod.mcfunction)
 # (Empty)
+
+# Method Attributes:
+#   [MCFunction]
 
 # (File (functions) compiled:test.anothertestmethod.mcfunction)
 # (Empty)
 
+# Method Attributes:
+#   [MCFunction]
+
 # (File (functions) compiled:test.testmethod.mcfunction)
 # (Empty)
+
+# Method Attributes:
+#   [MCFunction]
 ");
 
         [TestMethod]
@@ -57,21 +75,27 @@ public class Test {
     [MCFunction(""do-test"")]
     public static void TestMethod() { }
 }
-", "# (File (functions) compiled:do-test.mcfunction)\n# (Empty)");
+", @"
+# (File (functions) compiled:do-test.mcfunction)
+# (Empty)
+
+# Method Attributes:
+#   [MCFunction(""do-test"")]
+");
 
         [TestMethod]
-        public void MCFunctionTagTest4()
-            => TestCompilationSucceedsTheSame(@"
+        public void MCFunctionTagTest4Raw()
+            => TestCompilationSucceedsRaw(@"
 public class Test {
     [MCMirror.MCFunction]
     public static void TestMethod() { }
 }
 ", @"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() { }
-}
+# (File (functions) compiled:test.testmethod.mcfunction)
+# (Empty)
+
+# Method Attributes:
+#   [MCMirror.MCFunction]
 ");
 
         [TestMethod]
@@ -81,20 +105,6 @@ public class Test {
     public static void TestMethod() { }
 }
 ", "# (File (functions) compiled:internal/test.testmethod.mcfunction)\n# (Empty)");
-
-        [TestMethod]
-        public void NoMCFunctionTagTest2()
-            => TestCompilationSucceedsTheSame(@"
-using MCMirror;
-public class Test {
-    [NBT(""This is a different, non-MCFunction attribute."")]
-    public static void TestMethod() { }
-}
-", @"
-public class Test {
-    public static void TestMethod() { }
-}
-");
 
         [TestMethod]
         public void WrongMCFunctionTagTest1()

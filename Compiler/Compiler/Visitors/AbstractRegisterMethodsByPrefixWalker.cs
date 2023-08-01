@@ -16,7 +16,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax method) {
             string methodName = method.Identifier.Text;
             foreach (var s in CharacteristicString)
-                if (methodName.Contains(s))
+                if (methodName.StartsWith(s))
                     nameManager.RegisterMethodname(CurrentSemantics, method, this, isInternal: IsInternal);
             // Don't visit children because no need to.
         }
