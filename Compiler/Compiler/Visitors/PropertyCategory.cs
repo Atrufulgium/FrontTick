@@ -12,6 +12,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </remarks>
     public class PropertyCategory : AbstractFullWalker<
         ArrowRewriter,
+        InitPropertyRewriter,
         AutoPropertyRewriter,
         CopyPropertiesToNamedRewriter,
         RegisterPropertiesWalker,

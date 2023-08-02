@@ -83,5 +83,73 @@ public class Other {
     public static void SETVal(int value) { val = value; }
 }
 ");
+
+        [TestMethod]
+        public void AutoPropertyTest1()
+            => TestCompilationSucceedsTheSame(@"
+public class Test {
+    public static int Val { get; set; }
+
+    public static void TestMethod(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+", @"
+public class Test {
+    static int AUTOPROPERTYVal;
+    public static int Val { get => AUTOPROPERTYVal; set => AUTOPROPERTYVal = value; }
+
+    public static void TestMethod(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+");
+
+        [TestMethod]
+        public void AutoPropertyTest2()
+            => TestCompilationSucceedsTheSame(@"
+public class Test {
+    public int Val { get; set; }
+
+    public void TestMethod(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+", @"
+public class Test {
+    int AUTOPROPERTYVal;
+    public int Val { get => AUTOPROPERTYVal; set => AUTOPROPERTYVal = value; }
+
+    public void TestMethod(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+");
+
+        [TestMethod]
+        public void InitPropertyTest1()
+            => TestCompilationSucceedsTheSame(@"
+public class Test {
+    public int Val { get; init; }
+
+    public Test(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+", @"
+public class Test {
+    public int Val { get; set; }
+
+    public Test(int i) {
+        i = Val;
+        Val = 4;
+    }
+}
+");
     }
 }
