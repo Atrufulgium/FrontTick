@@ -72,6 +72,22 @@ namespace Atrufulgium.FrontTick.Compiler {
                 IdentifierName(name)
             );
 
+        /// <summary>
+        /// Parses a string with possibly '<tt>.</tt>'s into a proper qualified
+        /// name.
+        /// </summary>
+        public static NameSyntax QualifiedName(string identifiername) {
+            var parts = identifiername?.Split('.');
+            if (parts?.Length < 2)
+                throw new System.ArgumentException("The given MemberAccessExpression string does not represent any accessing.", nameof(identifiername));
+
+            NameSyntax lhs = IdentifierName(parts[0]);
+            for (int i = 1; i < parts.Length; i++)
+                lhs = SyntaxFactory.QualifiedName(lhs, IdentifierName(parts[i]));
+
+            return lhs;
+        }
+
         public static MemberAccessExpressionSyntax ThisAccessExpression(string name)
             => SyntaxFactory.MemberAccessExpression(
                 SyntaxKind.SimpleMemberAccessExpression,

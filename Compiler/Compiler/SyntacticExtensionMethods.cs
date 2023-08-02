@@ -291,7 +291,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// everything makes sense.
         /// </summary>
         public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method) where T : Attribute
-            => method.WithAddedAttribute(Attribute(IdentifierName(typeof(T).FullName.Replace("Attribute", ""))));
+            => method.WithAddedAttribute(Attribute(QualifiedName(typeof(T).FullName.Replace("Attribute", ""))));
 
         /// <inheritdoc cref="WithAddedAttribute{T}(MethodDeclarationSyntax)"/>
         public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method, params object[] constructorArgs) {
@@ -309,7 +309,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             }
             return method.WithAddedAttribute(
                 Attribute(
-                    IdentifierName(typeof(T).FullName),
+                    QualifiedName(typeof(T).FullName),
                     AttributeArgumentList(SeparatedList(args))
                 )
             );
