@@ -15,6 +15,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// an exception.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// From here on out the "all stages output valid c#" invariant is broken.
+    /// This is fine as there are not supposed to be many writes after this.
+    /// </remarks>
     public class ReturnRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
 
         bool isVoid;

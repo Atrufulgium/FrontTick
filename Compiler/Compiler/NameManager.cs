@@ -152,7 +152,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                 diagnosticsOutput.AddCustomDiagnostic(
                     DiagnosticRules.MCFunctionMethodNameNotRegistered,
                     method,
-                    methodSymbol.Name
+                    methodSymbol.ToString()
                 );
                 return new MCFunctionName("#UNKNOWN:#UNKNOWN");
             }
@@ -172,11 +172,6 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// but I don't care currently.
         /// </para>
         /// </summary>
-        /// <param name="semantics"></param>
-        /// <param name="method"></param>
-        /// <param name="diagnosticsOutput"></param>
-        /// <param name="scopeSuffix"></param>
-        /// <returns></returns>
         public MCFunctionName GetMethodName(
             SemanticModel semantics,
             IMethodSymbol method,

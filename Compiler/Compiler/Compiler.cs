@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 
 namespace Atrufulgium.FrontTick.Compiler
 {
@@ -221,7 +222,8 @@ namespace Atrufulgium.FrontTick.Compiler
             compilation = CSharpCompilation.Create(
                 assemblyName: "compiled",
                 syntaxTrees: syntaxTrees,
-                references: references
+                references: references,
+                options: new(OutputKind.DynamicallyLinkedLibrary) // to not have CS5001
             );
 
             var models = from syntaxTree in syntaxTrees
@@ -239,6 +241,8 @@ namespace Atrufulgium.FrontTick.Compiler
                 return false;
 
             int phaseID = 1;
+            bool incorrectTreeAllowed = false;
+            StringBuilder errors = new();
             foreach(var phase in compilationPhases) {
                 Console.WriteLine($"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3} - {phase.GetType().Name}");
                 phase.SetCompiler(this);
@@ -247,6 +251,15 @@ namespace Atrufulgium.FrontTick.Compiler
                 if (CompilationFailed)
                     return false;
                 appliedWalkers.AddByMostDerived(phase);
+
+                incorrectTreeAllowed |= phase is ReturnRewriter;
+                errors.Clear();
+                if (!incorrectTreeAllowed)
+                    foreach (var d in compilation.GetDiagnostics())
+                        if (d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error)
+                            errors.AppendLine(CSharpDiagnosticFormatter.Instance.Format(d));
+                if (errors.Length > 0)
+                    throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}):\n{errors}");
             }
 
             // Now add the setup file with constants and such

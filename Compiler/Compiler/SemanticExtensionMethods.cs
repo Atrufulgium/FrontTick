@@ -225,5 +225,19 @@ namespace Atrufulgium.FrontTick.Compiler {
                     return false;
             }
         }
+
+        /// <summary>
+        /// Returns the fully qualified name of a symbol.
+        /// </summary>
+        /// <remarks>
+        /// This does not go further than regular namespaces. No global:: or
+        /// assembly names or similar are prefixed ever.
+        /// </remarks>
+        public static string FullyQualifiedName(this ISymbol symbol) {
+            var container = symbol.ContainingSymbol;
+            if (container == null || (container is INamespaceSymbol namespaceSymbol && namespaceSymbol.IsGlobalNamespace))
+                return symbol.Name;
+            return $"{FullyQualifiedName(container)}.{symbol.Name}";
+        }
     }
 }
