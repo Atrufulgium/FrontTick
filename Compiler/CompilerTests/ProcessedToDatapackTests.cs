@@ -927,6 +927,7 @@ scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int32##
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw for name format II
+        // (update: ew needs constructor)
         [TestMethod]
         public void TestNames2Raw()
             => TestCompilationSucceedsRaw(@"
@@ -938,6 +939,12 @@ internal class Test {
     }
 }
 ", @"
+# (File (functions) compiled:internal/test.-constructstatic-.mcfunction)
+scoreboard players set #compiled:test#nUmBeR _ 0
+
+# Method Attributes:
+#   [MCMirror.TrueLoad]
+
 # (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players operation #RET _ = #compiled:test#nUmBeR _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -1029,6 +1036,7 @@ scoreboard players operation #RET _ = #compiled:internal/test.testmethod-int3##a
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw for very nested struct format
+        // Update: ouch the constructors added
         [TestMethod]
         public void StructAssignTest1Raw()
             => TestCompilationSucceedsRaw(@"
@@ -1051,6 +1059,29 @@ struct DolorSitAmet {
     int w;
 }
 ", @"
+# (File (functions) compiled:internal/dolorsitamet.-construct-.mcfunction)
+scoreboard players set #RET#pos#x _ 0
+scoreboard players set #RET#pos#y _ 0
+scoreboard players set #RET#pos#z _ 0
+scoreboard players set #RET#w _ 0
+
+# (File (functions) compiled:internal/ipsum.-construct-.mcfunction)
+scoreboard players set #RET#dolorSitAmet2#pos#x _ 0
+scoreboard players set #RET#dolorSitAmet2#pos#y _ 0
+scoreboard players set #RET#dolorSitAmet2#pos#z _ 0
+scoreboard players set #RET#dolorSitAmet2#w _ 0
+
+# (File (functions) compiled:internal/lorem.-construct-.mcfunction)
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#x _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#y _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#z _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#w _ 0
+scoreboard players set #RET#val _ 0
+scoreboard players set #RET#dolorSitAmet#pos#x _ 0
+scoreboard players set #RET#dolorSitAmet#pos#y _ 0
+scoreboard players set #RET#dolorSitAmet#pos#z _ 0
+scoreboard players set #RET#dolorSitAmet#w _ 0
+
 # (File (functions) compiled:internal/test.testmethod-lorem-lorem.mcfunction)
 scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#x _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#x _
 scoreboard players operation #compiled:internal/test.testmethod-lorem-lorem##arg0#ipsum#dolorSitAmet2#pos#y _ = #compiled:internal/test.testmethod-lorem-lorem##arg1#ipsum#dolorSitAmet2#pos#y _

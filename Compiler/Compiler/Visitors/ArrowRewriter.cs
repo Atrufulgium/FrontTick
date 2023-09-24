@@ -87,6 +87,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             // Note: we're not upgrading the first to the second to the third,
             // but directly first to third as "ArrowToBlock" requires its
             // argument to be in the original tree.
+
+            // First case, directly I => i; without getters/setters.
             if (node.ExpressionBody != null) {
                 return node.WithAccessorList(
                     AccessorList(
@@ -98,8 +100,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                             .WithExpressionBody(null)
                         )
                     )
-                );
+                ).WithExpressionBody(null);
             }
+
             // We are now guaranteed to have an AccessorList.
             var accessors = node.AccessorList.Accessors;
             var newAccessors = new List<AccessorDeclarationSyntax>(accessors.Count);

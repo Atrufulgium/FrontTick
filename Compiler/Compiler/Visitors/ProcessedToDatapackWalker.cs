@@ -246,7 +246,12 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             // special behaviour in that case.
             bool lhsIsRet = lhsName == nameManager.GetRetName();
 
-            if (TryGetIntegerLiteral(assign.Right, out int literal)) {
+            if (assign.Right is LiteralExpressionSyntax lit && lit.IsKind(SyntaxKind.DefaultLiteralExpression)) {
+                // Well-defined due to it being a reserved keyword and not
+                // a contextual keyword. In any case, nothing goes through
+                // nameManager to end up here.
+                rhsName = "default";
+            } else if (TryGetIntegerLiteral(assign.Right, out int literal)) {
                 isSetCommand = op == "=";
                 rhsName = literal.ToString();
                 if (!isSetCommand)
@@ -551,16 +556,27 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         /// </para>
         /// </summary>
         private void AddAssignment(string lhs, string rhs, string op, ITypeSymbol type) {
+            // Note that `default` has special handling.
+            if (rhs == "default" && op != "=")
+                throw new ArgumentException("Only =default is allowed, no other ops.");
+
             // Todo: this will probably be pretty expensive in the long run. Cache (type,fields[]) in some dict.
+            // Also, don't do a = a assignments. Those are stupid.
             if (CurrentSemantics.TypesMatch(type, typeof(int))) {
-                AddCode($"scoreboard players operation {lhs} _ {op} {rhs} _");
+                if (rhs == "default")
+                    AddCode($"scoreboard players set {lhs} _ 0");
+                else if (!(op == "=" && lhs == rhs))
+                    AddCode($"scoreboard players operation {lhs} _ {op} {rhs} _");
             } else if (type.IsPrimitive()) {
                 throw CompilationException.ToDatapackStructsMustEventuallyInt;
             } else {
                 foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {
                     ITypeSymbol fieldType = m.Type;
                     string name = m.Name;
-                    AddAssignment(nameManager.GetCombinedName(lhs, name), nameManager.GetCombinedName(rhs, name), op, fieldType);
+                    if (rhs == "default")
+                        AddAssignment(nameManager.GetCombinedName(lhs, name), rhs, op, fieldType);
+                    else if (!(op == "=" && lhs == rhs))
+                        AddAssignment(nameManager.GetCombinedName(lhs, name), nameManager.GetCombinedName(rhs, name), op, fieldType);
                 }
             }
         }

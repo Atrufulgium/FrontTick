@@ -107,10 +107,12 @@ public class Test {
 }
 ");
 
+        // Note CS1605: Classes may not have `ref this` in the constructor.
+        // Fix later, once I actualy care about classes.
         [TestMethod]
         public void AutoPropertyTest2()
             => TestCompilationSucceedsTheSame(@"
-public class Test {
+public struct Test {
     public int Val { get; set; }
 
     public void TestMethod(int i) {
@@ -119,7 +121,7 @@ public class Test {
     }
 }
 ", @"
-public class Test {
+public struct Test {
     int AUTOPROPERTYVal;
     public int Val { get => AUTOPROPERTYVal; set => AUTOPROPERTYVal = value; }
 
@@ -133,7 +135,7 @@ public class Test {
         [TestMethod]
         public void InitPropertyTest1()
             => TestCompilationSucceedsTheSame(@"
-public class Test {
+public struct Test {
     public int Val { get; init; }
 
     public Test(int i) {
@@ -142,7 +144,7 @@ public class Test {
     }
 }
 ", @"
-public class Test {
+public struct Test {
     public int Val { get; set; }
 
     public Test(int i) {

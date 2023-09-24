@@ -346,11 +346,13 @@ namespace Atrufulgium.FrontTick.Compiler {
             return postProcessor.PostProcessVariable($"#{mcfunctionname}##arg{index}");
         }
 
+        // TODO: Properly go through each of these variable names and whether
+        // or not they need processing here or elsewhere.
         /// <summary>
         /// Gives the name of a unified return variable callees should store
         /// their results in, and callers should read the result form.
         /// </summary>
-        public string GetRetName() => postProcessor.PostProcessVariable("#RET");
+        public string GetRetName() => "#RET";
 
         /// <summary>
         /// Gives the name of the label at the end of a method where the method

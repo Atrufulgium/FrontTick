@@ -314,5 +314,17 @@ namespace Atrufulgium.FrontTick.Compiler {
                 )
             );
         }
+
+        public static MemberDeclarationSyntax WithAddedModifier(this MemberDeclarationSyntax decl, SyntaxKind modifier) {
+            var list = decl.Modifiers;
+            list = list.Add(Token(modifier));
+            return decl.WithModifiers(list);
+        }
+
+        public static MemberDeclarationSyntax WithPrependedModifier(this MethodDeclarationSyntax decl, SyntaxKind modifier) {
+            var list = TokenList(Token(modifier));
+            list = list.AddRange(decl.Modifiers);
+            return decl.WithModifiers(list);
+        }
     }
 }

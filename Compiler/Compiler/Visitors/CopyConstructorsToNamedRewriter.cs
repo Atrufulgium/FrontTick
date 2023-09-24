@@ -104,7 +104,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         private class ConstructorRewriter : CSharpSyntaxRewriter {
 
-            static readonly string varName = "#created";
+            // Writing directly to the return value in constructors is
+            // preferable. Nothing happens in them.
+            static readonly string varName = "#RET";
             readonly TypeSyntax type;
             int depth = 0;
 

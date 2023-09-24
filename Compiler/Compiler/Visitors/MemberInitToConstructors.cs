@@ -16,6 +16,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// it does not yet exist. This is <i>also</i> including the static
     /// constructor for static member initializers.
     /// </para>
+    /// <para>
+    /// It also sets non-initialized members to default.
+    /// </para>
     /// </summary>
     /// <remarks>
     /// <para>
@@ -24,25 +27,25 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </remarks>
     // (This also handles auto-properties if their backing field is implemented
     //  before this pass)
-    // TODO: Classes should be inited to default even if there is no init in
-    // the definition. Structs don't need to due to CS0171.
     public class MemberInitToConstructors : AbstractFullRewriter {
 
         readonly List<MemberDeclarationSyntax> newMembers = new();
         readonly List<StatementSyntax> constructorAssignments = new();
         readonly List<StatementSyntax> staticConstructorAssignments = new();
 
+        // Want specifically the current type name and NOT any qualification.
+        // That's why we're doing `.Name` below.
         string currentTypeName;
 
         public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
+            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).Name;
             HandleMembers(node.Members);
             return node.WithMembers(List(newMembers));
             
         }
 
         public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
+            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).Name;
             HandleMembers(node.Members);
             return node.WithMembers(List(newMembers));
         }
@@ -94,38 +97,39 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 newMembers.Add(f.WithDeclaration(declaration.WithVariables(noInit)));
 
                 // If this variable has an initializer, add it to the constructor list.
+                // Otherwise, make the initializer the default initializer.
                 var init = variable.Initializer;
+                init ??= EqualsValueClause(
+                    LiteralExpression(SyntaxKind.DefaultLiteralExpression)
+                );
                 bool isStatic = f.ChildTokensContain(SyntaxKind.StaticKeyword);
-                if (init != null) {
-                    var rhs = init.Value;
-                    var assignment = AssignmentStatement(
-                        SyntaxKind.SimpleAssignmentExpression,
-                        ThisAccessExpression(variable.Identifier.Text),
-                        rhs
+                var rhs = init.Value;
+                if (isStatic)
+                    staticConstructorAssignments.Add(
+                        AssignmentStatement(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            IdentifierName(variable.Identifier.Text),
+                            rhs
+                        )
                     );
-                    if (isStatic)
-                        staticConstructorAssignments.Add(
-                            AssignmentStatement(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(variable.Identifier.Text),
-                                rhs
-                            )
-                        );
-                    else
-                        constructorAssignments.Add(
-                            AssignmentStatement(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                ThisAccessExpression(variable.Identifier.Text),
-                                rhs
-                            )
-                        );
-                }
+                else
+                    constructorAssignments.Add(
+                        AssignmentStatement(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            ThisAccessExpression(variable.Identifier.Text),
+                            rhs
+                        )
+                    );
             }
+
+            // Note: empty struct constructors must be public, so just to be
+            // safe, add the public keyword.
 
             if (!foundEmptyConstructor && constructorAssignments.Count > 0)
                 newMembers.Add(
                     ConstructorDeclaration(Identifier(currentTypeName))
                     .WithBody(Block())
+                    .WithAddedModifier(SyntaxKind.PublicKeyword)
                 );
             if (!foundStaticConstructor && staticConstructorAssignments.Count > 0)
                 newMembers.Add(

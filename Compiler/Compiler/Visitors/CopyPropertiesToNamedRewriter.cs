@@ -73,11 +73,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                         return null;
                     }
 
+                    // We do not want to introduce duplicate accessors. So
+                    // just replace all accessors with public, as access
+                    // semantics have already passed c# compilation.
+                    var combinedModifiers = accessor.Modifiers.Union(globalModifiers).Select(t => t.Kind()).ToHashSet();
+                    foreach (var token in new SyntaxKind[] { SyntaxKind.PrivateKeyword, SyntaxKind.ProtectedKeyword, SyntaxKind.InternalKeyword })
+                        combinedModifiers.Remove(token);
+                    combinedModifiers.Add(SyntaxKind.PublicKeyword);
+
                     var methodDeclaration =
                         MethodDeclaration(
                             retType, Identifier(methodName)
                         ).WithAttributeLists(accessor.AttributeLists)
-                         .WithModifiers(new(accessor.Modifiers.Union(globalModifiers))) // This can introduce `public private` or something, but Roslyn doesn't seem to mind.
+                         .WithModifiers(new(combinedModifiers.Select(k => Token(k))))
                          .WithParameterList(parameters)
                          .WithBody(accessor.Body);
                     newMethods.Add(methodDeclaration);

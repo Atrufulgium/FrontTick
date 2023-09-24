@@ -71,11 +71,16 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Removes # and - from variable and method names so comparison of
         /// generated code to regular code can be done.
         /// </summary>
+        /// <remarks>
+        /// Exception: *double* `--`s in methods are not replaced. These are so
+        /// internal that they should not even be needed to be emulated in
+        /// any tests.
+        /// </remarks>
         public class ConvenientTests : INameManagerPostProcessor {
             public string PostProcessVariable(string name)
                 => name.Replace("#", "").Replace("-", "");
             public string PostProcessFunction(string name)
-                => name.Replace("#", "").Replace("-", "");
+                => name.Replace("#", "").Replace("--", "**").Replace("-", "").Replace("**", "--");
         }
     }
 }

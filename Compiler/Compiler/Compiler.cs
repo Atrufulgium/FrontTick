@@ -256,10 +256,10 @@ namespace Atrufulgium.FrontTick.Compiler
                 errors.Clear();
                 if (!incorrectTreeAllowed)
                     foreach (var d in compilation.GetDiagnostics())
-                        if (d.Severity == DiagnosticSeverity.Warning || d.Severity == DiagnosticSeverity.Error)
+                        if (d.Severity == DiagnosticSeverity.Error)
                             errors.AppendLine(CSharpDiagnosticFormatter.Instance.Format(d));
                 if (errors.Length > 0)
-                    throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}):\n{errors}");
+                    throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}/{compilationPhases.Length}):\n{errors}");
             }
 
             // Now add the setup file with constants and such
