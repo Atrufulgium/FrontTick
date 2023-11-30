@@ -16,9 +16,7 @@
         /// only need this in case MCMirror is lacking some feature.
         /// </remarks>
         // This is implemented in the "ProcessedToDatapackWalker" class.
-#pragma warning disable IDE0060 // Remove unused parameter
         [CustomCompiled("CompileTime/RunRaw")]
         public static extern void Run(string code);
-#pragma warning restore IDE0060 // Remove unused parameter
     }
 }

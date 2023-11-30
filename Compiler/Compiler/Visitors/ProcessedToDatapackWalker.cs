@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MCMirror.Internal;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors
 {
@@ -86,7 +85,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(CustomCompiledAttribute), out _))
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.CustomCompiledAttribute, out _))
                 return;
             if (node.ChildTokensContain(SyntaxKind.ExternKeyword))
                 return;
@@ -102,7 +101,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
             // If this method is a test, we need to add some post processing to
             // the mcfunction.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCTestAttribute), out var attrib))
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.MCTestAttribute, out var attrib))
                 HandleMCTestMethod(node, attrib);
 
             // Add some debug stats
@@ -562,7 +561,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
             // Todo: this will probably be pretty expensive in the long run. Cache (type,fields[]) in some dict.
             // Also, don't do a = a assignments. Those are stupid.
-            if (CurrentSemantics.TypesMatch(type, typeof(int))) {
+            if (CurrentSemantics.TypesMatch(type, MCMirrorTypes.Int)) {
                 if (rhs == "default")
                     AddCode($"scoreboard players set {lhs} _ 0");
                 else if (!(op == "=" && lhs == rhs))

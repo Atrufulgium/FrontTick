@@ -34,8 +34,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             var op = (IBinaryOperation)CurrentSemantics.GetOperation(node);
             if (op.OperatorMethod == null) {
                 // No operator method. Not allowed except a few integer ones.
-                if (CurrentSemantics.TypesMatch(op.LeftOperand.Type, typeof(int))
-                    && CurrentSemantics.TypesMatch(op.RightOperand.Type, typeof(int))
+                if (CurrentSemantics.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Int)
+                    && CurrentSemantics.TypesMatch(op.RightOperand.Type, MCMirrorTypes.Int)
                     && node.OperatorToken.Text is "==" or "!=" or ">=" or "<=" or ">" or "<")
                     return base.VisitBinaryExpression(node);
                 throw CompilationException.OperatorsRequireUnderlyingMethod;

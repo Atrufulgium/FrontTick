@@ -6,7 +6,7 @@ namespace Atrufulgium.FrontTick.Compiler {
     public static class DiagnosticRules {
 
         static DiagnosticDescriptor Create(string id, string title, string messageFormat)
-            => new DiagnosticDescriptor(id, title, messageFormat, category: "", DiagnosticSeverity.Error, isEnabledByDefault: true);
+            => new(id, title, messageFormat, category: "", DiagnosticSeverity.Error, isEnabledByDefault: true);
 
         public static DiagnosticDescriptor Unsupported
             => Create(

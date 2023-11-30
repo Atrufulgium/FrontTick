@@ -20,10 +20,11 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Creates references to all assemblies that contain <paramref name="additionalTypes"/>
         /// with a few extra assemblies (like System) that any project needs.
         /// </summary>
+        /// <remarks>
+        /// System was just a common example. MCMirror does not actually need System.
+        /// </remarks>
         public static HashSet<MetadataReference> GetReferences(IEnumerable<Type> additionalTypes) {
-            if (additionalTypes == null) {
-                additionalTypes = Array.Empty<Type>();
-            }
+            additionalTypes ??= Array.Empty<Type>();
             var references = TypesToAssemblyReferences(additionalTypes);
             references.UnionWith(autoInclude);
             return references;
@@ -32,26 +33,28 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Simply returns the union of the given references and a few extra
         /// assemblies (like System) that any project needs.
         /// </summary>
+        /// <remarks>
+        /// System was just a common example. MCMirror does not actually need System.
+        /// </remarks>
         public static HashSet<MetadataReference> GetReferences(IEnumerable<MetadataReference> additionalreferences) {
-            if (additionalreferences == null) {
-                additionalreferences = Array.Empty<MetadataReference>();
-            }
+            additionalreferences ??= Array.Empty<MetadataReference>();
             var references = additionalreferences.ToHashSet();
             references.UnionWith(autoInclude);
             return references;
         }
 
-#pragma warning disable IDE0001, IDE0049
+//#pragma warning disable IDE0001, IDE0049
+#pragma warning disable CA1825
         /// <summary>
         /// A list of types whose assemblies to automatically include in any
         /// compilation. The actual listed types don't matter, just their
         /// containing assembly.
         /// </summary>
         // Until the far future, this is all that's supported anyway.
-        static readonly Type[] autoIncludeAssemblyTypes = new[] {
-            typeof(System.Object)
+        static readonly Type[] autoIncludeAssemblyTypes = new Type[] {
+            //typeof(System.Object)
         };
-#pragma warning restore IDE0001, IDE0049
+
         /// <summary>
         /// Unfortunately, getting assemblies via types isn't sufficient.
         /// There are a few literal dlls we need to read that don't seem to be
@@ -59,10 +62,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// These are their filenames (without the .dll), assuming they live
         /// in the same folder as System (which is a pretty fair assumption).
         /// </summary>
-        static readonly string[] difficultAutoIncludeDLLNames = new[] {
-            "netstandard",          // This one seems fair
-            "System.Runtime"        // For System.Attribute, somewhy
+        static readonly string[] difficultAutoIncludeDLLNames = new string[] {
+            //"netstandard",          // This one seems fair
+            //"System.Runtime"        // For System.Attribute, somewhy
         };
+#pragma warning restore CA1825
+//#pragma warning restore IDE0001, IDE0049
 
         static readonly HashSet<MetadataReference> autoInclude;
 

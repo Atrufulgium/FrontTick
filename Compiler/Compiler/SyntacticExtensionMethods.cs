@@ -290,15 +290,15 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// or if the overload is not found. There is no checking whether
         /// everything makes sense.
         /// </summary>
-        public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method) where T : Attribute
-            => method.WithAddedAttribute(Attribute(QualifiedName(typeof(T).FullName.Replace("Attribute", ""))));
+        public static MethodDeclarationSyntax WithAddedAttribute(this MethodDeclarationSyntax method, string typeName)
+            => method.WithAddedAttribute(Attribute(QualifiedName(typeName.Replace("Attribute", ""))));
 
         /// <inheritdoc cref="WithAddedAttribute{T}(MethodDeclarationSyntax)"/>
         public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method, params object[] constructorArgs) {
             List<AttributeArgumentSyntax> args = new(constructorArgs.Length);
             for (int i = 0; i < constructorArgs.Length; i++) {
                 var param = constructorArgs[i];
-                ExpressionSyntax expr = null;
+                ExpressionSyntax expr;
                 if (param is string str)
                     expr = StringLiteralExpression(str);
                 else if (param is int ii)

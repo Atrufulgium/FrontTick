@@ -13,7 +13,8 @@ namespace MCMirror.Internal {
     /// This includes any static content, whether used or not.
     /// </para>
     /// </summary>
-    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class NoCompileAttribute : Attribute { }
 }

@@ -24,6 +24,7 @@ namespace MCMirror {
     /// </para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class LoadAttribute : Attribute { }
 
@@ -46,6 +47,7 @@ namespace MCMirror {
     /// </para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class TrueLoadAttribute : Attribute { }
 
@@ -66,6 +68,7 @@ namespace MCMirror {
     /// </para>
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class TickAttribute : Attribute {
         public readonly int value;

@@ -318,18 +318,22 @@ public class Test {
 ", CompilationException.ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
-        [TestMethod]
-        public void CallTestWrong2()
-            => TestCompilationFails(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = System.Math.Abs(0);
-    }
-}
-", "FT0004", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        // Ever since I've moved to my own System implementation, this error is
+        // *surprisingly hard* to trigger. As in, "currently impossible". But
+        // it will be possible in the future again. Hope I remember the
+        // existence of FT0004 by then.
+//        [TestMethod]
+//        public void CallTestWrong2()
+//            => TestCompilationFails(@"
+//using MCMirror;
+//public class Test {
+//    [MCFunction]
+//    public static void TestMethod() {
+//        int i;
+//        i = System.Math.Abs(0);
+//    }
+//}
+//", "FT0004", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void TestCallInRefOut()

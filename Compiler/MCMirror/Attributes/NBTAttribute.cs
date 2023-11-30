@@ -8,6 +8,7 @@ namespace MCMirror {
     /// </summary>
     // "Method" arguably makes sense for write-only.
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class NBTAttribute : Attribute {
 

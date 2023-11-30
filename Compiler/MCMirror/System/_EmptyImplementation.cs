@@ -5,8 +5,8 @@
 // Requirements may change, shifting definitions from _EmptyImplementation.cs
 // to _Unimplemented.cs, or vice versa.
 
-// Any method returning one of these types should
-//   throw new MCMirror.Internal.CompiletimeNotImplementedException()
+// Any method returning one of the types in this file should
+//   { throw new MCMirror.Internal.CompiletimeNotImplementedException(); }
 // and leave it at that.
 
 using MCMirror.Internal;
@@ -48,6 +48,7 @@ namespace System {
     }
 
     // (This one's even empty in vanilla!)
+    [NoCompile]
     public sealed class ParamArrayAttribute : Attribute {
         public ParamArrayAttribute() { }
     }
@@ -100,4 +101,10 @@ namespace System.Diagnostics.CodeAnalysis {
         public string MessageId { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
         public string Justification { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
     }
+}
+
+namespace System.Runtime.CompilerServices {
+    // "Reserved by the compiler" yeah that's me.
+    [NoCompile]
+    internal class IsExternalInit { }
 }

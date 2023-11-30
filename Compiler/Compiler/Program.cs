@@ -114,6 +114,10 @@ namespace Atrufulgium.FrontTick.Compiler
                 datapackPath += $"{slash}.minecraft{slash}saves{slash}{outputWorld}{slash}datapacks{slash}{manespace}";
                 datapack.WriteToFilesystem(datapackPath);
                 Console.WriteLine("\nCompilation succesful!");
+                Console.WriteLine($"    Output world name:      {outputWorld}");
+                Console.WriteLine($"    Datapack namespace:     {manespace}");
+                Console.WriteLine($"    Generated files:        {datapack.Files.Count}");
+                Console.WriteLine($"    Minecraft version:      1.19.4");
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Don't forget to /reload in-game!");
                 Console.ResetColor();

@@ -16,6 +16,7 @@ namespace MCMirror {
     /// This attribute is only valid on <c>static void</c> methods without arguments.
     /// </remarks>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class MCFunctionAttribute : Attribute {
         public readonly string name;

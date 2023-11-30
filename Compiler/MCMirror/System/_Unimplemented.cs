@@ -30,6 +30,7 @@ namespace System {
     public static class Math { }
 
     // This implementation can only really get started once I have a heap and gc and all that jazz.
+    [NoCompile]
     public class Object {
         public virtual String ToString() => throw new CompiletimeNotImplementedException();
         public virtual bool Equals() => throw new CompiletimeNotImplementedException();
@@ -39,6 +40,8 @@ namespace System {
     }
 
     public class Random { }
+
+    public struct Single { }
 }
 
 namespace System.Collections {

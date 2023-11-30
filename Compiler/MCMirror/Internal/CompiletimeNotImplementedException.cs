@@ -13,7 +13,18 @@ namespace MCMirror.Internal {
     /// of course.
     /// </para>
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// If you get a CS8115, do not <c>=&gt; ..</c> and instead use 
+    /// <c>{ .. }</c>.
+    /// </para>
+    /// <para>
+    /// In its current state, make sure anything that constructs this is
+    /// tagged with [NoCompile].
+    /// </para>
+    /// </remarks>
     // TODO: Implement in the compiler
+    [NoCompile]
     public class CompiletimeNotImplementedException : Exception {
         public CompiletimeNotImplementedException() { }
 #pragma warning disable IDE0060 // Remove unused parameter

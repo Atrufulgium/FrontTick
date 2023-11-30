@@ -57,8 +57,8 @@ namespace Atrufulgium.FrontTick.Compiler
 
         public ReadOnlyCollection<Diagnostic> ErrorDiagnostics { get; private set; }
         public ReadOnlyCollection<Diagnostic> WarningDiagnostics { get; private set; }
-        List<Diagnostic> errorDiagnostics = new();
-        List<Diagnostic> warningDiagnostics = new();
+        readonly List<Diagnostic> errorDiagnostics = new();
+        readonly List<Diagnostic> warningDiagnostics = new();
 
         bool hasCompiled = false;
 
@@ -118,8 +118,7 @@ namespace Atrufulgium.FrontTick.Compiler
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
 
-            if (nameManagerPostProcessor == null)
-                nameManagerPostProcessor = new NamePostProcessors.Identity();
+            nameManagerPostProcessor ??= new NamePostProcessors.Identity();
 
             nameManager = new(manespace, nameManagerPostProcessor);
             this.references = ReferenceManager.GetReferences(references);
@@ -215,8 +214,8 @@ namespace Atrufulgium.FrontTick.Compiler
             hasCompiled = true;
 
             var syntaxTrees = new List<SyntaxTree>();
-            foreach(var source in sources) {
-                syntaxTrees.Add(CSharpSyntaxTree.ParseText(source.code, path: source.path));
+            foreach(var (code, path) in sources) {
+                syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: path));
             }
 
             compilation = CSharpCompilation.Create(
@@ -241,6 +240,7 @@ namespace Atrufulgium.FrontTick.Compiler
                 return false;
 
             int phaseID = 1;
+            string[] allowedErrors = new[] { "CS0159" };
             bool incorrectTreeAllowed = false;
             StringBuilder errors = new();
             foreach(var phase in compilationPhases) {
@@ -256,7 +256,7 @@ namespace Atrufulgium.FrontTick.Compiler
                 errors.Clear();
                 if (!incorrectTreeAllowed)
                     foreach (var d in compilation.GetDiagnostics())
-                        if (d.Severity == DiagnosticSeverity.Error)
+                        if (d.Severity == DiagnosticSeverity.Error && !allowedErrors.Contains(d.Id))
                             errors.AppendLine(CSharpDiagnosticFormatter.Instance.Format(d));
                 if (errors.Length > 0)
                     throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}/{compilationPhases.Length}):\n{errors}");

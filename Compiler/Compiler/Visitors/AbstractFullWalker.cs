@@ -1,5 +1,4 @@
-﻿using MCMirror.Internal;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
@@ -23,7 +22,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     public abstract class AbstractFullWalker : CSharpSyntaxWalker, IFullVisitor {
 
         public ReadOnlyCollection<Diagnostic> CustomDiagnostics => new(customDiagnostics);
-        List<Diagnostic> customDiagnostics = new();
+        readonly List<Diagnostic> customDiagnostics = new();
         protected NameManager nameManager;
 
         public bool ReadOnly => true;
@@ -46,7 +45,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // Do not handle any [NoCompile] code.
         /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public sealed override void VisitMethodDeclaration(MethodDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return;
             VisitMethodDeclarationRespectingNoCompile(node);
         }
@@ -56,7 +55,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public sealed override void VisitClassDeclaration(ClassDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return;
             VisitClassDeclarationRespectingNoCompile(node);
         }
@@ -66,13 +65,29 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public sealed override void VisitStructDeclaration(StructDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return;
             VisitStructDeclarationRespectingNoCompile(node);
         }
         /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public virtual void VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node)
             => base.VisitStructDeclaration(node);
+
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override void VisitEnumDeclaration(EnumDeclarationSyntax node) {
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
+                return;
+            VisitEnumDeclarationRespectingNoCompile(node);
+        }
+        /// <inheritdoc cref="AbstractFullRewriter.VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual void VisitEnumDeclarationRespectingNoCompile(EnumDeclarationSyntax node)
+            => base.VisitEnumDeclaration(node);
+
+        /// <summary>
+        /// I don't see a reason to modify interfaces anywhere in the
+        /// foreseeable future. And currently they're just breaking everything.
+        /// </summary>
+        public sealed override void VisitInterfaceDeclaration(InterfaceDeclarationSyntax node) { }
 
         public void FullVisit() {
             GlobalPreProcess();

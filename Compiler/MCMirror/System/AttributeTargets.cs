@@ -1,6 +1,9 @@
-﻿namespace System {
+﻿using MCMirror.Internal;
+
+namespace System {
     // Just a copy-pasta from MIT-licensed
     // https://github.com/microsoft/referencesource/blob/master/mscorlib/system/attributetargets.cs
+    [NoCompile]
     public enum AttributeTargets {
         Assembly = 0x0001,
         Module = 0x0002,

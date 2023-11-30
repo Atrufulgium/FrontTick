@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Collections.ObjectModel;
 
 namespace Atrufulgium.FrontTick.Compiler.Datapack {
     /// <summary>
@@ -17,6 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         // Keep them sorted alphabetically by path to keep the string output
         // consistent. Maybe it even helps with the filesystem output.
         private readonly SortedSet<IDatapackFile> files = new(DatapackFileComparer.Comparer);
+        public ReadOnlyCollection<IDatapackFile> Files => new(files.ToList());
 
         public FullDatapack(params IEnumerable<IDatapackFile>[] files) {
             // Only add datapacks that are intended to be valid -- exactly the
