@@ -20,7 +20,9 @@ namespace System {
     // reflection won't exist and they don't have use beyond that.
     // This also holds for all derived classes.
     [NoCompile]
-    public abstract class Attribute { }
+    public abstract class Attribute { 
+        public virtual object TypeId => throw new CompiletimeNotImplementedException();
+    }
 
     [NoCompile]
     public sealed class AttributeUsageAttribute : Attribute {
@@ -103,8 +105,69 @@ namespace System.Diagnostics.CodeAnalysis {
     }
 }
 
+namespace System.Reflection {
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyCompanyAttribute : Attribute {
+        public AssemblyCompanyAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Company { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyFileVersionAttribute : Attribute {
+        public AssemblyFileVersionAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Version { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyInformationalVersionAttribute : Attribute {
+        public AssemblyInformationalVersionAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string InformationalVersion { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyProductAttribute : Attribute {
+        public AssemblyProductAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Product { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyTitleAttribute : Attribute {
+        public AssemblyTitleAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Title { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyVersionAttribute : Attribute {
+        public AssemblyVersionAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Version { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class AssemblyConfigurationAttribute : Attribute {
+        public AssemblyConfigurationAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string Configuration { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
+}
+
 namespace System.Runtime.CompilerServices {
     // "Reserved by the compiler" yeah that's me.
     [NoCompile]
     internal class IsExternalInit { }
+}
+
+namespace System.Runtime.Versioning {
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+    [NoCompile]
+    public sealed class TargetFrameworkAttribute : Attribute {
+        public TargetFrameworkAttribute(string s) => throw new CompiletimeNotImplementedException();
+        public string FrameworkDisplayName { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+        public string FrameworkName { get => throw new CompiletimeNotImplementedException(); set => throw new CompiletimeNotImplementedException(); }
+    }
 }
