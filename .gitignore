@@ -356,3 +356,4 @@ Compiler/CompilerTests/Playground.cs
 # or where you store the project, this is different.
 Compiler/Compiler/Properties/launchSettings.json
 Compiler/MCMirror.dll
+Compiler/MCMirror.xml
