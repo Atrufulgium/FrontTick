@@ -39,7 +39,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static CompilationException ToDatapackDeclarationsMustBeInMethodRootScope
             => new("[To Datapack] Declarations must be in the method's root scope.");
         public static CompilationException ToDatapackLiteralsIntegerOnly
-            => new("[To Datapack] Literals may only be integers at this stage.");
+            => new("[To Datapack] Literals may only be integers or `true`/`false` at this stage.");
         public static CompilationException ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals
             => new("[To Datapack] Calls' arguments must consist of identifiers or literals.");
         public static CompilationException ToDatapackMethodCallsMustBeStatic

@@ -21,7 +21,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             if (node.ArgumentList?.Arguments.Count > 0)
                 arg = node.ArgumentList.Arguments[0].Expression;
 
-            if (methodName == "CompileTime/VarName") {
+            if (methodName.ToString().Contains("CompileTime/VarName")) {
                 if (arg is IdentifierNameSyntax or MemberAccessExpressionSyntax)
                     return StringLiteralExpression(nameManager.GetVariableName(CurrentSemantics, arg, this));
                 AddCustomDiagnostic(DiagnosticRules.VarNameArgMustBeIdentifier, node.GetLocation());

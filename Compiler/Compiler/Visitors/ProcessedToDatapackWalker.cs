@@ -531,9 +531,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
         // Only call this from TryGetIntegerLiteral
         private static int GetIntegerLiteral(LiteralExpressionSyntax lit) {
-            if (!int.TryParse(lit.Token.Text, out int res))
-                throw CompilationException.ToDatapackLiteralsIntegerOnly;
-            return res;
+            if (bool.TryParse(lit.Token.Text, out bool b))
+                return b ? 1 : 0;
+            if (int.TryParse(lit.Token.Text, out int res))
+                return res;
+            throw CompilationException.ToDatapackLiteralsIntegerOnly;
         }
 
         /// <summary>
@@ -561,7 +563,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
             // Todo: this will probably be pretty expensive in the long run. Cache (type,fields[]) in some dict.
             // Also, don't do a = a assignments. Those are stupid.
-            if (CurrentSemantics.TypesMatch(type, MCMirrorTypes.Int)) {
+            if (CurrentSemantics.TypesMatch(type, MCMirrorTypes.Int) || CurrentSemantics.TypesMatch(type, MCMirrorTypes.Bool)) {
                 if (rhs == "default")
                     AddCode($"scoreboard players set {lhs} _ 0");
                 else if (!(op == "=" && lhs == rhs))

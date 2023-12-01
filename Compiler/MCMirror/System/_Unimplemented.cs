@@ -16,8 +16,6 @@ namespace System {
     // complexity of the generated filecount in the former case.
     public abstract class Array { }
 
-    public struct Boolean { }
-
     // Note: Vanilla c# does some weird shit
     //   public abstract class Enum : ValueType
     // to probably support the myEnum : long {} syntax.

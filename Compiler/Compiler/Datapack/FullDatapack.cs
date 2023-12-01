@@ -91,7 +91,10 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         public string ToString(bool skipInternal = false, bool skipMCMirror = false) {
             StringBuilder result = new();
             foreach (var f in files) {
+                // .. i really need a better mechanism for this
                 if (skipInternal && f.Subpath.Contains("internal/--"))
+                    continue;
+                if (skipInternal && f.Subpath.Contains("internal/bool."))
                     continue;
                 if (skipInternal && f is FunctionTag tag)
                     if (tag.Subpath == "test.json"

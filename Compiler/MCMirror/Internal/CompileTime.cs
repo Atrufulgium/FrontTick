@@ -2,25 +2,31 @@
     /// <summary>
     /// A class of methods whose effect is only at compile-time.
     /// </summary>
+    // This is implemented in the "CompileTimeClassRewriter" class.
     public static class CompileTime {
         /// <summary>
         /// <para>
-        /// Converts an integer variable into the name the local context uses
-        /// in MCFunction to access its value. For instance, a method parameter
+        /// Converts an variable into the name the local context uses in
+        /// MCFunction to access its value. For instance, a method parameter
         /// turns into <tt>"#namespace:class.method##arg0"</tt>.
         /// </para>
         /// <para>
         /// This is made to go together with <see cref="RawMCFunction.Run(string)"/>
-        /// using string interpolation and is otherwise not useful.
+        /// using string interpolation and is otherwise not useful. (You may be
+        /// tempted to extract it if you use it multiple times, but as strings
+        /// are not supported...)
         /// </para>
         /// </summary>
         /// <param name="variable">
         /// The variable to convert to its name. This *must* be a single
         /// identifier, not a constant, the result of arithmetic, etc.
         /// </param>
-        // This is implemented in the "VarNameMethodRewriter" class.
-        [CustomCompiled("CompileTime/VarName")]
+        [CustomCompiled("CompileTime/VarNameInt")]
         public static extern string VarName(int variable);
+
+        /// <inheritdoc cref="VarName(int)"/>
+        [CustomCompiled("CompileTime/VarNameBool")]
+        public static extern string VarName(bool variable);
 
         /// <summary>
         /// <para>
@@ -38,7 +44,6 @@
         /// candidate -- isn't that in any case sufficient when all that's
         /// asked for is a delegate?
         /// </remarks>
-        // This is also implemented in the "VarNameMethodRewriter" class.
         [CustomCompiled("CompileTime/MethodName")]
         public static extern string MethodName(System.Delegate method);
 

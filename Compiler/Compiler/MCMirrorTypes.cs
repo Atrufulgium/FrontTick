@@ -28,6 +28,7 @@
         public static readonly string TrueLoadManager_TrueLoadTagname = "internal/--trueload--";
 
         // System.xxx
+        public static readonly string Bool = "bool";
         public static readonly string Int = "int";
     }
 }
