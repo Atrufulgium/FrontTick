@@ -211,8 +211,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
-            if (!AtRootScope)
-                throw CompilationException.ToDatapackDeclarationsMustBeInMethodRootScope;
             // Note that a declaration statement can consist of multiple
             // declarators, due to the syntax of `int i, j = 1, k;`.
             foreach (var declarator in decl.Declaration.ChildNodes().OfType<VariableDeclaratorSyntax>())
@@ -277,65 +275,61 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
 
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
-            MCFunctionName targetIfName = GetBranchPath("if-branch"),
-                targetElseName = null;
+            MCFunctionName targetIfName = GetBranchPath("if-branch");
             string conditionIdentifier;
-            bool hasElse = ifst.Else != null;
-            if (hasElse)
-                targetElseName = GetBranchPath("else-branch");
-
-            // The if-statement must be of the form
-            //   if (identifier != literal) [or ==]
-            // TODO: >, >=, <, <=
-
-            if (ifst.Condition is BinaryExpressionSyntax bin
-                && bin.Left is IdentifierNameSyntax id
-                && bin.OperatorToken.Text is "!=" or "=="
-                && TryGetIntegerLiteral(bin.Right, out int rhsValue)) {
-                conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
-            } else {
-                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero;
-            }
-
-            // In case we have an else branch, copy the if conditional over to
-            // the else conditional to ensure that not both branches run if
-            // the conditioned variable gets updated.
-            // This is only necessary when there's a chance it's written to.
-            // TODO: Guarantee this in a seperate pass.
-            if (hasElse) {
-                var dataFlow = CurrentSemantics.AnalyzeDataFlow(ifst);
-                var identifierSymbol = CurrentSemantics.GetSymbolInfo(id).Symbol;
-                bool modifiesIdentifier =
-                    dataFlow.WrittenInside.Contains(identifierSymbol)
-                    || !(identifierSymbol is ILocalSymbol or IParameterSymbol);
-
-                if (modifiesIdentifier) {
-                    // Use `branchCounter` to ensure uniqueness.
-                    string updatedIdentifier = $"conditionIdentifier-{branchCounter}";
-                    AddCode($"scoreboard players operation {updatedIdentifier} _ = {conditionIdentifier} _");
-                    conditionIdentifier = updatedIdentifier;
-                }
-            }
-
-            bool equalsVariant = bin.OperatorToken.Text == "==";
-            string ifBranchMCConditional = equalsVariant ? "if" : "unless";
-            string elseBranchMCConditional = equalsVariant ? "unless" : "if";
+            if (ifst.Else != null)
+                throw new ArgumentException("At this point the tree should have no else clauses left.");
 
             if (ifst.Statement is not BlockSyntax block)
                 throw CompilationException.ToDatapackBranchesMustBeBlocks;
 
+            // The if-statement must be of the form
+            //   if (identifier)
+            // or
+            //   if (!identifier)
+            // where `identifier` is a bool.
+            // See also SimplifyIfConditionRewriter.
+            // However, for semantic reasons (see GotoFlagifyRewriter's
+            // comment for mor info), we also have
+            //   if (someInt == constant)
+            // to deal with separately.
+
+            bool flipped;
+            if (ifst.Condition is IdentifierNameSyntax id) {                // "if (id)"
+                // Regular `if (identifier)`, handle later.
+                flipped = false;
+            } else if (ifst.Condition is PrefixUnaryExpressionSyntax un     // "if (!id2)" 
+                && un.IsKind(SyntaxKind.LogicalNotExpression)
+                && un.Operand is IdentifierNameSyntax id2) {
+                // Flipped `if (!identifier)`, handle later.
+                flipped = true;
+                id = id2;
+            } else if (ifst.Condition is BinaryExpressionSyntax bin         // "if (id3 == lit)"
+                && bin.Left is IdentifierNameSyntax id3
+                && bin.OperatorToken.Text == "=="
+                && TryGetIntegerLiteral(bin.Right, out int lit)
+                && CurrentSemantics.TypesMatch(id3, MCMirrorTypes.Int)) {
+                // The annoying special case introduced by GotoFlagifyRewriter, handle now.
+                string edgecaseCall = HandleBlock(block, targetIfName);
+                conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id3, this);
+                if (edgecaseCall != "")
+                    AddCode($"execute if score {conditionIdentifier} _ matches {lit} run {edgecaseCall}");
+                return;
+            } else { 
+                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierOrNegatedIdentifier;
+            }
+            if (!CurrentSemantics.TypesMatch(id, MCMirrorTypes.Bool)) {
+                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierOrNegatedIdentifier;
+            }
+
+            conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
+
+            bool equalsVariant = !flipped;
+            string ifBranchMCConditional = equalsVariant ? "if" : "unless";
+
             string call = HandleBlock(block, targetIfName);
             if (call != "")
-                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
-
-            if (hasElse) {
-                if (ifst.Else.Statement is not BlockSyntax elseBlock)
-                    throw CompilationException.ToDatapackBranchesMustBeBlocks;
-
-                call = HandleBlock(elseBlock, targetElseName);
-                if (call != "")
-                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
-            }
+                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches 1 run {call}");
         }
 
         private void HandleGoto(GotoStatementSyntax got) {
@@ -469,6 +463,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             // track fo a "skipped" variable, incremented at the start, and
             // decremented at the end.
             wipFiles.Peek().code.Insert(0, "scoreboard players add #TESTSSKIPPED _ 1");
+            wipFiles.Peek().code.Insert(0, "scoreboard players set #RET _ -2122222222");
             var pos = node.GetLocation().GetLineSpan();
             string path = System.IO.Path.GetFileName(pos.Path);
             string hover = $"\"hoverEvent\":{{\"action\":\"show_text\",\"contents\":[{{\"text\":\"File \",\"color\":\"gray\"}},{{\"text\":\"{path}\",\"color\":\"white\"}},{{\"text\":\"\\nLine \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Line}\",\"color\":\"white\"}},{{\"text\":\" Col \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Character}\",\"color\":\"white\"}}]}}";

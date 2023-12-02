@@ -21,7 +21,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static CompilationException LoopsToGotoOnlyWhileInWhileProcessing
             => new("[Loops to Goto] When processing while -> goto, there may not be any for, foreach, or do-while loops.");
         public static CompilationException OperatorsRequireUnderlyingMethod
-            => new("[Ops to Methods] Every unary and binary operator requires an underlying method. (Exception: `int +=,-=,*=,/=,%=,==,!=,>=,<=,>,< int`.)");
+            => new("[Ops to Methods] Every unary and binary operator requires an underlying method.");
         public static CompilationException ToDatapackAssignmentOpsMustBeSimpleOrArithmetic
             => new("[To Datapack] Assignments must be one of \"=\", \"+=\", \"-=\", \"*=\", \"/=\", or \"%=\".");
         public static CompilationException ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls
@@ -32,12 +32,10 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] A labeled statement may only label a block ({}) and nothing else.");
         public static CompilationException ToDatapackGotoMustBeLastBlockStatement
             => new("[To Datapack] In every block, goto must be the last statement -- nothing may follow, not even labels.");
-        public static CompilationException ToDatapackIfConditionalMustBeIdentifierNotEqualToZero
-            => new("[To Datapack] The conditional of a if-statement must be of the form `identifier != 0` or `identifier == 0`.");
+        public static CompilationException ToDatapackIfConditionalMustBeIdentifierOrNegatedIdentifier
+            => new("[To Datapack] The conditional of a if-statement must be of the form `identifier` or `!identifier` for some boolean variable `identifier`.");
         public static CompilationException ToDatapackDeclarationsMayNotBeInitializers
             => new("[To Datapack] Declarations may not be initializers.");
-        public static CompilationException ToDatapackDeclarationsMustBeInMethodRootScope
-            => new("[To Datapack] Declarations must be in the method's root scope.");
         public static CompilationException ToDatapackLiteralsIntegerOnly
             => new("[To Datapack] Literals may only be integers or `true`/`false` at this stage.");
         public static CompilationException ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals

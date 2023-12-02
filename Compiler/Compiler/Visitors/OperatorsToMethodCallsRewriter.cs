@@ -2,7 +2,6 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
-using System.Collections.Generic;
 using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -12,16 +11,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// Turns any expression of the form <tt>a + b</tt> into <tt>#ADD(a,b)</tt>
     /// and <tt>a += b</tt> into <tt>a = #ADD(a,b)</tt>.
     /// </para>
-    /// <para>
-    /// Assumes this transformation can happen *in all cases but one*:
-    /// *every* operation but any <tt>int ∘ int</tt> must have a underlying
-    /// method. Here ∘∈{+=, -=, *=, /=, %=, ==, !=, &gt;=, &lt;=, &gt;, &lt;}.
-    /// </para>
-    /// <para>
-    /// (Yes, even <tt>int ∘ int</tt> is disallowed.)
-    /// </para>
     /// </summary>
-    // TODO: Don't give exceptional status to ints. Instead, implement MCInt and use RunRaw().
     public class OperatorsToMethodCallsRewriter : AbstractFullRewriter<CopyOperatorsToNamedRewriter> {
 
         // ..attributes exist lol. Don't process those, even though they may
@@ -31,19 +21,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public override SyntaxNode VisitBinaryExpression(BinaryExpressionSyntax node) {
-            var op = (IBinaryOperation)CurrentSemantics.GetOperation(node);
-            if (op.OperatorMethod == null) {
-                // No operator method. Not allowed except a few integer ones.
-                if (CurrentSemantics.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Int)
-                    && CurrentSemantics.TypesMatch(op.RightOperand.Type, MCMirrorTypes.Int)
-                    && node.OperatorToken.Text is "==" or "!=" or ">=" or "<=" or ">" or "<")
-                    return base.VisitBinaryExpression(node);
-                throw CompilationException.OperatorsRequireUnderlyingMethod;
-            }
-            var containingType = op.OperatorMethod.ContainingType;
-            var methodName = NameOperatorsCategory.GetMethodName(node.OperatorToken.Text);
+            var (fullyQualified, name) = NameOperatorsCategory.ParseOperator(CurrentSemantics, node);
+
+            var fullyQualifiedName = $"{fullyQualified}.{name}";
             return InvocationExpression(
-                MemberAccessExpression(containingType, methodName),
+                MemberAccessExpression(fullyQualifiedName),
                 ArgumentList(
                     (ExpressionSyntax)Visit(node.Left),
                     (ExpressionSyntax)Visit(node.Right)
@@ -51,28 +33,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             );
         }
 
-        private readonly List<string> intAllowed = new() { "+=", "-=", "*=", "/=", "%=", "==", "!=", ">=", "<=", ">", "<" };
         public override SyntaxNode VisitAssignmentExpression(AssignmentExpressionSyntax node) {
             if (node.Kind() == SyntaxKind.SimpleAssignmentExpression)
                 return base.VisitAssignmentExpression(node);
 
-            // TODO: We've excluded ISimple with the above, handle ICompound here, but ICoalesce and IDesconstruction also exist. Far future.
-            var op = (ICompoundAssignmentOperation)CurrentSemantics.GetOperation(node);
-            if (op.OperatorMethod == null) {
-                if (intAllowed.Contains(node.OperatorToken.Text))
-                    return base.VisitAssignmentExpression(node);
-                throw CompilationException.OperatorsRequireUnderlyingMethod;
-            }
+            var (fullyQualified, name) = NameOperatorsCategory.ParseOperator(CurrentSemantics, node);
+            var fullyQualifiedName = $"{fullyQualified}.{name}";
 
-            var containingType = op.OperatorMethod.ContainingType;
-            var methodName = NameOperatorsCategory.GetMethodName(node.OperatorToken.Text[0..^1]);
             var left = (ExpressionSyntax)Visit(node.Left);
             var right = (ExpressionSyntax)Visit(node.Right);
             return AssignmentExpression(
                 SyntaxKind.SimpleAssignmentExpression,
                 left,
                 InvocationExpression(
-                    MemberAccessExpression(containingType, methodName),
+                    MemberAccessExpression(fullyQualifiedName),
                     ArgumentList(
                         left,
                         right
