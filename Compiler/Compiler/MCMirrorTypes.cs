@@ -28,6 +28,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static readonly string NoCompileAttribute = "MCMirror.Internal.NoCompileAttribute";
         public static readonly string TrueLoadManager = "MCMirror.Internal.TrueLoadManager";
         public static readonly string TrueLoadManager_TrueLoadTagname = "internal/--trueload--";
+        public static readonly string UnreachableCodeException = "MCMirror.Internal.UnreachableCodeException";
+        public static readonly string UnreachableCodeException_Exception = "MCMirror.Internal.UnreachableCodeException.Exception";
 
         // System.xxx
         public static readonly string Bool = "bool";

@@ -197,6 +197,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                 HandleGoto(got);
             } else if (statement is EmptyStatementSyntax) {
                 // We'll also autogen this a ton, probably.
+            } else if (statement is ThrowStatementSyntax th
+                && CurrentSemantics.TypesMatch(th.Expression, MCMirrorTypes.UnreachableCodeException)) {
+                // Also defined to be a noop.
             } else {
                 throw CompilationException.ToDatapackUnsupportedStatementType;
             }
