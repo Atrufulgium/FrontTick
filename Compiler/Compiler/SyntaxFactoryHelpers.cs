@@ -73,6 +73,21 @@ namespace Atrufulgium.FrontTick.Compiler {
             );
 
         /// <summary>
+        /// Parses a string with possible `<c>.</c>`'s into a proper name.
+        /// Requires at least one dot.
+        /// </summary>
+        public static MemberAccessExpressionSyntax MemberAccessExpression(string fullyQualified) {
+            var parts = fullyQualified.Split('.');
+            if (parts.Length < 2)
+                throw new System.ArgumentException("The given MemberAccessExpression string does not represent any accessing.", nameof(fullyQualified));
+
+            ExpressionSyntax lhs = IdentifierName(parts[0]);
+            for (int i = 1; i < parts.Length; i++)
+                lhs = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, lhs, IdentifierName(parts[i]));
+            return (MemberAccessExpressionSyntax)lhs;
+        }
+
+        /// <summary>
         /// Parses a string with possibly '<tt>.</tt>'s into a proper qualified
         /// name.
         /// </summary>

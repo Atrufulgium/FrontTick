@@ -1,4 +1,6 @@
-﻿namespace Atrufulgium.FrontTick.Compiler {
+﻿using Atrufulgium.FrontTick.Compiler.Visitors;
+
+namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
     /// Class that contains the names of various MCMirror types.
     /// While it's not yet used, the types used should be annotated with a
@@ -29,6 +31,9 @@
 
         // System.xxx
         public static readonly string Bool = "bool";
+        public static readonly string BoolFullyQualified = "System.Boolean";
         public static readonly string Int = "int";
+        public static readonly string IntFullyQualified = "System.Int32";
+        public static readonly string Int_Equals_PostOperatorsToMethodCalls = "System.Int32." + NameOperatorsCategory.GetMethodName("==");
     }
 }

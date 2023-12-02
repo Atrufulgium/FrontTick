@@ -5,8 +5,6 @@
 
 using MCMirror.Internal;
 
-// TODO: Note that I'm including the system library when constructing Roslyn. Don't do that anymore.
-
 #pragma warning disable IDE0049 // Name can be simplified
 #pragma warning disable IDE0060 // Remove unused parameter
 namespace System {
@@ -21,9 +19,6 @@ namespace System {
     // to probably support the myEnum : long {} syntax.
     // I'm not doing that and just using a 32 bit field.
     public struct Enum { }
-
-    // Can I just copy MCMirror.Internal.Primitives.MCInt into here?
-    public struct Int32 { }
 
     public static class Math { }
 

@@ -98,20 +98,22 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Blocks part of labels count as seperate from their parent blocks.
         /// </para>
         /// </summary>
+        // Fun fact: for something at depth n, this is called n times.
+        // This recursion is so suboptimal that something at depth n is visited
+        // n times. Super stupid O(n^2) for something that's O(1) lol.
         public static BlockSyntax Flattened(this BlockSyntax block) {
-            List<BlockSyntax> nestedNodes = new();
+            var newBlock = Block();
             // Add all direct blocks and blocks that are labeled.
-            foreach (var s in block.Statements) {
-                var statement = s;
-                if (statement is BlockSyntax b)
-                    nestedNodes.Add(b);
+            foreach (var statement in block.Statements) {
+                if (statement is BlockSyntax b) {
+                    foreach (var nestedStatement in b.Flattened().Statements) {
+                        newBlock = newBlock.WithAppendedStatement(nestedStatement);
+                    }
+                } else {
+                    newBlock = newBlock.WithAppendedStatement(statement);
+                }
             }
-
-            // Create a new block by replacing everything with its flattening.
-            foreach (var b in nestedNodes) {
-                block = block.ReplaceNode(b, b.Flattened().Statements);
-            }
-            return block;
+            return newBlock;
         }
 
         /// <summary>

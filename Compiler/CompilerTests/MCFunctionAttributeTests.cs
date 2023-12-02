@@ -99,7 +99,7 @@ public class Test {
 ");
 
         [TestMethod]
-        public void NoMCFunctionTagTest1()
+        public void NoMCFunctionTagTest1Raw()
             => TestCompilationSucceedsRaw(@"
 public class Test {
     public static void TestMethod() { }

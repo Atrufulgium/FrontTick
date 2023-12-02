@@ -96,6 +96,8 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
                     continue;
                 if (skipInternal && f.Subpath.Contains("internal/bool."))
                     continue;
+                if (skipInternal && f.Subpath.Contains("internal/int."))
+                    continue;
                 if (skipInternal && f is FunctionTag tag)
                     if (tag.Subpath == "test.json"
                         || (tag.Namespace == "minecraft" && tag.Subpath == "load.json")
