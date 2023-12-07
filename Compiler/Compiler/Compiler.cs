@@ -151,11 +151,17 @@ namespace Atrufulgium.FrontTick.Compiler
         /// </summary>
         IEnumerable<IFullVisitor> ApplyDependencies(IEnumerable<IFullVisitor> compilationPhases) {
             var phasesList = (from p in compilationPhases select p.GetType()).ToList();
+            var phasesDepth = phasesList.ToDictionary(p => p, p => 0);
             var toHandle = new Queue<Type>(phasesList);
             while(toHandle.Count > 0) {
                 var visitor = toHandle.Dequeue();
                 var baseType = visitor.BaseType;
+                int currentDepth = phasesDepth[visitor];
                 foreach(Type dependency in baseType.GenericTypeArguments) {
+                    // Prevent headache later
+                    if (!phasesDepth.ContainsKey(dependency))
+                        phasesDepth[dependency] = -1;
+
                     // We care mostly about type, so need to manually walk the list.
                     // Good 'ol O(ew). Luckily these lists will never be too large
                     // so I don't care about more sophisticated methods.
@@ -172,6 +178,12 @@ namespace Atrufulgium.FrontTick.Compiler
                         if (phasesList[i] == visitor)
                             visitorIndex = i;
                     }
+
+                    // The depth needs to be updated in two cases:
+                    // - It doesn't exist yet
+                    // - It gets moved ahead
+                    // In both cases, the last branch happens and the dependency
+                    // inherits the current one's depth + 1.
                     if (dependencyIndex > visitorIndex) {
                         // This dependency is too late in the list and needs
                         // to be moved ahead.
@@ -183,12 +195,17 @@ namespace Atrufulgium.FrontTick.Compiler
                             toHandle.Enqueue(dependencyDependency);
                     }
                     if (!foundDependency) {
+                        phasesDepth[dependency] = currentDepth + 1;
                         toHandle.Enqueue(dependency);
                         phasesList.Insert(visitorIndex, dependency);
                     }
                 }
             }
-            return from p in phasesList select (IFullVisitor)Activator.CreateInstance(p);
+            return phasesList.Select(p => {
+                var v = (IFullVisitor)Activator.CreateInstance(p);
+                v.DependencyDepth = phasesDepth[p];
+                return v;
+            });
         }
 
         /// <summary>
@@ -243,8 +260,40 @@ namespace Atrufulgium.FrontTick.Compiler
             string[] allowedErrors = new[] { "CS0159" };
             bool incorrectTreeAllowed = false;
             StringBuilder errors = new();
+            int prevDepth = -1;
             foreach(var phase in compilationPhases) {
-                Console.WriteLine($"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3} - {phase.GetType().Name}");
+                // I should really extract logging to someplace else.
+                int depth = phase.DependencyDepth;
+                string indent = "";
+                for (int i = 0; i < depth - 1; i++)
+                    indent += "│ ";
+                if (depth > 0)
+                    if (prevDepth >= depth)
+                        indent += "├─";
+                    else
+                        indent += "┌─";
+                prevDepth = depth;
+
+                string lhs = $"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3}";
+                string colorless = $" - {indent} ";
+                string rhs = $"{phase.GetType().Name}";
+                var consoleColor = ConsoleColor.Gray;
+                if (rhs.Contains("Category"))
+                    consoleColor = ConsoleColor.Yellow;
+                else if (rhs.Contains("ProcessedToDatapackWalker"))
+                    consoleColor = ConsoleColor.Cyan;
+                else if (rhs.Contains("Walker"))
+                    consoleColor = ConsoleColor.DarkGray;
+                Console.ForegroundColor = consoleColor;
+                Console.Write(lhs);
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(colorless);
+                Console.ForegroundColor = consoleColor;
+                Console.WriteLine(rhs);
+                Console.ResetColor();
+
+                // ACTUALLY do the thing!
                 phase.SetCompiler(this);
                 phase.FullVisit();
                 AppendDiagnostics(phase.CustomDiagnostics);

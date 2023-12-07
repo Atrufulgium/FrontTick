@@ -16,7 +16,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // As such, there's some annoying manual handling, which I put here.
     public class NameOperatorsCategory : AbstractFullWalker<
         CopyOperatorsToNamedRewriter,
-        RegisterOperatorsCategory,
+        RegisterOperatorsWalker,
         OperatorsToMethodCallsRewriter,
         RemoveOperatorRewriter
         > {
@@ -112,7 +112,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
     }
 
-    public class RegisterOperatorsCategory : AbstractRegisterMethodsByPrefixWalker {
+    public class RegisterOperatorsWalker : AbstractRegisterMethodsByPrefixWalker {
         public override string[] CharacteristicString => new[] { "OPERATOR-" };
     }
 

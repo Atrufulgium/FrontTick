@@ -120,6 +120,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         /// <remarks> No need to call the base method. </remarks>
         public virtual void GlobalPostProcess() { }
+
+        public int DependencyDepth { get; set; }
     }
 
     /// <inheritdoc/>
