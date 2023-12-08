@@ -328,5 +328,18 @@ namespace Atrufulgium.FrontTick.Compiler {
             list = list.AddRange(decl.Modifiers);
             return decl.WithModifiers(list);
         }
+
+        /// <summary>
+        /// When <paramref name="block"/> has no elements, returns <see cref="EmptyStatementSyntax"/>.
+        /// When it has one element, returns it.
+        /// Does nothing with more than one element.
+        /// </summary>
+        public static StatementSyntax SimplifyBlock(this BlockSyntax block) {
+            if (block.Statements.Count == 0)
+                return EmptyStatement();
+            if (block.Statements.Count == 1)
+                return block.Statements[0];
+            return block;
+        }
     }
 }

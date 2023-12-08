@@ -41,32 +41,6 @@ public class Test {
     }
 }
 ",              new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void DeclarationTestWrong1()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i = 3;
-    }
-}
-", CompilationException.ToDatapackDeclarationsMayNotBeInitializers,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void DeclarationTestWrong2()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i, j, k = 3, l, m = 2;
-    }
-}
-", CompilationException.ToDatapackDeclarationsMayNotBeInitializers,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
         #region assignment tests
@@ -877,9 +851,9 @@ scoreboard players set #RET _ 0
             => TestCompilationThrows(@"
 using MCMirror;
 internal class Test {
-    static int TestMethod() {
+    static int TestMethod(int i) {
         return 3;
-        int i;
+        i = 3;
     }
 }
 ", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,

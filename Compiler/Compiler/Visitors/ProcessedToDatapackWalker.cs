@@ -211,6 +211,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
+            // Note to future self: This one is actually needed and some phases
+            // use this assumption.
+            if (!AtRootScope)
+                throw CompilationException.ToDatapackDeclarationsMustBeInMethodRootScope;
             // Note that a declaration statement can consist of multiple
             // declarators, due to the syntax of `int i, j = 1, k;`.
             foreach (var declarator in decl.Declaration.ChildNodes().OfType<VariableDeclaratorSyntax>())

@@ -20,7 +20,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// scoping, goto labels and targets, or return statements inbetween).
     /// </para>
     /// </summary>
-    public class GotoFlagifyRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, LoopsToGotoCategory, ReturnRewriter> {
+    public class GotoFlagifyRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, LoopsToGotoCategory, MoveLocalDeclarationsToRootRewriter, ReturnRewriter> {
 
         // The basic idea is that any code of the form
         //     // Label here

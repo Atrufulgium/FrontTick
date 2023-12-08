@@ -36,6 +36,8 @@ namespace Atrufulgium.FrontTick.Compiler {
             => new("[To Datapack] The conditional of a if-statement must be of the form `identifier` or `!identifier` for some boolean variable `identifier`.");
         public static CompilationException ToDatapackDeclarationsMayNotBeInitializers
             => new("[To Datapack] Declarations may not be initializers.");
+        public static CompilationException ToDatapackDeclarationsMustBeInMethodRootScope
+            => new("[To Datapack] Declarations must be in the method's root scope.");
         public static CompilationException ToDatapackLiteralsIntegerOnly
             => new("[To Datapack] Literals may only be integers or `true`/`false` at this stage.");
         public static CompilationException ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals

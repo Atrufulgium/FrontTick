@@ -24,7 +24,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             => SyntaxFactory.SingleVariableDesignation(Identifier(identifier));
 
         public static ArgumentListSyntax ArgumentList(params ExpressionSyntax[] args)
-            => SyntaxFactory.ArgumentList(SeparatedList(from arg in args select Argument(arg)));
+            => SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(from arg in args select Argument(arg)));
 
         // I don't like BinaryExpression(<syntaxkind>, ...), so variants here.
 
@@ -139,23 +139,23 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static VariableDeclarationSyntax VariableDeclaration(ITypeSymbol type, string identifiername)
             => SyntaxFactory.VariableDeclaration(
                 Type(type),
-                SeparatedList(new[] {
+                SeparatedList(
                     VariableDeclarator(Identifier(identifiername))
-                })
+                )
             );
 
         public static VariableDeclarationSyntax VariableDeclaration(TypeSyntax type, string identifiername)
             => SyntaxFactory.VariableDeclaration(
                 type,
-                SeparatedList(new[] {
+                SeparatedList(
                     VariableDeclarator(Identifier(identifiername))
-                })
+                )
             );
 
         public static VariableDeclarationSyntax VariableDeclaration(ITypeSymbol type, string identifiername, ExpressionSyntax value)
             => SyntaxFactory.VariableDeclaration(
                 Type(type),
-                SeparatedList(new[] {
+                SeparatedList(
                     VariableDeclarator(
                         Identifier(identifiername),
                         default,
@@ -163,13 +163,13 @@ namespace Atrufulgium.FrontTick.Compiler {
                             value
                         )
                     )
-                })
+                )
             );
 
         public static VariableDeclarationSyntax VariableDeclaration(TypeSyntax type, string identifiername, ExpressionSyntax value)
             => SyntaxFactory.VariableDeclaration(
                 type,
-                SeparatedList(new[] {
+                SeparatedList(
                     VariableDeclarator(
                         Identifier(identifiername),
                         default,
@@ -177,7 +177,7 @@ namespace Atrufulgium.FrontTick.Compiler {
                             value
                         )
                     )
-                })
+                )
             );
 
         public static ParameterSyntax Parameter(ITypeSymbol type, string identifiername)
@@ -186,7 +186,10 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static ParameterListSyntax ParameterList(params ParameterSyntax[] parameters)
             => SyntaxFactory.ParameterList(
-                SeparatedList(parameters)
+                SyntaxFactory.SeparatedList(parameters)
             );
+
+        public static SeparatedSyntaxList<T> SeparatedList<T>(T item) where T : SyntaxNode
+            => SyntaxFactory.SeparatedList(new T[] { item });
     }
 }
