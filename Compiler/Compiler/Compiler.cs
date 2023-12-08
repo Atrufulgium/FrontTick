@@ -57,8 +57,8 @@ namespace Atrufulgium.FrontTick.Compiler
 
         public ReadOnlyCollection<Diagnostic> ErrorDiagnostics { get; private set; }
         public ReadOnlyCollection<Diagnostic> WarningDiagnostics { get; private set; }
-        List<Diagnostic> errorDiagnostics = new();
-        List<Diagnostic> warningDiagnostics = new();
+        readonly List<Diagnostic> errorDiagnostics = new();
+        readonly List<Diagnostic> warningDiagnostics = new();
 
         bool hasCompiled = false;
 
@@ -118,8 +118,7 @@ namespace Atrufulgium.FrontTick.Compiler
             ErrorDiagnostics = new(errorDiagnostics);
             WarningDiagnostics = new(warningDiagnostics);
 
-            if (nameManagerPostProcessor == null)
-                nameManagerPostProcessor = new NamePostProcessors.Identity();
+            nameManagerPostProcessor ??= new NamePostProcessors.Identity();
 
             nameManager = new(manespace, nameManagerPostProcessor);
             this.references = ReferenceManager.GetReferences(references);
@@ -152,11 +151,17 @@ namespace Atrufulgium.FrontTick.Compiler
         /// </summary>
         IEnumerable<IFullVisitor> ApplyDependencies(IEnumerable<IFullVisitor> compilationPhases) {
             var phasesList = (from p in compilationPhases select p.GetType()).ToList();
+            var phasesDepth = phasesList.ToDictionary(p => p, p => 0);
             var toHandle = new Queue<Type>(phasesList);
             while(toHandle.Count > 0) {
                 var visitor = toHandle.Dequeue();
                 var baseType = visitor.BaseType;
+                int currentDepth = phasesDepth[visitor];
                 foreach(Type dependency in baseType.GenericTypeArguments) {
+                    // Prevent headache later
+                    if (!phasesDepth.ContainsKey(dependency))
+                        phasesDepth[dependency] = -1;
+
                     // We care mostly about type, so need to manually walk the list.
                     // Good 'ol O(ew). Luckily these lists will never be too large
                     // so I don't care about more sophisticated methods.
@@ -173,6 +178,12 @@ namespace Atrufulgium.FrontTick.Compiler
                         if (phasesList[i] == visitor)
                             visitorIndex = i;
                     }
+
+                    // The depth needs to be updated in two cases:
+                    // - It doesn't exist yet
+                    // - It gets moved ahead
+                    // In both cases, the last branch happens and the dependency
+                    // inherits the current one's depth + 1.
                     if (dependencyIndex > visitorIndex) {
                         // This dependency is too late in the list and needs
                         // to be moved ahead.
@@ -184,12 +195,17 @@ namespace Atrufulgium.FrontTick.Compiler
                             toHandle.Enqueue(dependencyDependency);
                     }
                     if (!foundDependency) {
+                        phasesDepth[dependency] = currentDepth + 1;
                         toHandle.Enqueue(dependency);
                         phasesList.Insert(visitorIndex, dependency);
                     }
                 }
             }
-            return from p in phasesList select (IFullVisitor)Activator.CreateInstance(p);
+            return phasesList.Select(p => {
+                var v = (IFullVisitor)Activator.CreateInstance(p);
+                v.DependencyDepth = phasesDepth[p];
+                return v;
+            });
         }
 
         /// <summary>
@@ -215,8 +231,8 @@ namespace Atrufulgium.FrontTick.Compiler
             hasCompiled = true;
 
             var syntaxTrees = new List<SyntaxTree>();
-            foreach(var source in sources) {
-                syntaxTrees.Add(CSharpSyntaxTree.ParseText(source.code, path: source.path));
+            foreach(var (code, path) in sources) {
+                syntaxTrees.Add(CSharpSyntaxTree.ParseText(code, path: path));
             }
 
             compilation = CSharpCompilation.Create(
@@ -241,10 +257,47 @@ namespace Atrufulgium.FrontTick.Compiler
                 return false;
 
             int phaseID = 1;
+            string[] allowedErrors = new[] { "CS0159" };
             bool incorrectTreeAllowed = false;
             StringBuilder errors = new();
+            int prevDepth = -1;
             foreach(var phase in compilationPhases) {
-                Console.WriteLine($"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3} - {phase.GetType().Name}");
+                // I should really extract logging to someplace else.
+                int depth = phase.DependencyDepth;
+                string indent = "";
+                for (int i = 0; i < depth - 1; i++)
+                    indent += "│ ";
+                if (depth > 0)
+                    if (prevDepth >= depth)
+                        indent += "├─";
+                    else
+                        indent += "┌─";
+                prevDepth = depth;
+
+                string rhs = $"{phase.GetType().Name}";
+                string lhs = $"[{DateTime.Now.TimeOfDay}] ";
+                if (rhs.Contains("Category"))
+                    lhs += "(Category)";
+                else
+                    lhs += $"Phase {phaseID++,-4}";
+                string colorless = $" - {indent}";
+                var consoleColor = ConsoleColor.Gray;
+                if (rhs.Contains("Category"))
+                    consoleColor = ConsoleColor.Yellow;
+                else if (rhs.Contains("ProcessedToDatapackWalker"))
+                    consoleColor = ConsoleColor.Cyan;
+                else if (rhs.Contains("Walker"))
+                    consoleColor = ConsoleColor.DarkGray;
+                Console.ForegroundColor = consoleColor;
+                Console.Write(lhs);
+                Console.ResetColor();
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(colorless);
+                Console.ForegroundColor = consoleColor;
+                Console.WriteLine(rhs);
+                Console.ResetColor();
+
+                // ACTUALLY do the thing!
                 phase.SetCompiler(this);
                 phase.FullVisit();
                 AppendDiagnostics(phase.CustomDiagnostics);
@@ -256,7 +309,7 @@ namespace Atrufulgium.FrontTick.Compiler
                 errors.Clear();
                 if (!incorrectTreeAllowed)
                     foreach (var d in compilation.GetDiagnostics())
-                        if (d.Severity == DiagnosticSeverity.Error)
+                        if (d.Severity == DiagnosticSeverity.Error && !allowedErrors.Contains(d.Id))
                             errors.AppendLine(CSharpDiagnosticFormatter.Instance.Format(d));
                 if (errors.Length > 0)
                     throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}/{compilationPhases.Length}):\n{errors}");
@@ -291,8 +344,9 @@ namespace Atrufulgium.FrontTick.Compiler
             MCFunctionFile postTestFile = new(nameManager.TestPostProcessName);
             postTestFile.code.Add("tellraw @a [{\"text\":\"Testing complete.\",\"color\":\"white\"},{\"text\":\"\\n  Successes: \",\"color\":\"green\"},{\"score\":{\"name\":\"#TESTSUCCESSES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_green\"},{\"text\":\"\\n  Failures: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTFAILURES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
             postTestFile.code.Add("execute unless score #TESTSSKIPPED _ matches 0 run tellraw @a [{\"text\":\"  Skipped: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTSSKIPPED\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
-            postTestFile.code.Add("execute if score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To hide subsequent successes, click here.)\",\"color\":\"dark_gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 1\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display off.\"]}}");
-            postTestFile.code.Add("execute unless score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To show subsequent successes, click here.)\",\"color\":\"dark_gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 0\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display on.\"]}}");
+            postTestFile.code.Add($"tellraw @a {{\"text\":\"(Tests compiled {DateTime.Now} local time.)\",\"color\":\"gray\"}}");
+            postTestFile.code.Add("execute if score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To hide subsequent successes, click here.)\",\"color\":\"gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 1\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display off.\"]}}");
+            postTestFile.code.Add("execute unless score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To show subsequent successes, click here.)\",\"color\":\"gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 0\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display on.\"]}}");
             postTestFile.code.Add("scoreboard players set #TESTSUCCESSES _ 0");
             postTestFile.code.Add("scoreboard players set #TESTFAILURES _ 0");
             postTestFile.code.Add("scoreboard players set #TESTSSKIPPED _ 0");

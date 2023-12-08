@@ -8,7 +8,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// are called explicitely.
     /// </para>
     /// </summary>
-    public class NameCastsCategory : AbstractFullRewriter<
+    public class NameCastsCategory : AbstractCategory<
         CopyCastsToNamedRewriter,
         RegisterCastsWalker,
         CastsToMethodCallsRewriter,

@@ -25,11 +25,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// In other words, it ensures no call is contained in another.
     /// </para>
     /// </summary>
-    /// <remarks>
-    /// This is only partially implemented for conditions, but since those
-    /// aren't yet extracted if complicated anyways, they're untested.
-    /// So for if/while/for/etc this doesn't yet work.
-    /// </remarks>
     // Very annoying note: expressions are *everywhere* and extraction cannot
     // be handled uniformly. E.g. within statements calls should be handled
     // differently from while conditions.
@@ -63,7 +58,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     #endregion
     // Anything not implemented will throw due to later assumptions, so there's
     // no chance of silently failing.
-    public class FlattenNestedCallsRewriter : AbstractFullRewriter {
+    public class FlattenNestedCallsRewriter : AbstractFullRewriter<SimplifyIfConditionRewriter> {
 
         int tempCounter = 0;
         readonly List<StatementSyntax> priorDeclarations = new();
@@ -146,7 +141,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // EUEUEUeueueeuughh
         public override SyntaxNode VisitCheckedStatement(CheckedStatementSyntax node) => VisitEasyStatement(node, base.VisitCheckedStatement);
         public override SyntaxNode VisitExpressionStatement(ExpressionStatementSyntax node) => VisitEasyStatement(node, base.VisitExpressionStatement);
-        public override SyntaxNode VisitIfStatement(IfStatementSyntax node) => VisitEasyStatement(node, base.VisitIfStatement);
         public override SyntaxNode VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node) => VisitEasyStatement(node, base.VisitLocalDeclarationStatement);
         public override SyntaxNode VisitLockStatement(LockStatementSyntax node) => VisitEasyStatement(node, base.VisitLockStatement);
         public override SyntaxNode VisitReturnStatement(ReturnStatementSyntax node) => VisitEasyStatement(node, base.VisitReturnStatement);

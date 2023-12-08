@@ -8,30 +8,30 @@ These things would not be a problem if you had some more sensible language, (say
 <!-- omit in toc -->
 Table of Contents
 ======
-- [Supported Features](#supported-features)
-  - [Data types](#data-types)
-  - [Data transformation](#data-transformation)
-  - [Control flow](#control-flow)
-  - [Minecraft-specific](#minecraft-specific)
-  - [Higher-level Minecraft framework](#higher-level-minecraft-framework)
-  - [Other](#other)
-- [Project Setup](#project-setup)
-- [Using this project](#using-this-project)
-- [Why the name?](#why-the-name)
+1. [Supported Features](#supported-features)
+   1. [Data types](#data-types)
+   2. [Data transformation](#data-transformation)
+   3. [Control flow](#control-flow)
+   4. [Minecraft-specific](#minecraft-specific)
+   5. [Higher-level Minecraft framework](#higher-level-minecraft-framework)
+   6. [Other](#other)
+2. [Project Setup](#project-setup)
+3. [Using this project](#using-this-project)
+4. [Why the name?](#why-the-name)
 
 Supported Features
 ======
 What follows is a list of features that have been implemented *and* unimplemented. Think of it both like a sort of to-do list, in no particular order, and like a reference of what you can do.
 
-For a short tl;dr: no, &lt;feature you care about&gt; isn't implemented yet, and you can't reference *anything* but `MCMirror`. Which should be included in code-form.
+For a short tl;dr: no, &lt;feature you care about&gt; isn't implemented yet, and you can't reference *anything* but `MCMirror`. Which should be included in code-form. (You can add the dll with xml comments as a reference for VS though.)
 
 Data types
 ------
 - [x] Integers.
-- [ ] Built-in value types other than `int`.
-- [ ] Static fields.
-- [ ] Static properties.
-- [ ] General structs.
+- [ ] Built-in value types other than `int`. (Note: currently `int`, `bool`.)
+- [x] Static fields.
+- [x] Static properties.
+- [x] General structs.
 - [ ] Static arrays.
 - [ ] Strings.
 - [ ] Objects.
@@ -42,17 +42,17 @@ Data types
 Data transformation
 ------
 - [x] Assignments of the form `=` or `∘=` where `∘` is one of `+`, `-`, `*`, `/`, `%`.
-- [ ] Arbitrary arithmetic.
+- [x] Arbitrary arithmetic.
 - [x] Static function calls.
-- [ ] General function calls.
+- [x] General function calls.
 - [x] Return.
-- [ ] `ref`, `in`, `out` modifiers.
+- [x] `ref`, `in`, `out` modifiers. (Note: only for value types.)
 - [ ] Recursive function calls.
 
 Control flow
 ------
 - [x] Branching by comparing to constants.
-- [ ] General branching.
+- [x] General branching.
 - [x] Goto.
 - [ ] Switches.
 - [ ] Switches' `goto case`.
@@ -63,7 +63,7 @@ Control flow
 Minecraft-specific
 ------
 - [x] `[MCFunction]` entrypoints to code.
-- [ ] Tick (any interval) and load code.
+- [x] Tick (any interval) and load code.
 - [x] Literal `mcfunction` code.
 - [ ] Selectors + `foreach` over selectors.
 - [ ] World-specific stuff like `/weather` and `/gamerule`.
@@ -80,6 +80,7 @@ Other
 ------
 - [x] A very simple in-game testing framework.
 - [ ] MSIL support instead of just c# code.
+- [ ] More optimised output
 - [ ] Proper documentation.
 
 Project Setup
@@ -101,6 +102,8 @@ To be honest I still don't get how VS works around this kind of stuff. I'm using
 - [**`MCMirror`**](./Compiler/MCMirror):
   A project to map Minecraft (implementable) features to c# usage. This is what end-users will use when creating data packs.
 - There will at some point be a fifth project as sample.
+
+See also [the gotchas](./gotchas.md).
 
 Using this project
 ======

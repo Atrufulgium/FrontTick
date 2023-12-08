@@ -1,5 +1,4 @@
-﻿using MCMirror;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
@@ -61,7 +60,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                             PredefinedType(Token(SyntaxKind.VoidKeyword)),
                             Identifier("-CONSTRUCTSTATIC-")
                         ).WithAttributeLists(op.AttributeLists)
-                         .WithAddedAttribute<TrueLoadAttribute>()
+                         .WithAddedAttribute(MCMirrorTypes.TrueLoadAttribute)
                          .WithModifiers(op.Modifiers)
                          .WithBody(op.Body)
                          .WithParameterList(op.ParameterList); // should be empty, but if not, throws later

@@ -16,6 +16,7 @@ namespace MCMirror.Internal {
     /// </para>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
+    [CompilerUsesName]
     [NoCompile]
     public class MCTestAttribute : Attribute {
 

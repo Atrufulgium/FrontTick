@@ -98,20 +98,22 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// Blocks part of labels count as seperate from their parent blocks.
         /// </para>
         /// </summary>
+        // Fun fact: for something at depth n, this is called n times.
+        // This recursion is so suboptimal that something at depth n is visited
+        // n times. Super stupid O(n^2) for something that's O(1) lol.
         public static BlockSyntax Flattened(this BlockSyntax block) {
-            List<BlockSyntax> nestedNodes = new();
+            var newBlock = Block();
             // Add all direct blocks and blocks that are labeled.
-            foreach (var s in block.Statements) {
-                var statement = s;
-                if (statement is BlockSyntax b)
-                    nestedNodes.Add(b);
+            foreach (var statement in block.Statements) {
+                if (statement is BlockSyntax b) {
+                    foreach (var nestedStatement in b.Flattened().Statements) {
+                        newBlock = newBlock.WithAppendedStatement(nestedStatement);
+                    }
+                } else {
+                    newBlock = newBlock.WithAppendedStatement(statement);
+                }
             }
-
-            // Create a new block by replacing everything with its flattening.
-            foreach (var b in nestedNodes) {
-                block = block.ReplaceNode(b, b.Flattened().Statements);
-            }
-            return block;
+            return newBlock;
         }
 
         /// <summary>
@@ -290,15 +292,15 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// or if the overload is not found. There is no checking whether
         /// everything makes sense.
         /// </summary>
-        public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method) where T : Attribute
-            => method.WithAddedAttribute(Attribute(QualifiedName(typeof(T).FullName.Replace("Attribute", ""))));
+        public static MethodDeclarationSyntax WithAddedAttribute(this MethodDeclarationSyntax method, string typeName)
+            => method.WithAddedAttribute(Attribute(QualifiedName(typeName.Replace("Attribute", ""))));
 
         /// <inheritdoc cref="WithAddedAttribute{T}(MethodDeclarationSyntax)"/>
         public static MethodDeclarationSyntax WithAddedAttribute<T>(this MethodDeclarationSyntax method, params object[] constructorArgs) {
             List<AttributeArgumentSyntax> args = new(constructorArgs.Length);
             for (int i = 0; i < constructorArgs.Length; i++) {
                 var param = constructorArgs[i];
-                ExpressionSyntax expr = null;
+                ExpressionSyntax expr;
                 if (param is string str)
                     expr = StringLiteralExpression(str);
                 else if (param is int ii)
@@ -325,6 +327,19 @@ namespace Atrufulgium.FrontTick.Compiler {
             var list = TokenList(Token(modifier));
             list = list.AddRange(decl.Modifiers);
             return decl.WithModifiers(list);
+        }
+
+        /// <summary>
+        /// When <paramref name="block"/> has no elements, returns <see cref="EmptyStatementSyntax"/>.
+        /// When it has one element, returns it.
+        /// Does nothing with more than one element.
+        /// </summary>
+        public static StatementSyntax SimplifyBlock(this BlockSyntax block) {
+            if (block.Statements.Count == 0)
+                return EmptyStatement();
+            if (block.Statements.Count == 1)
+                return block.Statements[0];
+            return block;
         }
     }
 }

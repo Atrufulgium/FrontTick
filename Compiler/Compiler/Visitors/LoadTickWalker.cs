@@ -1,6 +1,4 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Datapack;
-using MCMirror;
-using MCMirror.Internal;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +33,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             loadTag = new("minecraft", "load.json");
             loadTag.AddToTag(nameManager.SetupFileName);
             tickTag = new("minecraft", "tick.json");
-            trueLoadTag = new(nameManager.manespace, $"{TrueLoadManager.TrueLoadTagname}.json");
+            trueLoadTag = new(nameManager.manespace, $"{MCMirrorTypes.TrueLoadManager_TrueLoadTagname}.json");
         }
 
         public override void GlobalPostProcess() {
@@ -65,13 +63,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax method) {
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(LoadAttribute), out var _)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.LoadAttribute, out var _)) {
                 loadTag.AddToTag(nameManager.GetMethodName(CurrentSemantics, method, this));
             }
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TrueLoadAttribute), out var _)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.TrueLoadAttribute, out var _)) {
                 trueLoadTag.AddToTag(nameManager.GetMethodName(CurrentSemantics, method, this));
             }
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TickAttribute), out var attrib)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.TickAttribute, out var attrib)) {
                 int tickRate = 1;
                 if (attrib.ConstructorArguments.Length == 1) {
                     tickRate = (int)attrib.ConstructorArguments[0].Value;

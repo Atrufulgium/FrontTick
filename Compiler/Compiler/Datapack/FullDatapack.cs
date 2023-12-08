@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Collections.ObjectModel;
 
 namespace Atrufulgium.FrontTick.Compiler.Datapack {
     /// <summary>
@@ -17,6 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         // Keep them sorted alphabetically by path to keep the string output
         // consistent. Maybe it even helps with the filesystem output.
         private readonly SortedSet<IDatapackFile> files = new(DatapackFileComparer.Comparer);
+        public ReadOnlyCollection<IDatapackFile> Files => new(files.ToList());
 
         public FullDatapack(params IEnumerable<IDatapackFile>[] files) {
             // Only add datapacks that are intended to be valid -- exactly the
@@ -89,7 +91,12 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         public string ToString(bool skipInternal = false, bool skipMCMirror = false) {
             StringBuilder result = new();
             foreach (var f in files) {
+                // .. i really need a better mechanism for this
                 if (skipInternal && f.Subpath.Contains("internal/--"))
+                    continue;
+                if (skipInternal && f.Subpath.Contains("internal/bool."))
+                    continue;
+                if (skipInternal && f.Subpath.Contains("internal/int."))
                     continue;
                 if (skipInternal && f is FunctionTag tag)
                     if (tag.Subpath == "test.json"

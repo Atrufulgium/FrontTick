@@ -9,9 +9,12 @@ namespace MCMirror.Internal {
     /// </para>
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "Visible to .mcfunction and the compiler.")]
+    [CompilerUsesName]
     public static class TrueLoadManager {
 
+        [CompilerUsesName]
         const string varname = "trueloaded";
+        [CompilerUsesName]
         public const string TrueLoadTagname = "internal/--trueload--";
 
         [Load]

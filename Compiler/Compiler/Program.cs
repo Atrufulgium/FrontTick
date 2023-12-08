@@ -1,6 +1,7 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Datapack;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -91,6 +92,8 @@ namespace Atrufulgium.FrontTick.Compiler
             Console.WriteLine($"    Output world name:      {outputWorld}");
             Console.WriteLine($"    Datapack namespace:     {manespace}");
             try {
+                Stopwatch sw = new();
+                sw.Start();
                 IEnumerable<(string code, string path)> code = FolderToContainingCode.GetCode(inputDirectory);
                 if (mcMirrorDirectory != null)
                     code = code.Concat(FolderToContainingCode.GetCode(mcMirrorDirectory));
@@ -98,12 +101,16 @@ namespace Atrufulgium.FrontTick.Compiler
                 // Compilation phases here yada yada
                 compiler.Compile(code);
                 if (compiler.WarningDiagnostics.Count > 0) {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
                     Console.WriteLine("Compilation warnings:");
+                    Console.ResetColor();
                     foreach (var diagnostic in compiler.WarningDiagnostics)
                         Console.WriteLine(diagnostic);
                 }
                 if (compiler.CompilationFailed) {
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Compilation failed! Diagnostics:");
+                    Console.ResetColor();
                     foreach (var diagnostic in compiler.ErrorDiagnostics)
                         Console.WriteLine(diagnostic);
                     return 1;
@@ -113,12 +120,22 @@ namespace Atrufulgium.FrontTick.Compiler
                 var slash = Path.DirectorySeparatorChar;
                 datapackPath += $"{slash}.minecraft{slash}saves{slash}{outputWorld}{slash}datapacks{slash}{manespace}";
                 datapack.WriteToFilesystem(datapackPath);
+                sw.Stop();
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("\nCompilation succesful!");
+                Console.ResetColor();
+                Console.WriteLine($"    Output world name:      {outputWorld}");
+                Console.WriteLine($"    Datapack namespace:     {manespace}");
+                Console.WriteLine($"    Generated files:        {datapack.Files.Count}");
+                Console.WriteLine($"    Minecraft version:      1.19.4");
+                Console.WriteLine($"    Compilation took:       {sw.ElapsedMilliseconds} ms");
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine("Don't forget to /reload in-game!");
                 Console.ResetColor();
             } catch (IOException e) {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("\n\n\nIO trouble ffs:\n");
+                Console.ResetColor();
                 Console.WriteLine(e);
                 return 1;
             }

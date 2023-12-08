@@ -4,9 +4,14 @@ using System.Collections.ObjectModel;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
+    /// <para>
     /// A pretty hacky interface to unify the <see cref="AbstractFullWalker"/>
     /// and <see cref="AbstractFullRewriter"/> classes for what I need them:
     /// being arbitrary reads and readwrites on the multiple trees I compile.
+    /// </para>
+    /// <para>
+    /// (Also, <see cref="AbstractCategory"/> with the trivial implementation.)
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Don't implement this manually anywhere else. I'm assuming the
@@ -29,6 +34,14 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// operations.
         /// </summary>
         public bool ReadOnly { get; }
+
+        /// <summary>
+        /// Phases can depend on other phases. If this phase is introduced
+        /// because of a phase with depth <c>k</c>, then this has depth
+        /// <c>k+1</c>. These values are automatically written to by
+        /// <see cref="Compiler"/>.
+        /// </summary>
+        public int DependencyDepth { get; set; }
     }
 
     public interface ICustomDiagnosable {

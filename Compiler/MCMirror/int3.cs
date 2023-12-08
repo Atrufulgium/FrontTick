@@ -15,11 +15,23 @@
         public int y;
         public int z;
 
+        public int3(int x, int y, int z) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+        }
+
         public static int3 operator +(int3 a, int3 b) {
             a.x += b.x;
             a.y += b.y;
             a.z += b.z;
             return a;
         }
+
+        public static bool operator ==(int3 a, int3 b)
+            => a.x == b.x & a.y == b.y & a.z == b.z;
+
+        public static bool operator !=(int3 a, int3 b)
+            => a.x != b.x | a.y != b.y | a.z != b.z;
     }
 }

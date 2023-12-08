@@ -31,12 +31,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </param>
         /// <remarks>
         /// This is the syntactic version of
-        /// <see cref="TryGetSemanticAttributeOfType(SemanticModel, MemberDeclarationSyntax, Type, out AttributeData)"/>.
+        /// <see cref="TryGetSemanticAttributeOfType(SemanticModel, MemberDeclarationSyntax, string, out AttributeData)"/>.
         /// </remarks>
         public static bool TryGetAttributeOfType(
             this SemanticModel semantics,
             MemberDeclarationSyntax node,
-            Type attributeType,
+            string attributeType,
             out AttributeSyntax outAttribute
         ) {
             // MemberDeclarationSyntax is super to both all ways to declare
@@ -79,12 +79,12 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </param>
         /// <remarks>
         /// This is the semantic version of
-        /// <see cref="TryGetAttributeOfType(SemanticModel, MemberDeclarationSyntax, Type, out AttributeSyntax)"/>.
+        /// <see cref="TryGetAttributeOfType(SemanticModel, MemberDeclarationSyntax, string, out AttributeSyntax)"/>.
         /// </remarks>
         public static bool TryGetSemanticAttributeOfType(
             this SemanticModel semantics,
             MemberDeclarationSyntax node,
-            Type attributeType,
+            string attributeType,
             out AttributeData outAttribute
         ) {
             var nodeModel = semantics.GetDeclaredSymbol(node);
@@ -105,16 +105,16 @@ namespace Atrufulgium.FrontTick.Compiler {
         // For when I also want to maybe take into account generics here.
 
         /// <summary>
-        /// Compares a syntax tree node's type to a known type according to the
-        /// semantics' interpretation of that node's type, and returns whether
-        /// the two types match.
+        /// Compares a syntax tree node's type to a string type, such as
+        /// <c>"MCMirror.Internal.NoCompileAttribute"</c>. The match must be
+        /// exact.
         /// </summary>
         /// <remarks>
         /// This does not work for generic types.
         /// </remarks>
-        public static bool TypesMatch(this SemanticModel semantics, SyntaxNode node, Type other) {
+        public static bool TypesMatch(this SemanticModel semantics, SyntaxNode node, string typeName) {
             var typeSymbol = semantics.GetTypeInfo(node).Type;
-            return semantics.TypesMatch(typeSymbol, other);
+            return semantics.TypesMatch(typeSymbol, typeName);
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// semantics' interpretation of those nodes' types, and returns
         /// whether the two types match.
         /// </summary>
-        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, Type)"/>
+        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, string)"/>
         public static bool TypesMatch(this SemanticModel semantics, SyntaxNode node, SyntaxNode other) {
             var typeSymbol = semantics.GetTypeInfo(node).Type;
             var otherTypeSymbol = semantics.GetTypeInfo(other).Type;
@@ -130,14 +130,14 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
-        /// Compares a type in the syntax tree to a known type according to the
+        /// Compares a type in the syntax tree to a type name according to the
         /// semantics' interpretation of that type, and returns whether the two
         /// types match.
         /// </summary>
-        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, Type)"/>
-        public static bool TypesMatch(this SemanticModel semantics, ITypeSymbol typeSymbol, Type other) {
-            var otherTypeSymbol = semantics.Compilation.GetTypeByMetadataName(other.FullName);
-            return semantics.TypesMatch(typeSymbol, otherTypeSymbol);
+        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, string)"/>
+        public static bool TypesMatch(this SemanticModel semantics, ITypeSymbol typeSymbol, string typeName) {
+            var typeString = typeSymbol.ToDisplayString();
+            return typeString == typeName;
         }
 
         /// <summary>
@@ -145,7 +145,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// semantics' interpretation of those types, and returns whether the
         /// two types match.
         /// </summary>
-        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, Type)"/>
+        /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, string)"/>
         public static bool TypesMatch(this SemanticModel semantics, ITypeSymbol typeSymbol, ITypeSymbol otherTypeSymbol) {
             return SymbolEqualityComparer.Default.Equals(typeSymbol, otherTypeSymbol);
         }

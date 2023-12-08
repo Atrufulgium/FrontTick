@@ -8,57 +8,93 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// <summary>
     /// Turns any conditional
     /// <code>
-    ///     if (complexExpression op literal) ..
+    ///     if (complexExpression) ..
+    ///     [else .. ]
     /// </code>
     /// into something like
     /// <code>
     ///     {
-    ///         tempvar = complexExpression;
-    ///         if (tempvar op literal) ..
+    ///         bool tempvar = complexExpression;
+    ///         if (tempvar) ..
+    ///         [if (!tempvar) ..]
     ///     }
     /// </code>
     /// </summary>
     /// <remarks>
+    /// <para>
     /// By relying on <see cref="LoopsToGotoCategory"/>, this also immediately
     /// applies this to all loop conditionals as well.
+    /// </para>
+    /// <para>
+    /// Note that while this preserves semantics, c# doesn't like this rewrite
+    /// when both branches return; it then sees a new path after the two
+    /// branches. As such, introduce a
+    /// <see cref="MCMirrorTypes.UnreachableCodeException"/>
+    /// after every method.
+    /// </para>
     /// </remarks>
-    // TODO: Really, someday, implement bools and make this do the *obvious* transformation!
-    // TODO II: Also, put this in an if-category with the other stuff in ProcessedToDatapack.
     public class SimplifyIfConditionRewriter : AbstractFullRewriter<LoopsToGotoCategory> {
-
         int tempCounter = 0;
         string GetTempName() => $"#IFTEMP{tempCounter++}";
 
         public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
+            if (node.IsExtern())
+                return node;
+
             tempCounter = 0;
-            return base.VisitMethodDeclarationRespectingNoCompile(node);
+            var methodDeclaration = (MethodDeclarationSyntax)base.VisitMethodDeclarationRespectingNoCompile(node);
+            methodDeclaration = methodDeclaration.WithBody(
+                methodDeclaration.Body.WithAppendedStatement(
+                    ThrowStatement(MemberAccessExpression(MCMirrorTypes.UnreachableCodeException_Exception))
+                )
+            );
+            return methodDeclaration;
         }
 
         public override SyntaxNode VisitIfStatement(IfStatementSyntax node) {
-            if (node.Condition is BinaryExpressionSyntax bin
-                && bin.Left is not IdentifierNameSyntax) {
-                
-                var retType = CurrentSemantics.GetTypeInfo(bin.Left).Type;
-                var name = GetTempName();
+            // Don't need to do anything when the condition is a boolean type
+            // identifier name.
+            var condition = node.Condition;
+            // Positive `if (bleh)`
+            if (condition is IdentifierNameSyntax id && CurrentSemantics.TypesMatch(id, MCMirrorTypes.Bool))
+                return base.VisitIfStatement(node);
+            // Negative `if (!bleh)`
+            if (condition is PrefixUnaryExpressionSyntax un && un.IsKind(SyntaxKind.LogicalNotExpression)
+                && un.Operand is IdentifierNameSyntax id2 && CurrentSemantics.TypesMatch(id2, MCMirrorTypes.Bool))
+                return base.VisitIfStatement(node);
+            
+            // We're not simple and we need to extract.
+            var block = Block();
+            // (Note: do I need to handle casts?)
+            var typeSymbol = CurrentSemantics.GetTypeInfo(condition).Type;
+            var name = GetTempName();
 
-                return VisitBlock(
-                    Block(
-                        LocalDeclarationStatement(retType, name),
-                        AssignmentStatement(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            IdentifierName(name),
-                            bin.Left
+            block = block.WithAppendedStatement(
+                LocalDeclarationStatement(typeSymbol, name),
+                AssignmentStatement(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    IdentifierName(name),
+                    condition
+                ),
+                IfStatement(
+                    IdentifierName(name),
+                    (StatementSyntax) base.Visit(node.Statement)
+                )
+            );
+
+            if (node.Else != null) {
+                block = block.WithAppendedStatement(
+                    IfStatement(
+                        PrefixUnaryExpression(
+                            SyntaxKind.LogicalNotExpression,
+                            IdentifierName(name)
                         ),
-                        node.WithCondition(
-                            bin.WithLeft(
-                                IdentifierName(name)
-                            )
-                        )
+                        (StatementSyntax) base.Visit(node.Else.Statement)
                     )
                 );
-            } else {
-                return base.VisitIfStatement(node);
             }
+
+            return block;
         }
 
         public override SyntaxNode VisitBlock(BlockSyntax node) {

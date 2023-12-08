@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using MCMirror.Internal;
 
 namespace Atrufulgium.FrontTick.Compiler.Visitors
 {
@@ -86,7 +85,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(CustomCompiledAttribute), out _))
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.CustomCompiledAttribute, out _))
                 return;
             if (node.ChildTokensContain(SyntaxKind.ExternKeyword))
                 return;
@@ -102,7 +101,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
             // If this method is a test, we need to add some post processing to
             // the mcfunction.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, typeof(MCTestAttribute), out var attrib))
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.MCTestAttribute, out var attrib))
                 HandleMCTestMethod(node, attrib);
 
             // Add some debug stats
@@ -198,6 +197,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                 HandleGoto(got);
             } else if (statement is EmptyStatementSyntax) {
                 // We'll also autogen this a ton, probably.
+            } else if (statement is ThrowStatementSyntax th
+                && CurrentSemantics.TypesMatch(th.Expression, MCMirrorTypes.UnreachableCodeException)) {
+                // Also defined to be a noop.
             } else {
                 throw CompilationException.ToDatapackUnsupportedStatementType;
             }
@@ -209,6 +211,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
 
         private void HandleLocalDeclaration(LocalDeclarationStatementSyntax decl) {
+            // Note to future self: This one is actually needed and some phases
+            // use this assumption.
             if (!AtRootScope)
                 throw CompilationException.ToDatapackDeclarationsMustBeInMethodRootScope;
             // Note that a declaration statement can consist of multiple
@@ -275,65 +279,61 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
 
         private void HandleIfElseGroup(IfStatementSyntax ifst) {
-            MCFunctionName targetIfName = GetBranchPath("if-branch"),
-                targetElseName = null;
+            MCFunctionName targetIfName = GetBranchPath("if-branch");
             string conditionIdentifier;
-            bool hasElse = ifst.Else != null;
-            if (hasElse)
-                targetElseName = GetBranchPath("else-branch");
-
-            // The if-statement must be of the form
-            //   if (identifier != literal) [or ==]
-            // TODO: >, >=, <, <=
-
-            if (ifst.Condition is BinaryExpressionSyntax bin
-                && bin.Left is IdentifierNameSyntax id
-                && bin.OperatorToken.Text is "!=" or "=="
-                && TryGetIntegerLiteral(bin.Right, out int rhsValue)) {
-                conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
-            } else {
-                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero;
-            }
-
-            // In case we have an else branch, copy the if conditional over to
-            // the else conditional to ensure that not both branches run if
-            // the conditioned variable gets updated.
-            // This is only necessary when there's a chance it's written to.
-            // TODO: Guarantee this in a seperate pass.
-            if (hasElse) {
-                var dataFlow = CurrentSemantics.AnalyzeDataFlow(ifst);
-                var identifierSymbol = CurrentSemantics.GetSymbolInfo(id).Symbol;
-                bool modifiesIdentifier =
-                    dataFlow.WrittenInside.Contains(identifierSymbol)
-                    || !(identifierSymbol is ILocalSymbol or IParameterSymbol);
-
-                if (modifiesIdentifier) {
-                    // Use `branchCounter` to ensure uniqueness.
-                    string updatedIdentifier = $"conditionIdentifier-{branchCounter}";
-                    AddCode($"scoreboard players operation {updatedIdentifier} _ = {conditionIdentifier} _");
-                    conditionIdentifier = updatedIdentifier;
-                }
-            }
-
-            bool equalsVariant = bin.OperatorToken.Text == "==";
-            string ifBranchMCConditional = equalsVariant ? "if" : "unless";
-            string elseBranchMCConditional = equalsVariant ? "unless" : "if";
+            if (ifst.Else != null)
+                throw new ArgumentException("At this point the tree should have no else clauses left.");
 
             if (ifst.Statement is not BlockSyntax block)
                 throw CompilationException.ToDatapackBranchesMustBeBlocks;
 
+            // The if-statement must be of the form
+            //   if (identifier)
+            // or
+            //   if (!identifier)
+            // where `identifier` is a bool.
+            // See also SimplifyIfConditionRewriter.
+            // However, for semantic reasons (see GotoFlagifyRewriter's
+            // comment for mor info), we also have
+            //   if (someInt == constant)
+            // to deal with separately.
+
+            bool flipped;
+            if (ifst.Condition is IdentifierNameSyntax id) {                // "if (id)"
+                // Regular `if (identifier)`, handle later.
+                flipped = false;
+            } else if (ifst.Condition is PrefixUnaryExpressionSyntax un     // "if (!id2)" 
+                && un.IsKind(SyntaxKind.LogicalNotExpression)
+                && un.Operand is IdentifierNameSyntax id2) {
+                // Flipped `if (!identifier)`, handle later.
+                flipped = true;
+                id = id2;
+            } else if (ifst.Condition is BinaryExpressionSyntax bin         // "if (id3 == lit)"
+                && bin.Left is IdentifierNameSyntax id3
+                && bin.OperatorToken.Text == "=="
+                && TryGetIntegerLiteral(bin.Right, out int lit)
+                && CurrentSemantics.TypesMatch(id3, MCMirrorTypes.Int)) {
+                // The annoying special case introduced by GotoFlagifyRewriter, handle now.
+                string edgecaseCall = HandleBlock(block, targetIfName);
+                conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id3, this);
+                if (edgecaseCall != "")
+                    AddCode($"execute if score {conditionIdentifier} _ matches {lit} run {edgecaseCall}");
+                return;
+            } else { 
+                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierOrNegatedIdentifier;
+            }
+            if (!CurrentSemantics.TypesMatch(id, MCMirrorTypes.Bool)) {
+                throw CompilationException.ToDatapackIfConditionalMustBeIdentifierOrNegatedIdentifier;
+            }
+
+            conditionIdentifier = nameManager.GetVariableName(CurrentSemantics, id, this);
+
+            bool equalsVariant = !flipped;
+            string ifBranchMCConditional = equalsVariant ? "if" : "unless";
+
             string call = HandleBlock(block, targetIfName);
             if (call != "")
-                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
-
-            if (hasElse) {
-                if (ifst.Else.Statement is not BlockSyntax elseBlock)
-                    throw CompilationException.ToDatapackBranchesMustBeBlocks;
-
-                call = HandleBlock(elseBlock, targetElseName);
-                if (call != "")
-                    AddCode($"execute {elseBranchMCConditional} score {conditionIdentifier} _ matches {rhsValue} run {call}");
-            }
+                AddCode($"execute {ifBranchMCConditional} score {conditionIdentifier} _ matches 1 run {call}");
         }
 
         private void HandleGoto(GotoStatementSyntax got) {
@@ -467,6 +467,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             // track fo a "skipped" variable, incremented at the start, and
             // decremented at the end.
             wipFiles.Peek().code.Insert(0, "scoreboard players add #TESTSSKIPPED _ 1");
+            wipFiles.Peek().code.Insert(0, "scoreboard players set #RET _ -2122222222");
             var pos = node.GetLocation().GetLineSpan();
             string path = System.IO.Path.GetFileName(pos.Path);
             string hover = $"\"hoverEvent\":{{\"action\":\"show_text\",\"contents\":[{{\"text\":\"File \",\"color\":\"gray\"}},{{\"text\":\"{path}\",\"color\":\"white\"}},{{\"text\":\"\\nLine \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Line}\",\"color\":\"white\"}},{{\"text\":\" Col \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Character}\",\"color\":\"white\"}}]}}";
@@ -532,9 +533,11 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
         // Only call this from TryGetIntegerLiteral
         private static int GetIntegerLiteral(LiteralExpressionSyntax lit) {
-            if (!int.TryParse(lit.Token.Text, out int res))
-                throw CompilationException.ToDatapackLiteralsIntegerOnly;
-            return res;
+            if (bool.TryParse(lit.Token.Text, out bool b))
+                return b ? 1 : 0;
+            if (int.TryParse(lit.Token.Text, out int res))
+                return res;
+            throw CompilationException.ToDatapackLiteralsIntegerOnly;
         }
 
         /// <summary>
@@ -562,7 +565,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
 
             // Todo: this will probably be pretty expensive in the long run. Cache (type,fields[]) in some dict.
             // Also, don't do a = a assignments. Those are stupid.
-            if (CurrentSemantics.TypesMatch(type, typeof(int))) {
+            if (CurrentSemantics.TypesMatch(type, MCMirrorTypes.Int) || CurrentSemantics.TypesMatch(type, MCMirrorTypes.Bool)) {
                 if (rhs == "default")
                     AddCode($"scoreboard players set {lhs} _ 0");
                 else if (!(op == "=" && lhs == rhs))

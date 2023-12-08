@@ -1,5 +1,4 @@
-﻿using MCMirror.Internal;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
@@ -31,7 +30,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     public abstract class AbstractFullRewriter : CSharpSyntaxRewriter, IFullVisitor {
 
         public ReadOnlyCollection<Diagnostic> CustomDiagnostics => new(customDiagnostics);
-        List<Diagnostic> customDiagnostics = new();
+        readonly List<Diagnostic> customDiagnostics = new();
         protected NameManager nameManager;
 
         public bool ReadOnly => false;
@@ -61,6 +60,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// <item> <see cref="MethodDeclarationSyntax"/> </item>
         /// <item> <see cref="ClassDeclarationSyntax"/> </item>
         /// <item> <see cref="StructDeclarationSyntax"/> </item>
+        /// <item> <see cref="EnumDeclarationSyntax"/> </item>
         /// <item> Other MemberDeclarationSyntaxes I may support. </item>
         /// </list>
         /// In order to achieve this, we need a <tt>RespectingNoCompile</tt>
@@ -82,7 +82,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </para>
         /// </remarks>
         public sealed override SyntaxNode VisitMethodDeclaration(MethodDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return node;
             return VisitMethodDeclarationRespectingNoCompile(node);
         }
@@ -92,7 +92,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public sealed override SyntaxNode VisitClassDeclaration(ClassDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return node;
             return VisitClassDeclarationRespectingNoCompile(node);
         }
@@ -102,13 +102,30 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public sealed override SyntaxNode VisitStructDeclaration(StructDeclarationSyntax node) {
-            if (CurrentSemantics.TryGetAttributeOfType(node, typeof(NoCompileAttribute), out _))
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
                 return node;
             return VisitStructDeclarationRespectingNoCompile(node);
         }
         /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
         public virtual SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node)
             => base.VisitStructDeclaration(node);
+
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public sealed override SyntaxNode VisitEnumDeclaration(EnumDeclarationSyntax node) {
+            if (CurrentSemantics.TryGetAttributeOfType(node, MCMirrorTypes.NoCompileAttribute, out _))
+                return node;
+            return VisitEnumDeclarationRespectingNoCompile(node);
+        }
+        /// <inheritdoc cref="VisitMethodDeclaration(MethodDeclarationSyntax)"/>
+        public virtual SyntaxNode VisitEnumDeclarationRespectingNoCompile(EnumDeclarationSyntax node)
+            => base.VisitEnumDeclaration(node);
+
+        /// <summary>
+        /// I don't see a reason to modify interfaces anywhere in the
+        /// foreseeable future. And currently they're just breaking everything.
+        /// </summary>
+        public sealed override SyntaxNode VisitInterfaceDeclaration(InterfaceDeclarationSyntax node)
+            => node;
 
         public void FullVisit() {
             // We will be modifying the compiler roots because of updates,
@@ -146,6 +163,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         /// </summary>
         /// <remarks> No need to call the base method. </remarks>
         public virtual void GlobalPostProcess() { }
+
+        public int DependencyDepth { get; set; }
     }
 
     /// <inheritdoc/>

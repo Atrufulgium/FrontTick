@@ -146,8 +146,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             string scopeSuffix = ""
         ) {
             var methodSymbol = (IMethodSymbol)semantics.GetSymbolInfo(method).Symbol;
-            if (methodSymbol == null)
-                methodSymbol = (IMethodSymbol)semantics.GetDeclaredSymbol(method);
+            methodSymbol ??= (IMethodSymbol)semantics.GetDeclaredSymbol(method);
             if (!methodNames.TryGetValue(methodSymbol, out MCFunctionName name)) {
                 diagnosticsOutput.AddCustomDiagnostic(
                     DiagnosticRules.MCFunctionMethodNameNotRegistered,
@@ -448,9 +447,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public readonly string name;
 
         internal MCFunctionName(string name) {
-            if (name == null)
-                throw new ArgumentNullException(nameof(name));
-            this.name = name;
+            this.name = name ?? throw new ArgumentNullException(nameof(name));
         }
 
         public static implicit operator string(MCFunctionName name) => name.name;

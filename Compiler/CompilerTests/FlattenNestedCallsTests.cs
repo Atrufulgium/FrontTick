@@ -97,6 +97,7 @@ public class Test {
 }
 ");
 
+        // BROKEN: The "goto breaklabel" is at the wrong place.
         [TestMethod]
         public void FlattenTest4()
             => TestCompilationSucceedsTheSame(@"
@@ -110,7 +111,21 @@ public class Test {
     public static int Identity(int i) { return i; }
 }
 ", @"
-// (this fails because general condition extraction isn't done yet)
+public class Test {
+    public static void TestMethod(int i) {
+        int temp, temp2, temp3;
+        while(true) {
+            temp = Identity(i);
+            temp2 = Identity(temp);
+            temp3 = Identity(temp2);
+            if (temp3 != 0)
+                break;
+            i = i;
+        }
+    }
+
+    public static int Identity(int i) { return i; }
+}
 ");
     }
 }

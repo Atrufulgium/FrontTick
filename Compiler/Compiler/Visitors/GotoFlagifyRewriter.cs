@@ -20,7 +20,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// scoping, goto labels and targets, or return statements inbetween).
     /// </para>
     /// </summary>
-    public class GotoFlagifyRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, LoopsToGotoCategory, ReturnRewriter> {
+    public class GotoFlagifyRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, LoopsToGotoCategory, MoveLocalDeclarationsToRootRewriter, ReturnRewriter> {
 
         // The basic idea is that any code of the form
         //     // Label here
@@ -73,11 +73,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // and a check `if (specific flag(s)) { reset flag(s), goto relevant goto}`.
         // This is implemented as going through all flags and writing to
         // `#FLAGFOUND` if we find any flag.
-        // TODO: This can be improved once more complex if-statements are supported.
         //
         // The flags are implemented as a *single* scoreboard value that gets
         // reset after every jump, with the flag specifying the currently
         // "active" goto jump.
+
+        // Additional note:
+        // It would be nice if the generated code here could be of the same
+        // form as everything else, with the if statements containing only
+        // (negated) bools to make our lives in ProcessedToDatapack easier.
+        // However, doing that messes with `#RET` (as the comparison is a
+        // function call) and doesn't maintain semantics.
+        // So unfortunately we need to also handle `if (.. == n)` in
+        // ProcessedToDatapackWalker.
 
         public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (node.IsExtern())

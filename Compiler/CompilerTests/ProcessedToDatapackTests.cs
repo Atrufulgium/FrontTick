@@ -41,50 +41,6 @@ public class Test {
     }
 }
 ",              new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void DeclarationTestWrong1()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i = 3;
-    }
-}
-", CompilationException.ToDatapackDeclarationsMayNotBeInitializers,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void DeclarationTestWrong2()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i, j, k = 3, l, m = 2;
-    }
-}
-", CompilationException.ToDatapackDeclarationsMayNotBeInitializers,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void DeclarationTestWrong3()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = 0;
-        if (i != 0) {
-            int j;
-            j = 0;
-        }
-    }
-}
-", CompilationException.ToDatapackDeclarationsMustBeInMethodRootScope,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
         #region assignment tests
@@ -105,13 +61,29 @@ public class Test {
         i %= 5;
     }
 }
-", @"# (File (functions) compiled:test.testmethod.mcfunction)
+", @"
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-scoreboard players operation #compiled:test.testmethod#i _ += #CONST#1 _
-scoreboard players operation #compiled:test.testmethod#i _ -= #CONST#2 _
-scoreboard players operation #compiled:test.testmethod#i _ *= #CONST#3 _
-scoreboard players operation #compiled:test.testmethod#i _ /= #CONST#4 _
-scoreboard players operation #compiled:test.testmethod#i _ %= #CONST#5 _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-add-int32-int32##arg1 _ 1
+function compiled:internal/int.operator-add-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-sub-int32-int32##arg1 _ 2
+function compiled:internal/int.operator-sub-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-mul-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-mul-int32-int32##arg1 _ 3
+function compiled:internal/int.operator-mul-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-div-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-div-int32-int32##arg1 _ 4
+function compiled:internal/int.operator-div-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-mod-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-mod-int32-int32##arg1 _ 5
+function compiled:internal/int.operator-mod-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
 # Method Attributes:
 #   [MCFunction]
@@ -135,14 +107,30 @@ public class Test {
         i %= j;
     }
 }
-", @"# (File (functions) compiled:test.testmethod.mcfunction)
+", @"
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players operation #compiled:test.testmethod#i _ = #compiled:test.testmethod#j _
-scoreboard players operation #compiled:test.testmethod#i _ += #compiled:test.testmethod#j _
-scoreboard players operation #compiled:test.testmethod#i _ -= #compiled:test.testmethod#j _
-scoreboard players operation #compiled:test.testmethod#i _ *= #compiled:test.testmethod#j _
-scoreboard players operation #compiled:test.testmethod#i _ /= #compiled:test.testmethod#j _
-scoreboard players operation #compiled:test.testmethod#i _ %= #compiled:test.testmethod#j _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg1 _ = #compiled:test.testmethod#j _
+function compiled:internal/int.operator-add-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg1 _ = #compiled:test.testmethod#j _
+function compiled:internal/int.operator-sub-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-mul-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-mul-int32-int32##arg1 _ = #compiled:test.testmethod#j _
+function compiled:internal/int.operator-mul-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-div-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-div-int32-int32##arg1 _ = #compiled:test.testmethod#j _
+function compiled:internal/int.operator-div-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-mod-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-mod-int32-int32##arg1 _ = #compiled:test.testmethod#j _
+function compiled:internal/int.operator-mod-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
 # Method Attributes:
 #   [MCFunction]
@@ -170,12 +158,17 @@ scoreboard players set #RET _ 3
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 3
 function compiled:internal/test.getthree
-scoreboard players operation #compiled:test.testmethod#i _ -= #RET _
+scoreboard players operation #compiled:test.testmethod##CALLTEMP0 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg1 _ = #compiled:test.testmethod##CALLTEMP0 _
+function compiled:internal/int.operator-sub-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
 # Method Attributes:
 #   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        // (There's no method overloading yet and my own int has no impl yet, so broken.)
         [TestMethod]
         public void AssignmentTest4()
             => TestCompilationSucceedsTheSame(@"
@@ -199,49 +192,6 @@ public class Test {
     }
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void AssignmentTestWrong1()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = 0;
-        i |= 1;
-    }
-}
-", CompilationException.ToDatapackAssignmentOpsMustBeSimpleOrArithmetic,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void AssignmentTestWrong2()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = 2 + 2;
-    }
-}
-", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void AssignmentTestWrong3()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = -(2 + 2);
-    }
-}
-", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void AssignmentTestWrong4()
@@ -303,36 +253,25 @@ function compiled:internal/test.calledmethod
 #   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
-        [TestMethod]
-        public void CallTestWrong1()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        CalledMethod(2 + 2);
-    }
-
-    public static void CalledMethod(int i) { }
-}
-", CompilationException.ToDatapackMethodCallArgumentMustBeIdentifiersOrLiterals,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void CallTestWrong2()
-            => TestCompilationFails(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = System.Math.Abs(0);
-    }
-}
-", "FT0004", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+        // Ever since I've moved to my own System implementation, this error is
+        // *surprisingly hard* to trigger. As in, "currently impossible". But
+        // it will be possible in the future again. Hope I remember the
+        // existence of FT0004 by then.
+//        [TestMethod]
+//        public void CallTestWrong2()
+//            => TestCompilationFails(@"
+//using MCMirror;
+//public class Test {
+//    [MCFunction]
+//    public static void TestMethod() {
+//        int i;
+//        i = System.Math.Abs(0);
+//    }
+//}
+//", "FT0004", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestCallInRefOut()
+        public void TestCallInRefOutRaw()
             => TestCompilationSucceedsRaw(@"
 public class Test {
     public static void TestMethod(int i, int j, int k, int l) {
@@ -361,7 +300,7 @@ scoreboard players operation #compiled:internal/test.testmethod-int32-int32-int3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
-        public void TestOverloads()
+        public void TestOverloadsRaw()
             => TestCompilationSucceedsRaw(@"
 public class Test {
     public static void TestMethod(int i) {
@@ -410,7 +349,11 @@ internal class Test {
 ", @"
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 
 # Method Attributes:
 #   [MCFunction]
@@ -434,7 +377,11 @@ internal class Test {
 ", @"
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:internal/int.operator-eq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-eq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-eq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 
 # Method Attributes:
 #   [MCFunction]
@@ -459,7 +406,11 @@ internal class Test {
 ", @"
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
 
 # Method Attributes:
 #   [MCFunction]
@@ -491,8 +442,12 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 1
-execute if score #compiled:test.testmethod#i _ matches 0 run scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 1
+execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 2
 
 # Method Attributes:
 #   [MCFunction]
@@ -517,21 +472,24 @@ internal class Test {
     }
 }
 ", @"
- # (File (functions) compiled:test.testmethod.mcfunction)
+# (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-scoreboard players operation conditionIdentifier-2 _ = #compiled:test.testmethod#i _
-execute unless score conditionIdentifier-2 _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
-execute if score conditionIdentifier-2 _ matches 0 run function compiled:test.testmethod-1-else-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
+execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-1-if-branch
 
 # Method Attributes:
 #   [MCFunction]
 
-# (File (functions) compiled:test.testmethod-1-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-1-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 2
 scoreboard players set #compiled:test.testmethod#i _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
-        // Raw to.. test variable names in branches I guess?
+        // Raw to.. test arg names in branches I guess?
         [TestMethod]
         public void TestBranching6Raw()
             => TestCompilationSucceedsRaw(@"
@@ -547,17 +505,22 @@ internal class Test {
     }
 }
 ", @"
- # (File (functions) compiled:internal/test.testmethod-int32-int32.mcfunction)
-execute unless score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
-execute if score #compiled:internal/test.testmethod-int32-int32##arg0 _ matches 0 run function compiled:internal/test.testmethod-int32-int32-1-else-branch
+# (File (functions) compiled:internal/test.testmethod-int32-int32.mcfunction)
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod-int32-int32##arg0 _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ = #RET _
+execute if score #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ matches 1 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
+execute unless score #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-int32-int32-1-if-branch
 
-# (File (functions) compiled:internal/test.testmethod-int32-int32-1-else-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-int32-int32-1-if-branch.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 2
 scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // The "let's throw against the wall and see what sticks" test.
         // Raw because it's chaos.
+        // Status update: It's even worse with the function-call comparison! Yay!
         [TestMethod]
         public void TestBranching9Raw()
             => TestCompilationSucceedsRaw(@"
@@ -595,37 +558,49 @@ internal class Test {
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-0-if-branch
-execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-1-else-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
+execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-3-if-branch
 
 # Method Attributes:
 #   [MCFunction]
 
 # (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-2-if-branch
-execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-3-else-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP1 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-1-if-branch
+execute unless score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-2-if-branch
 scoreboard players set #compiled:test.testmethod#j _ 0
 
-# (File (functions) compiled:test.testmethod-1-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#j _ 1
-execute unless score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-4-if-branch
-execute if score #compiled:test.testmethod#i _ matches 0 run function compiled:test.testmethod-5-else-branch
-scoreboard players set #compiled:test.testmethod#j _ 1
+# (File (functions) compiled:test.testmethod-1-if-branch.mcfunction)
+scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players set #compiled:test.testmethod#j _ 2
 
 # (File (functions) compiled:test.testmethod-2-if-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#j _ 2
-scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players set #compiled:test.testmethod#j _ 3
+scoreboard players set #compiled:test.testmethod#j _ 3
 
-# (File (functions) compiled:test.testmethod-3-else-branch.mcfunction)
-scoreboard players set #compiled:test.testmethod#j _ 3
-scoreboard players set #compiled:test.testmethod#j _ 3
+# (File (functions) compiled:test.testmethod-3-if-branch.mcfunction)
+scoreboard players set #compiled:test.testmethod#j _ 1
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP2 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP2 _ matches 1 run function compiled:test.testmethod-4-if-branch
+execute unless score #compiled:test.testmethod##IFTEMP2 _ matches 1 run function compiled:test.testmethod-5-if-branch
+scoreboard players set #compiled:test.testmethod#j _ 1
 
 # (File (functions) compiled:test.testmethod-4-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 4
 scoreboard players set #compiled:test.testmethod#j _ 4
 
-# (File (functions) compiled:test.testmethod-5-else-branch.mcfunction)
+# (File (functions) compiled:test.testmethod-5-if-branch.mcfunction)
 scoreboard players set #compiled:test.testmethod#j _ 5
 scoreboard players set #compiled:test.testmethod#j _ 5
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -656,10 +631,28 @@ internal class Test {
 scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players set #compiled:test.testmethod#k _ 0
-execute unless score #compiled:test.testmethod#i _ matches 0 unless score #compiled:test.testmethod#j _ matches 0 unless score #compiled:test.testmethod#k _ matches 0 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
 
 # Method Attributes:
 #   [MCFunction]
+
+# (File (functions) compiled:test.testmethod-0-if-branch.mcfunction)
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#j _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP1 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-1-if-branch
+
+# (File (functions) compiled:test.testmethod-1-if-branch.mcfunction)
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#k _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP2 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP2 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test a non-1 variable???'s !=
@@ -680,7 +673,11 @@ internal class Test {
 ", @"
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute unless score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 10
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
 
 # Method Attributes:
 #   [MCFunction]
@@ -704,43 +701,15 @@ internal class Test {
 ", @"
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 0
-execute if score #compiled:test.testmethod#i _ matches 10 run scoreboard players set #compiled:test.testmethod#i _ 10
+scoreboard players operation #compiled:internal/int.operator-eq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-eq-int32-int32##arg1 _ 10
+function compiled:internal/int.operator-eq-int32-int32
+scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
 
 # Method Attributes:
 #   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void BranchingTestWrong1()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    [MCFunction]
-    static void TestMethod() {
-        int i;
-        i = 0;
-        if (i > 0)
-            i = 1;
-    }
-}
-", CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero);
-
-        [TestMethod]
-        public void BranchingTestWrong2()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    [MCFunction]
-    static void TestMethod() {
-        int i;
-        i = 0;
-        if (HiMayIHaveSomeTruth())
-            i = 1;
-    }
-
-    static bool HiMayIHaveSomeTruth() { return true; }
-}
-", CompilationException.ToDatapackIfConditionalMustBeIdentifierNotEqualToZero);
         #endregion
 
         #region return tests
@@ -825,24 +794,36 @@ internal class Test {
 # (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod#i _ 0
 scoreboard players set #compiled:internal/test.testmethod#j _ 0
-execute unless score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-0-if-branch
-execute if score #compiled:internal/test.testmethod#i _ matches 0 run function compiled:internal/test.testmethod-1-else-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod#i _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:internal/test.testmethod##IFTEMP0 _ = #RET _
+execute if score #compiled:internal/test.testmethod##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-0-if-branch
+execute if score #GOTOFLAG _ matches 0 run function compiled:internal/test.testmethod-4-if-branch
 execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 
 # (File (functions) compiled:internal/test.testmethod-0-if-branch.mcfunction)
-execute unless score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-2-if-branch
-execute if score #compiled:internal/test.testmethod#j _ matches 0 run function compiled:internal/test.testmethod-3-else-branch
+scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod#j _
+scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
+function compiled:internal/int.operator-neq-int32-int32
+scoreboard players operation #compiled:internal/test.testmethod##IFTEMP1 _ = #RET _
+execute if score #compiled:internal/test.testmethod##IFTEMP1 _ matches 1 run function compiled:internal/test.testmethod-1-if-branch
+execute if score #GOTOFLAG _ matches 0 unless score #compiled:internal/test.testmethod##IFTEMP1 _ matches 1 run function compiled:internal/test.testmethod-3-if-branch
 
-# (File (functions) compiled:internal/test.testmethod-1-else-branch.mcfunction)
-scoreboard players set #RET _ 3
-scoreboard players set #GOTOFLAG _ 1
-
-# (File (functions) compiled:internal/test.testmethod-2-if-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-1-if-branch.mcfunction)
 scoreboard players set #RET _ 1
 scoreboard players set #GOTOFLAG _ 1
 
-# (File (functions) compiled:internal/test.testmethod-3-else-branch.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-3-if-branch.mcfunction)
 scoreboard players set #RET _ 2
+scoreboard players set #GOTOFLAG _ 1
+
+# (File (functions) compiled:internal/test.testmethod-4-if-branch.mcfunction)
+execute unless score #compiled:internal/test.testmethod##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-5-if-branch
+execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
+
+# (File (functions) compiled:internal/test.testmethod-5-if-branch.mcfunction)
+scoreboard players set #RET _ 3
 scoreboard players set #GOTOFLAG _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -870,24 +851,12 @@ scoreboard players set #RET _ 0
             => TestCompilationThrows(@"
 using MCMirror;
 internal class Test {
-    static int TestMethod() {
+    static int TestMethod(int i) {
         return 3;
-        int i;
+        i = 3;
     }
 }
 ", CompilationException.ToDatapackReturnNoNonReturnAfterReturn,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void TestReturnWrong2()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static int TestMethod() {
-        return 2 + 2;
-    }
-}
-", CompilationException.ToDatapackAssignmentRHSsMustBeIdentifiersOrLiteralsOrCalls,
                 new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
@@ -1169,7 +1138,10 @@ internal class Test {
 ", @"
 # (File (functions) compiled:internal/test.testmethod-int3.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int3##arg0#x _ 24
-scoreboard players operation #compiled:internal/test.testmethod-int3##arg0#y _ += #CONST#23 _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg0 _ = #compiled:internal/test.testmethod-int3##arg0#y _
+scoreboard players set #compiled:internal/int.operator-add-int32-int32##arg1 _ 23
+function compiled:internal/int.operator-add-int32-int32
+scoreboard players operation #compiled:internal/test.testmethod-int3##arg0#y _ = #RET _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]

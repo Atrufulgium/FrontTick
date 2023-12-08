@@ -1,6 +1,4 @@
-﻿using MCMirror;
-using MCMirror.Internal;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Linq;
@@ -22,7 +20,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             bool isInternal = false;
 
             // Before doing the normal path, check first if it's a custom compiled method.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(CustomCompiledAttribute), out var attrib)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.CustomCompiledAttribute, out var attrib)) {
                 // No error checking this branch whatsoever because really, I'm me.
                 // Note that this doesn't get the "isInternal" true prefix because the results aren't stored
                 // to a datapack, because this is custom compilation.
@@ -37,14 +35,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             // First the special methods with their signature checks
 
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(LoadAttribute), out _)
-                || CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TrueLoadAttribute), out _)
-                || CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(TickAttribute), out _)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.LoadAttribute, out _)
+                || CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.TrueLoadAttribute, out _)
+                || CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.TickAttribute, out _)) {
                 if (!(hasStatic && voidIn && voidOut))
                     this.AddCustomDiagnostic(DiagnosticRules.FunctionTagAttributeMustBeStaticVoidVoid, method, method.Identifier.Text);
             }
 
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, typeof(MCFunctionAttribute), out attrib)) {
+            if (CurrentSemantics.TryGetSemanticAttributeOfType(method, MCMirrorTypes.MCFunctionAttribute, out attrib)) {
                 if (!(hasStatic && voidIn && voidOut)) {
                     this.AddCustomDiagnostic(
                         DiagnosticRules.MCFunctionAttributeIncorrect,

@@ -19,7 +19,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// From here on out the "all stages output valid c#" invariant is broken.
     /// This is fine as there are not supposed to be many writes after this.
     /// </remarks>
-    public class ReturnRewriter : AbstractFullRewriter<GuaranteeBlockRewriter> {
+    public class ReturnRewriter : AbstractFullRewriter<GuaranteeBlockRewriter, MoveLocalDeclarationsToRootRewriter> {
 
         bool isVoid;
 
@@ -84,11 +84,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         // We can introduce { { } } which we don't want.
         // Also, check whether or not there any statements after any returns,
         // because that hints at wrongly processed code in an earlier stage.
+        // Exception: The UnreachableCodeException.
         public override SyntaxNode VisitBlock(BlockSyntax node) {
             bool foundReturn = false;
             foreach (var statement in node.Statements) {
-                if (foundReturn)
+                if (foundReturn) {
+                    if (statement is ThrowStatementSyntax th
+                        && CurrentSemantics.TypesMatch(th.Expression, MCMirrorTypes.UnreachableCodeException))
+                        continue;
                     throw CompilationException.ToDatapackReturnNoNonReturnAfterReturn;
+                }
 
                 var checkStatement = statement;
                 while (checkStatement is LabeledStatementSyntax labeled) {

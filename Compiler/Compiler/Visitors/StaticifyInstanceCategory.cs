@@ -8,7 +8,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// This category turns instance methods into static methods.
     /// </para>
     /// </summary>
-    public class StaticifyInstanceCategory : AbstractFullRewriter<
+    public class StaticifyInstanceCategory : AbstractCategory<
         ThisRewriter,
         CopyInstanceToStaticCallsRewriter,
         RegisterStaticfiedWalker,
