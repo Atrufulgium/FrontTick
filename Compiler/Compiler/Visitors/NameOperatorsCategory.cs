@@ -14,7 +14,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     // This despite `int`'s TypeSymbol seeing the `op_Equality` and
     // `op_Inequality` in Type > Non-Public Members > MemberNames.
     // As such, there's some annoying manual handling, which I put here.
-    public class NameOperatorsCategory : AbstractFullWalker<
+    public class NameOperatorsCategory : AbstractCategory<
         CopyOperatorsToNamedRewriter,
         RegisterOperatorsWalker,
         OperatorsToMethodCallsRewriter,

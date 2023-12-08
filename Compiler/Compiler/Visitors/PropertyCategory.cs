@@ -10,7 +10,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// This introduces arithmetic of the form `a ∘ b`, so put this before
     /// anything handling that. Yes I need an <tt>IBefore&lt;..&gt;</tt>.
     /// </remarks>
-    public class PropertyCategory : AbstractFullWalker<
+    public class PropertyCategory : AbstractCategory<
         ArrowRewriter,
         InitPropertyRewriter,
         AutoPropertyRewriter,

@@ -2,7 +2,7 @@
     /// <summary>
     /// This is to transform for/while/do while loops into goto loops.
     /// </summary>
-    public class LoopsToGotoCategory : AbstractFullRewriter<
+    public class LoopsToGotoCategory : AbstractCategory<
         GuaranteeBlockRewriter,
         ForToWhileRewriter,
         DoWhileToWhileRewriter,

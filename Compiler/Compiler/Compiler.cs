@@ -274,9 +274,13 @@ namespace Atrufulgium.FrontTick.Compiler
                         indent += "┌─";
                 prevDepth = depth;
 
-                string lhs = $"[{DateTime.Now.TimeOfDay}] Phase {phaseID++:D3}";
-                string colorless = $" - {indent} ";
                 string rhs = $"{phase.GetType().Name}";
+                string lhs = $"[{DateTime.Now.TimeOfDay}] ";
+                if (rhs.Contains("Category"))
+                    lhs += "(Category)";
+                else
+                    lhs += $"Phase {phaseID++,-4}";
+                string colorless = $" - {indent}";
                 var consoleColor = ConsoleColor.Gray;
                 if (rhs.Contains("Category"))
                     consoleColor = ConsoleColor.Yellow;

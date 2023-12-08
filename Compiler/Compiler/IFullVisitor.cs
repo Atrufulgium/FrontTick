@@ -4,9 +4,14 @@ using System.Collections.ObjectModel;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
+    /// <para>
     /// A pretty hacky interface to unify the <see cref="AbstractFullWalker"/>
     /// and <see cref="AbstractFullRewriter"/> classes for what I need them:
     /// being arbitrary reads and readwrites on the multiple trees I compile.
+    /// </para>
+    /// <para>
+    /// (Also, <see cref="AbstractCategory"/> with the trivial implementation.)
+    /// </para>
     /// </summary>
     /// <remarks>
     /// Don't implement this manually anywhere else. I'm assuming the

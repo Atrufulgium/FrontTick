@@ -355,5 +355,7 @@ Compiler/CompilerTests/Playground.cs
 # test compilation. Depending on what Minecraft world you want to test this in,
 # or where you store the project, this is different.
 Compiler/Compiler/Properties/launchSettings.json
+
+# These are for the releases
 Compiler/MCMirror.dll
 Compiler/MCMirror.xml

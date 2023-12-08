@@ -10,7 +10,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// Also does the other constructor processing we need.
     /// </para>
     /// </summary>
-    public class NameConstructorsCategory : AbstractFullRewriter<
+    public class NameConstructorsCategory : AbstractCategory<
         MemberInitToConstructors,
         CopyConstructorsToNamedRewriter,
         RegisterConstructorsWalker,
