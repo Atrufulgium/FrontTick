@@ -6,7 +6,6 @@ namespace System {
     // 0 -- false       1 -- true.
     // Other values are invalid and assumed not to happen.
     public struct Boolean {
-        // TODO: Short circuiting &&, ||.
 
         public static bool operator !(bool value) {
             // res = 1 - value

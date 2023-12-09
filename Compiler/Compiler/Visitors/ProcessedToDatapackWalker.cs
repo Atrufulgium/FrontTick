@@ -520,22 +520,26 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         }
         // Only call this from TryGetIntegerLiteral
         private static bool TryGetIntegerLiteral(PrefixUnaryExpressionSyntax unary, out int value) {
-            if (!TryGetIntegerLiteral(unary.Operand, out value))
-                return false;
-
+            string prefix = "";
             if (unary.Kind() == SyntaxKind.UnaryPlusExpression)
-                return true;
+                prefix = "";
             else if (unary.Kind() == SyntaxKind.UnaryMinusExpression) {
-                value = -value;
+                prefix = "-";
+            } else {
+                throw CompilationException.ToDatapackUnsupportedUnary;
+            }
+            if (unary.Operand is LiteralExpressionSyntax lit) {
+                value = GetIntegerLiteral(lit, prefix);
                 return true;
             }
-            throw CompilationException.ToDatapackUnsupportedUnary;
+            value = 0;
+            return false;
         }
         // Only call this from TryGetIntegerLiteral
-        private static int GetIntegerLiteral(LiteralExpressionSyntax lit) {
-            if (bool.TryParse(lit.Token.Text, out bool b))
+        private static int GetIntegerLiteral(LiteralExpressionSyntax lit, string prefix = "") {
+            if (bool.TryParse(prefix + lit.Token.ValueText, out bool b))
                 return b ? 1 : 0;
-            if (int.TryParse(lit.Token.Text, out int res))
+            if (int.TryParse(prefix + lit.Token.ValueText, out int res))
                 return res;
             throw CompilationException.ToDatapackLiteralsIntegerOnly;
         }

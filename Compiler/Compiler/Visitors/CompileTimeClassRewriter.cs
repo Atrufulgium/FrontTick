@@ -42,7 +42,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 return StringLiteralExpression(trueLoadValue);
             } else if (methodName == "CompileTime/Print") {
                 if (arg is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)) {
-                    AddCustomDiagnostic(DiagnosticRules.VarNameArgMustBeIdentifier, node.GetLocation());
+                    AddCustomDiagnostic(DiagnosticRules.PrintArgMustBeIdentifier, node.GetLocation());
                     return null;
                 }
 

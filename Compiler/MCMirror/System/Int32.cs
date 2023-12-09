@@ -4,8 +4,8 @@ using static MCMirror.Internal.RawMCFunction;
 namespace System {
     public struct Int32 {
 
-        public const int MaxValue = 2147483647;
-        public const int MinValue = -2147483648; // Trivia: if there's no UInt32 definition anywhere, this throws a CS0518. The same does *not* hold for -2147483647. WHy.
+        public static int MaxValue = 2147483647;
+        public static int MinValue = -2147483648; // Trivia: if there's no UInt32 definition anywhere, this throws a CS0518. The same does *not* hold for -2147483647. WHy.
 
         public static int operator +(int a, int b) {
             int res;
@@ -36,18 +36,51 @@ namespace System {
             return res;
         }
 
-        public static int operator /(int a, int b) {
-            int res;
-            res = a;
+        /// <summary>
+        /// For positive results, this is the same as
+        /// <paramref name="a"/>/<paramref name="b"/>. For negative results
+        /// that weren't rounded, it is also the same. For rounded negative
+        /// results, this is one lower than regular integer division.
+        /// </summary>
+        public static int FloorDiv(int a, int b) {
+            int res = a;
             Run($"scoreboard players operation {VarName(res)} _ /= {VarName(b)} _");
             return res;
         }
 
-        // TODO: Minecraft uses *positive* remainder vs c# maintaining sign, apparantly.
-        public static int operator %(int a, int b) {
-            int res;
-            res = a;
+        public static int operator /(int a, int b) {
+            // This would be easy... If not for the fact that
+            // - c# rounds towards zero (standard);
+            // - mcfunction rounds down (ever since 18w32a, see MC-135431).
+            // Since I'm aiming for compatability with c#, I need to handle this.
+            // Either consider everything positive and handle the sign
+            // separately, or do a check with mod. Either way sucks.
+            int res = FloorDiv(a,b);
+            if (res < 0) {
+                if (a % b != 0)
+                    res += 1;
+            }
+            return res;
+        }
+
+        /// <summary>
+        /// For positive <paramref name="a"/>, this is the same as
+        /// <paramref name="a"/>%<paramref name="b"/>. For negative <paramref name="a"/>
+        /// however, we take the positive modulus, instead of keeping the sign
+        /// like the regular modulo operator.
+        /// </summary>
+        public static int PositiveMod(int a, int b) {
+            int res = a;
             Run($"scoreboard players operation {VarName(res)} _ %= {VarName(b)} _");
+            return res;
+        }
+
+        public static int operator %(int a, int b) {
+            // Minecraft uses *positive* remainder vs c# maintaining sign, apparantly.
+            // Also, as per MC-135431 mentioned above, it floors. TODO: Does that matter?
+            int res = PositiveMod(a, b);
+            if (a < 0 & res != 0)
+                res -= b;
             return res;
         }
 
@@ -55,7 +88,7 @@ namespace System {
 
         // Fills the created gap with sign bits
         public static int operator >>(int a, int b) {
-            b %= 32; // This is part of the spec and I don't like it.
+            b = PositiveMod(b, 32); // This is part of the spec and I don't like it.
             bool startedNegative = a < 0;
             if (b >= 16) {
                 a /= 65536;
@@ -85,7 +118,7 @@ namespace System {
 
         // Fills the created gap with 0 bits.
         public static int operator >>>(int a, int b) {
-            b %= 32;
+            b = PositiveMod(b, 32);
             // The first step from negative to positive is different.
             // After that everything's positive and we don't need to care.
             if (b > 0 & a < 0) {
@@ -116,7 +149,7 @@ namespace System {
 
         // Fills the created gap with 0 bits.
         public static int operator <<(int a, int b) {
-            b %= 32;
+            b = PositiveMod(b, 32);
             if (b >= 16) {
                 a *= 65536;
                 b -= 16;
@@ -171,6 +204,7 @@ namespace System {
         public static int operator |(int a, int b) => ~(~a & ~b);
 
         public static int operator ^(int a, int b) {
+            // Exactly the same logic as &.
             bool aNeg = a < 0;
             bool bNeg = b < 0;
             if (aNeg) {
@@ -181,9 +215,6 @@ namespace System {
             }
             int result = 0;
             int power = 1;
-            // 3 bits at a time, 10x.
-            // Each iteration, look at the bottom 3 bits and afterwards
-            // shift over.
             int i = 0;
             for (; i < 10; i += 1) {
                 result += BitHelpers.Xor8(a % 8, b % 8) * power;
@@ -191,7 +222,6 @@ namespace System {
                 a /= 8;
                 b /= 8;
             }
-            // Two bits left: non-sign-MSB and sign (that got removed earlier)
             if (a + b == 1)
                 result += power;
             if (aNeg ^ bNeg)
@@ -264,7 +294,7 @@ namespace System {
         /// </summary>
         public static int Max(int a, int b) {
             int res = a;
-            Run($"scoreboard players operation{VarName(res)} _ > {VarName(b)} _");
+            Run($"scoreboard players operation {VarName(res)} _ > {VarName(b)} _");
             return res;
         }
 
@@ -273,7 +303,7 @@ namespace System {
         /// </summary>
         public static int Min(int a, int b) {
             int res = a;
-            Run($"scoreboard players operation{VarName(res)} _ < {VarName(b)} _");
+            Run($"scoreboard players operation {VarName(res)} _ < {VarName(b)} _");
             return res;
         }
 

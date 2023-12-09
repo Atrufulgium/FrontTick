@@ -249,7 +249,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             if (access.Expression is IdentifierNameSyntax identifier) {
                 prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
             } else if (access.Expression is PredefinedTypeSyntax predef) {
-                prefix = "#" + predef.Keyword;
+                prefix = $"#{manespace}:{predef.Keyword}";
             } else {
                 throw new ArgumentException("Malformed namemanager variable name access in the syntax tree, not an identifier!");
             }

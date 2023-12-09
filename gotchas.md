@@ -11,6 +11,8 @@ FrontTick gotchas
 - Throughout the entire compilation process, less and less c# features become available to you. Keep note.
 - When your tests fail when stuff *looks* the same, ensure you don't have any `\n    \n` vs `\n\n` comparisons that didn't get removed when shift-tabbing.
 - Recursion is **not supported**, but it **doesn't throw errors yet**.
+- `const` is **not a thing yet**, but it **doesn't throw errors**.
+- If your in-game tests return `-2122222222`, it means that nothing was returned at all. This may be a sign of malformed `mcfunction` code, check your launcher logs or manually review the generated pack.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
 
 Roslyn gotchas
@@ -24,6 +26,10 @@ Roslyn gotchas
 - Semantic interpretation is a bit obnoxious. For instance, you cannot get the type belonging to some *statement*, instead you need to get it from its corresponding *expression*. It just doesn't walk to the nearest thing returning something non-null, it expects you to know how it works.
 - Returning `null` is a nice deletion, but make sure it doesn't have any weird side effects. 
 - (There was something annoying with `SyntaxKind`, but I forgot.)
+  
+Minecraft gotchas
+=================
+- `scoreboard players operation /` floors, and `scoreboard players operation %` uses the positive remainder. These are --hopefully-- only a problem one time, however.
 
 Known issues that are too low priority to fix
 =============================================
