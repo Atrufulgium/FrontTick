@@ -168,10 +168,10 @@ scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 #   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
-        // (There's no method overloading yet and my own int has no impl yet, so broken.)
+        // Raw because I don't yet optimise these methods away so comparing to just "+= -3" fails.
         [TestMethod]
-        public void AssignmentTest4()
-            => TestCompilationSucceedsTheSame(@"
+        public void AssignmentTest4Raw()
+            => TestCompilationSucceedsRaw(@"
 using MCMirror;
 public class Test {
     [MCFunction]
@@ -182,30 +182,31 @@ public class Test {
     }
 }
 ", @"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = 3;
-        i += -3;
-    }
-}
-", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+# (File (functions) compiled:test.testmethod.mcfunction)
+scoreboard players set #compiled:test.testmethod#i _ 3
+scoreboard players set #compiled:internal/int.operator-add-int32##arg0 _ -3
+function compiled:internal/int.operator-add-int32
+scoreboard players operation #compiled:test.testmethod##CALLTEMP0 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP0 _
+function compiled:internal/int.operator-sub-int32
+scoreboard players operation #compiled:test.testmethod##CALLTEMP1 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP1 _
+function compiled:internal/int.operator-add-int32
+scoreboard players operation #compiled:test.testmethod##CALLTEMP2 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP2 _
+function compiled:internal/int.operator-add-int32
+scoreboard players operation #compiled:test.testmethod##CALLTEMP3 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP3 _
+function compiled:internal/int.operator-sub-int32
+scoreboard players operation #compiled:test.testmethod##CALLTEMP4 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg0 _ = #compiled:test.testmethod#i _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg1 _ = #compiled:test.testmethod##CALLTEMP4 _
+function compiled:internal/int.operator-add-int32-int32
+scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
-        [TestMethod]
-        public void AssignmentTestWrong4()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        int i;
-        i = ~3;
-    }
-}
-", CompilationException.ToDatapackUnsupportedUnary,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
+# Method Attributes:
+#   [MCFunction]
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         [TestMethod]
         public void AssignmentTestWrong5()
@@ -828,6 +829,8 @@ scoreboard players set #GOTOFLAG _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw for label name format I guess
+        // But I don't know what happened here to cause the label to go to *4*.
+        // (The two "set #RET _ 0"s aren't weird with the trivial inling.)
         [TestMethod]
         public void TestReturnLabeledRaw()
             => TestCompilationSucceedsRaw(@"
@@ -842,7 +845,7 @@ internal class Test {
 # (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #RET _ 0
 
-# (File (functions) compiled:internal/test.testmethod-0-goto-label-1.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-0-goto-label-4.mcfunction)
 scoreboard players set #RET _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 

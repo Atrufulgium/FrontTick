@@ -244,10 +244,16 @@ namespace Atrufulgium.FrontTick.Compiler {
                 access = a;
             }
             accesses.Add(access.Name.Identifier.Text);
-            if (access.Expression is not IdentifierNameSyntax identifier)
-                throw new ArgumentException("Malformed namemanager variable name access in the syntax tree, not an identifier!");
 
-            string prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
+            string prefix;
+            if (access.Expression is IdentifierNameSyntax identifier) {
+                prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
+            } else if (access.Expression is PredefinedTypeSyntax predef) {
+                prefix = "#" + predef.Keyword;
+            } else {
+                throw new ArgumentException("Malformed namemanager variable name access in the syntax tree, not an identifier!");
+            }
+
             // No datapack-normalisation necessary as ingame scoreboards handle like everything.
             string suffix = string.Join('#', ((IEnumerable<string>)accesses).Reverse().ToArray());
             return $"{prefix}#{suffix}";
