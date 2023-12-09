@@ -110,5 +110,12 @@ namespace Atrufulgium.FrontTick.Compiler {
                 title: "Short-circuiting operators '&&' and '||' are unsupported and replaced by '&' and '|'.",
                 messageFormat: "Short-circuiting ops '&&', '||', are not supported and converted to '&', '|'. If you want to short-circuit, do a manual if-check. If not, update your code to use '&' or '|' instead to not get this warning. (This behaviour may be subject to change.)"
             );
+
+        public static DiagnosticDescriptor PrintArgMustBeIdentifier
+            => Error(
+                id: "FT0014",
+                title: "Print(int) arguments must be identifiers.",
+                messageFormat: "Calling 'MCMirror.Internal.CompileTime.Print(int)' requires an argument that is just an identifier. No arithmetic, method calls etc."
+            );
     }
 }

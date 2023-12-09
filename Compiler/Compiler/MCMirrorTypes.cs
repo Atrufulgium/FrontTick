@@ -23,9 +23,11 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         // MCMirror.Internal.xxx
         public static readonly string CompilerUsesNameAttribute = "MCMirror.Internal.CompilerUsesNameAttribute"; // not yet
+        public static readonly string CompileTime_VarName = "MCMirror.Internal.CompileTime.VarName";
         public static readonly string CustomCompiledAttribute = "MCMirror.Internal.CustomCompiledAttribute";
         public static readonly string MCTestAttribute = "MCMirror.Internal.MCTestAttribute";
         public static readonly string NoCompileAttribute = "MCMirror.Internal.NoCompileAttribute";
+        public static readonly string RawMCFunction_Run = "MCMirror.Internal.RawMCFunction.Run";
         public static readonly string TrueLoadManager = "MCMirror.Internal.TrueLoadManager";
         public static readonly string TrueLoadManager_TrueLoadTagname = "internal/--trueload--";
         public static readonly string UnreachableCodeException = "MCMirror.Internal.UnreachableCodeException";

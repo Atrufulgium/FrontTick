@@ -29,7 +29,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     var newPart = VisitInterpolation(i);
                     if (newPart is LiteralExpressionSyntax lit)
                         newContent.Add(
-                            InterpolatedStringText(lit.Token.ValueText)
+                            InterpolatedStringText(
+                                lit.Token.ValueText
+                            )
                         );
                     else
                         newContent.Add((InterpolationSyntax)newPart);
@@ -40,7 +42,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string textSoFar = "";
             foreach (var part in newContent) {
                 if (part is InterpolatedStringTextSyntax t) {
-                    textSoFar += t.TextToken.Text;
+                    textSoFar += t.TextToken.ValueText
+                        .Replace("{{", "{")
+                        .Replace("}}", "}");
                 } else if (part is InterpolationSyntax) {
                     if (textSoFar != "") {
                         newnewContent.Add(
@@ -62,7 +66,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 && newnewContent[0] is InterpolatedStringTextSyntax text) {
                 return LiteralExpression(
                     SyntaxKind.StringLiteralExpression,
-                    Literal(text.TextToken.Text)
+                    Literal(text.TextToken.ValueText)
                 );
             }
             return InterpolatedStringExpression(node.StringStartToken, new(newnewContent), node.StringEndToken);

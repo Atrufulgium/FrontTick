@@ -17,6 +17,7 @@
         /// </remarks>
         // This is implemented in the "ProcessedToDatapackWalker" class.
         [CustomCompiled("CompileTime/RunRaw")]
+        [CompilerUsesName]
         public static extern void Run(string code);
     }
 }

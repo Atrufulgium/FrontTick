@@ -22,6 +22,7 @@
         /// identifier, not a constant, the result of arithmetic, etc.
         /// </param>
         [CustomCompiled("CompileTime/VarNameInt")]
+        [CompilerUsesName]
         public static extern string VarName(int variable);
 
         /// <inheritdoc cref="VarName(int)"/>
@@ -59,5 +60,17 @@
         /// </summary>
         [CustomCompiled("CompileTime/TrueLoadValue")]
         public static extern string TrueLoadValue();
+
+        /// <summary>
+        /// <para>
+        /// Puts the current value of <paramref name="value"/> into chat for <c>@a</c>.
+        /// </para>
+        /// <para>
+        /// Meant for internal debug purposes only, please use [doesn't exist
+        /// yet] for proper logging into chat.
+        /// </para>
+        /// </summary>
+        [CustomCompiled("CompileTime/Print")]
+        public static extern string Print(int value);
     }
 }

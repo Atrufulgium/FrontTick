@@ -191,5 +191,13 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         public static SeparatedSyntaxList<T> SeparatedList<T>(T item) where T : SyntaxNode
             => SyntaxFactory.SeparatedList(new T[] { item });
+
+        public static InterpolatedStringExpressionSyntax InterpolatedStringExpression(params InterpolatedStringContentSyntax[] contents)
+            => SyntaxFactory.InterpolatedStringExpression(
+                Token(
+                    SyntaxKind.InterpolatedStringStartToken
+                ),
+                List(contents)
+            );
     }
 }
