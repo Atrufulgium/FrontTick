@@ -9,8 +9,9 @@ FrontTick gotchas
 - In a lot of places you care about types. Unfortunately, importing them from MCMirror directly is not an option. For that reason, the `MCMirrorTypes.cs` file holds *manual* definitions of stuff *manually* annotated `[CompilerUsesName]` which you can then use in `CurrentSemantics.TypesMatch(node, MCMirrorTypes.Whatever)` or something.
 - You (or rather, I) can't build the `MCMirror` directory manually in VS, see [the batch file](./Compiler/mcmirror_to_dll.bat).
 - Throughout the entire compilation process, less and less c# features become available to you. Keep note.
+- When your tests fail when stuff *looks* the same, ensure you don't have any `\n    \n` vs `\n\n` comparisons that didn't get removed when shift-tabbing.
+- Recursion is **not supported**, but it **doesn't throw errors yet**.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
-- Goto's (in non-switches) in *user code* should be forbidden.
 
 Roslyn gotchas
 ==============

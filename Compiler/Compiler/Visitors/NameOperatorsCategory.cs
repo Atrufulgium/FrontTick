@@ -81,6 +81,32 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         }
 
         /// <summary>
+        /// In a node <c>OP rhs</c>, returns the fully qualified name to
+        /// the OPERATOR-OP method name in two parts.
+        /// </summary>
+        public static (string containingType, string name) ParseOperator(SemanticModel model, PrefixUnaryExpressionSyntax node) {
+            var op = (IUnaryOperation)model.GetOperation(node);
+            var methodName = GetMethodName(node.OperatorToken.Text);
+
+            if (op.OperatorMethod != null) {
+                var containingType = op.OperatorMethod.ContainingType.ToDisplayString();
+                return (containingType, methodName);
+            } else {
+                // Primitive or nonexistent.
+                string fullyQualified;
+                if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Int))
+                    fullyQualified = MCMirrorTypes.IntFullyQualified;
+                else if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Bool))
+                    fullyQualified = MCMirrorTypes.BoolFullyQualified;
+                else
+                    throw CompilationException.OperatorsRequireUnderlyingMethod;
+
+                // Guaranteed primitive.
+                return (fullyQualified, methodName);
+            }
+        }
+
+        /// <summary>
         /// In a node <c>lhs OP= rhs</c> (explicitely disallowing <c>lhs = rhs</c>
         /// simple assignment), returns the fully qualified name to the
         /// OPERATOR-OP method name in two parts.

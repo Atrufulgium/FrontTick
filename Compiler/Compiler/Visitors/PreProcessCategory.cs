@@ -5,6 +5,7 @@
     /// with dependencies.
     /// </summary>
     public class PreProcessCategory : AbstractCategory<
+        RemoveParenthesesRewriter,
         SplitDeclarationInitializersRewriter,
         ShortCircuitOperatorRewriter,
         MethodifyCategory,

@@ -55,33 +55,36 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             );
         }
 
+        // +x -x !x ~x ++x --x ^x (T)x await x &x *x true(x) false(x)
         public override SyntaxNode VisitPrefixUnaryExpression(PrefixUnaryExpressionSyntax node) {
-            // Alow literals like "-3".
+            // Allow literals like "-3" to be parsed by ProcessedToDatapack later.
             if (node.Operand is LiteralExpressionSyntax literal
-                && literal.Kind() == SyntaxKind.NumericLiteralExpression)
+                && literal.Kind() == SyntaxKind.NumericLiteralExpression
+                && (node.IsKind(SyntaxKind.UnaryPlusExpression)
+                 || node.IsKind(SyntaxKind.UnaryMinusExpression)))
                 return node;
 
-            var op = (IUnaryOperation)CurrentSemantics.GetOperation(node);
-            return HandleUnary(op, node.OperatorToken.Text, node.Operand);
+            if (node.IsKind(SyntaxKind.PreIncrementExpression)
+                || node.IsKind(SyntaxKind.PreDecrementExpression))
+                throw new System.ArgumentException("++x and --x should already be handled.");
+
+            var (fullyQualified, name) = NameOperatorsCategory.ParseOperator(CurrentSemantics, node);
+            var fullyQualifiedName = $"{fullyQualified}.{name}";
+            return HandleUnary(fullyQualifiedName, node.Operand);
         }
 
+        // x++ x-- x!
         public override SyntaxNode VisitPostfixUnaryExpression(PostfixUnaryExpressionSyntax node) {
-            if (node.Operand is LiteralExpressionSyntax literal
-                && literal.Kind() == SyntaxKind.NumericLiteralExpression)
-                return node;
-
-            var op = (IUnaryOperation)CurrentSemantics.GetOperation(node);
-            return HandleUnary(op, node.OperatorToken.Text, node.Operand);
+            if (node.IsKind(SyntaxKind.PostIncrementExpression)
+                || node.IsKind(SyntaxKind.PostDecrementExpression))
+                throw new System.ArgumentException("x++ and x-- should already be handled.");
+            
+            return base.VisitPostfixUnaryExpression(node);
         }
 
-        SyntaxNode HandleUnary(IUnaryOperation op, string opText, ExpressionSyntax operand) {
-            if (op.OperatorMethod == null)
-                throw CompilationException.OperatorsRequireUnderlyingMethod;
-
-            var containingType = op.OperatorMethod.ContainingType;
-            var methodName = NameOperatorsCategory.GetMethodName(opText);
+        SyntaxNode HandleUnary(string fullyQualifiedName, ExpressionSyntax operand) {
             return InvocationExpression(
-                MemberAccessExpression(containingType, methodName),
+                MemberAccessExpression(fullyQualifiedName),
                 ArgumentList(
                     (ExpressionSyntax)Visit(operand)
                 )
