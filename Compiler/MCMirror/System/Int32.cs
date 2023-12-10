@@ -43,6 +43,7 @@ namespace System {
         /// results, this is one lower than regular integer division.
         /// </summary>
         public static int FloorDiv(int a, int b) {
+            // TODO: Divide by zero exception.
             int res = a;
             Run($"scoreboard players operation {VarName(res)} _ /= {VarName(b)} _");
             return res;
@@ -78,6 +79,7 @@ namespace System {
         public static int operator %(int a, int b) {
             // Minecraft uses *positive* remainder vs c# maintaining sign, apparantly.
             // Also, as per MC-135431 mentioned above, it floors. TODO: Does that matter?
+            // TODO: Divide by zero exception.
             int res = PositiveMod(a, b);
             if (a < 0 & res != 0)
                 res -= b;
@@ -276,6 +278,7 @@ namespace System {
         /// Returns the absolute value of <paramref name="a"/>.
         /// </summary>
         public static int Abs(int a) {
+            // TODO: Throw on int.MinValue
             if (a < 0)
                 return -a;
             return a;
@@ -314,5 +317,123 @@ namespace System {
         public static void Swap(ref int a, ref int b) {
             Run($"scoreboard players operation {VarName(a)} _ >< {VarName(b)} _");
         }
+
+        /// <summary>
+        /// Computes <paramref name="a"/>+<paramref name="b"/> which is allowed
+        /// to wrap around. However, it also notifies whether wrapping around
+        /// happened.
+        /// </summary>
+        public static int WraparoundAdd(int a, int b, out bool wrappedAround) {
+            wrappedAround = (a > 0 & b > MaxValue - a)
+                          | (a < 0 & b < MinValue - a);
+            return a + b;
+        }
+
+        /// <summary>
+        /// Computes <paramref name="a"/>+<paramref name="b"/>, clamped to the
+        /// range of a valid int. If the result is changed by this clamping,
+        /// <paramref name="wrappedAround"/> is <c>true</c>.
+        /// </summary>
+        public static int NoWraparoundAdd(int a, int b, out bool wrappedAround) {
+            if (a > 0 & b > MaxValue - a) {
+                wrappedAround = true;
+                return MaxValue;
+            }
+            if (a < 0 & b < MinValue - a) {
+                wrappedAround = true;
+                return MinValue;
+            }
+            wrappedAround = false;
+            return a + b;
+        }
+
+        /// <summary>
+        /// Computes <paramref name="a"/>*<paramref name="b"/> which is allowed
+        /// to wrap around. However, it also notifies whether wrapping around
+        /// happened.
+        /// </summary>
+        public static int WraparoundMul(int a, int b, out bool wrappedAround) {
+            int res = a * b;
+            wrappedAround = false;
+            if (a != 0)
+                wrappedAround = res / a != b;
+            return res;
+        }
+
+        /// <summary>
+        /// Computes <paramref name="a"/>*<paramref name="b"/>, clamped to the
+        /// range of a valid int. If the result is changed by this clamping,
+        /// <paramref name="wrappedAround"/> is <c>true</c>.
+        /// </summary>
+        public static int NoWraparoundMul(int a, int b, out bool wrappedAround) {
+            int res = a * b;
+            if (a != 0) {
+                if (res / a != b) {
+                    wrappedAround = true;
+                    if (a < 0 ^ b < 0)
+                        return MinValue;
+                    return MaxValue;
+                }
+            }
+            wrappedAround = false;
+            return res;
+        }
+
+        /// <summary>
+        /// Computes a*b as <c>uint * uint</c> and returns the resulting 64 bit
+        /// number in full without any clamping or wraparound.
+        /// Note that signs of <paramref name="high"/> and <paramref name="low"/>
+        /// are actually just numeric bits representing 2^32 and 2^64; this
+        /// computation is unsigned.
+        /// </summary>
+        public static void LongMultiplication(int a, int b, out int high, out int low) {
+            // The result is:
+            // 2**32 (hi(a) hi(b) + hi(cross1) + hi(cross2))
+            //     + (lo(a) lo(b) ⊕ 2**16 lo(cross1) ⊕ 2**16 lo(cross2))
+            // With cross1, cross2 as below;
+            // With ⊕ addition that can overflow.
+            int aHigh = HighHalf(a);
+            int aLow = LowHalf(a);
+            int bHigh = HighHalf(a);
+            int bLow = LowHalf(b);
+
+            // Mul has no sign issues as both args are <2**16
+            high = aHigh * bHigh;
+            low = aLow * bLow;
+
+            // The cross terms are problematic.
+            // Mul has no sign issues as both args are <2**16
+            int cross1 = aHigh * bLow;
+            int cross2 = bHigh * aLow;
+            high += HighHalf(cross1) + HighHalf(cross2);
+            // Add before multiplying so we can read of overflow easily.
+            int crossLowSum = LowHalf(cross1) + LowHalf(cross2);
+            if (crossLowSum >= 65536) {
+                crossLowSum -= 65536;
+                high += 1;
+            }
+            bool wrapped;
+            high = WraparoundAdd(high, crossLowSum * 65536, out wrapped);
+            if (wrapped)
+                high += 1;
+        }
+
+        /// <summary>
+        /// Interpreting a value as a 32-bit pattern, returns the top 16 bits
+        /// (i.e. a value [0, 65536)).
+        /// </summary>
+        public static int HighHalf(int a) {
+            if (a < 0) {
+                return (Abs(a/2 + 1)) / 32768;
+            }
+            return a / 65536;
+        }
+
+        /// <summary>
+        /// Interpreting a value as a 32-bit pattern, returns the bottom 16
+        /// bits (i.e. a value [0,65536)).
+        /// </summary>
+        public static int LowHalf(int a)
+            => PositiveMod(a, 65536);
     }
 }

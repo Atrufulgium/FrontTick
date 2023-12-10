@@ -34,8 +34,6 @@ namespace System {
 
     public class Random { }
 
-    public struct Single { }
-
     public struct UInt32 { }
 }
 
