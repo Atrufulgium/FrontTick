@@ -7,21 +7,21 @@
         }
 
         // A lookup table is slightly quicker, but generates *tons* of files.
-        // This is slightly slower but only has two auxiliary files.
+        // This is slightly slower but only has fewer auxiliary files.
         /// <summary>
         /// Computes <paramref name="a"/>&amp;<paramref name="b"/> when the
         /// arguments are both in 0, .., 7, and undefined otherwise.
         /// </summary>
         public static int And8(int a, int b) {
-            if (a > b) {
-                int.Swap(ref a, ref b);
-            }
-            int res = 1160 - 775 * a;
-            if (a >= 4)
-                res += 3104;
-            res %= 1160;
-            res += 1680;
-            return res % ((b % 4) + 5);
+            int a4 = int.PositiveMod(a, 4);
+            int b4 = int.PositiveMod(b, 4);
+            int res = int.PositiveMod(9, a4 * b4 + 1);
+            if (a4 == b4)
+                res = a4;
+            if (a4 < a)
+                if (b4 < b)
+                    res += 4;
+            return res;
         }
 
         /// <summary>
@@ -29,19 +29,14 @@
         /// arguments are both in 0, .., 7, and undefined otherwise.
         /// </summary>
         public static int Xor8(int a, int b) {
-            if (a > b) {
-                int.Swap(ref a, ref b);
-            }
-            if (a + b < 7) {
-                int temp = a;
-                a = 7 - b;
-                b = 7 - temp;
-            }
-            int res = 106 + 3761 * a;
-            res -= 3454 * (a / 2);
-            if (a >= 4)
-                res += 3630;
-            return res % (b + 4);
+            int a4 = int.PositiveMod(a, 4);
+            int b4 = int.PositiveMod(b, 4);
+            int res = int.PositiveMod(177, a4 + b4 + 3);
+            if (a4 == b4)
+                res = 0;
+            if (a4 < a ^ b4 < b)
+                res += 4;
+            return res;
         }
         #region ooh (very ad-hoc) math, scary
         // By the way, if you wonder why the above works, recall how sometimes
@@ -50,6 +45,17 @@
         // This is similar, but instead of reading a value from a number with
         // `&` and `>>`, you read a value by, in essence, just `%`, because
         // there's nothing else in Minecraft.
+        //
+        // --------------------------------------------------------------------
+        // UPDATE: I changed the way the methods work. The fundamental idea of
+        // "store in modulo" still holds, but the `f` map of step 2 can also be
+        // a map f(a,b) where you then try to get it to work on the 4x4 case.
+        // Also note we do 4x4 and then can extend it *once* by using
+        // inequalities for cheaper than the overhead per bit of the for loop
+        // that calls these.
+        // For both operators the diagonals make things very difficult, so
+        // handle those separately.
+        // --------------------------------------------------------------------
         //
         // To construct code for `a OP b` like this, you have to:
         // - STEP 1: Write the entire operator table out, and remove any

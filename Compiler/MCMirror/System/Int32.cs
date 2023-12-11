@@ -37,10 +37,16 @@ namespace System {
         }
 
         /// <summary>
+        /// <para>
         /// For positive results, this is the same as
         /// <paramref name="a"/>/<paramref name="b"/>. For negative results
         /// that weren't rounded, it is also the same. For rounded negative
         /// results, this is one lower than regular integer division.
+        /// </para>
+        /// <para>
+        /// This is equivalent to and more efficient than <c>/</c> if you know
+        /// the result is positive.
+        /// </para>
         /// </summary>
         public static int FloorDiv(int a, int b) {
             // TODO: Divide by zero exception.
@@ -65,10 +71,16 @@ namespace System {
         }
 
         /// <summary>
+        /// <para>
         /// For positive <paramref name="a"/>, this is the same as
         /// <paramref name="a"/>%<paramref name="b"/>. For negative <paramref name="a"/>
         /// however, we take the positive modulus, instead of keeping the sign
         /// like the regular modulo operator.
+        /// </para>
+        /// <para>
+        /// This is equivalent to and more efficient than <c>%</c> if you know
+        /// <paramref name="a"/> is positive.
+        /// </para>
         /// </summary>
         public static int PositiveMod(int a, int b) {
             int res = a;
