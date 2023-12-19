@@ -137,8 +137,9 @@
         }
 
         /// <summary>
-        /// Whether <c>f < 0</c>.
-        /// False for NaNs and -0.
+        /// Whether <c>f &lt; 0</c>.
+        /// False for NaNs and ±0.
+        /// In particular true for -∞.
         /// </summary>
         public static bool IsNegative(float f) {
             if (IsNan(f))
@@ -165,8 +166,9 @@
             => false;
 
         /// <summary>
-        /// Whether <c>f > 0</c>.
-        /// False for NaNs and +0.
+        /// Whether <c>f &gt; 0</c>.
+        /// False for NaNs and ±0.
+        /// In particular true for +∞.
         /// </summary>
         public static bool IsPositive(float f) {
             if (IsNan(f))
@@ -187,6 +189,125 @@
         /// </summary>
         public static bool IsZero(float f)
             => f.exponent == int.MinValue;
+
+        public static float operator +(float a, float b) {
+            bool aNeg, bNeg;
+            // Exceptional cases.
+            if (IsNan(a) | IsNan(b))
+                return NaN;
+            if (IsZero(a))
+                return b;
+            if (IsZero(b))
+                return a;
+            if (IsInfinity(a)) {
+                if (IsInfinity(b)) {
+                    aNeg = a.mantissa < 0;
+                    bNeg = b.mantissa < 0;
+                    if (aNeg ^ bNeg)
+                        return NaN;
+                }
+                return a;
+            }
+            if (IsInfinity(b))
+                return b;
+            
+            // Regular cases.
+            // First rewrite both exponents to be the same.
+            // For convenience ensure that a's exponent is the big one.
+            if (a.exponent < b.exponent) {
+                int.Swap(ref a.exponent, ref b.exponent);
+                int.Swap(ref a.mantissa, ref b.mantissa);
+            }
+            int exponentDifference = a.exponent - b.exponent;
+            // If we need to shift too much there's nothing to do as we'd only
+            // be adding a rounding error.
+            if (exponentDifference >= 31)
+                return a;
+            // Otherwise shift powers of two from b's mantissa to b's exponent.
+            b.mantissa >>= exponentDifference;
+            //b.exponent = a.exponent; // implicit from here on out
+
+            aNeg = a.mantissa < 0;
+            bNeg = b.mantissa < 0;
+            if (aNeg == bNeg) {
+                // 2^e (1+m1) + 2^e (1+m2) = 2^{e+1}(1 + m1/2 + m2/2)
+                // ez pz no overflow and no trouble with mantissa's representation
+                // (in particular note that the 1 offset in the negative
+                //  representation does no harm.)
+                a.exponent += 1;
+                if (a.exponent == int.MaxValue) {
+                    if (aNeg)
+                        return NegativeInfinity;
+                    return PositiveInfinity;
+                }
+                a.mantissa /= 2;
+                b.mantissa /= 2;
+                a.mantissa += b.mantissa;
+            } else {
+                // wlog a the positive mantissa
+                if (aNeg)
+                    int.Swap(ref a.mantissa, ref b.mantissa);
+                // the problem:
+                // 2^e (1+m1) - 2^e (1+m2) = 2^e(m1 - m2)
+                // This result may be of the form 0.000012345, which will need some
+                // rescaling to become "1 + m" again.
+                // (Also no need to beware of overflow if sign differs.)
+                // No need even to care about the different representations for +
+                // and - as that difference is linear.
+                a.mantissa -= b.mantissa;
+                // However for the shiftstep we do care about that difference
+                // as it'd otherwise blow up literally exponentially.
+                // So swap the sign temporarily.
+                bool resNeg = a.mantissa < 0;
+                if (resNeg)
+                    a.FlipSign();
+                if (a.mantissa == 0) {
+                    if (resNeg)
+                        return NegativeZero;
+                    return PositiveZero;
+                }
+                // Example: If m1 - m2 = r ∈ [1/2, 1), we'd have
+                //   2^e(m1 - m2) = 2^{e-1} (1 + r')
+                // with r' = 2r - 1.
+                // Otherwise, if r ∈ [1/4, 1/2) for instance, and you'd need to
+                // do 2^{e-2} (1 + r') with r' = 4r - 1.
+                // (These computations without overflow: r' = 2(r - 1/2).)
+                // With our representation, 1/2 is just 1<<30.
+                // Problem: This only does one bit at a time. We need to do 31.
+                // I don't see any shortcuts at this point.
+                // Oh well.
+                int i = 0;
+                for (; i < 31; i += 1) {
+                    if (a.mantissa >= 1073741824) {
+                        a.mantissa -= 1073741824;
+                        a.mantissa *= 2;
+                        a.exponent -= 1;
+                        if (a.exponent == int.MinValue) {
+                            if (resNeg)
+                                return NegativeZero;
+                            return PositiveZero;
+                        }
+                        break;
+                    }
+                    a.mantissa *= 2;
+                    a.exponent -= 1;
+                }
+                // Undo the flip.
+                if (resNeg)
+                    a.FlipSign();
+            }
+
+            return a;
+        }
+
+        public static float operator +(float a) => a;
+
+        public static float operator -(float a, float b) => a + (-b);
+
+        public static float operator -(float a) {
+            a.FlipSign();
+            return a;
+        }
 
         public static float operator *(float a, float b) {
             // Exceptional cases.
