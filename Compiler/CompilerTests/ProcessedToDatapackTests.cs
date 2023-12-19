@@ -1036,14 +1036,31 @@ scoreboard players set #RET#pos#x _ 0
 scoreboard players set #RET#pos#y _ 0
 scoreboard players set #RET#pos#z _ 0
 scoreboard players set #RET#w _ 0
+scoreboard players set #RET#pos#x _ 0
+scoreboard players set #RET#pos#y _ 0
+scoreboard players set #RET#pos#z _ 0
+scoreboard players set #RET#w _ 0
 
 # (File (functions) compiled:internal/ipsum.-construct-.mcfunction)
 scoreboard players set #RET#dolorSitAmet2#pos#x _ 0
 scoreboard players set #RET#dolorSitAmet2#pos#y _ 0
 scoreboard players set #RET#dolorSitAmet2#pos#z _ 0
 scoreboard players set #RET#dolorSitAmet2#w _ 0
+scoreboard players set #RET#dolorSitAmet2#pos#x _ 0
+scoreboard players set #RET#dolorSitAmet2#pos#y _ 0
+scoreboard players set #RET#dolorSitAmet2#pos#z _ 0
+scoreboard players set #RET#dolorSitAmet2#w _ 0
 
 # (File (functions) compiled:internal/lorem.-construct-.mcfunction)
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#x _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#y _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#pos#z _ 0
+scoreboard players set #RET#ipsum#dolorSitAmet2#w _ 0
+scoreboard players set #RET#val _ 0
+scoreboard players set #RET#dolorSitAmet#pos#x _ 0
+scoreboard players set #RET#dolorSitAmet#pos#y _ 0
+scoreboard players set #RET#dolorSitAmet#pos#z _ 0
+scoreboard players set #RET#dolorSitAmet#w _ 0
 scoreboard players set #RET#ipsum#dolorSitAmet2#pos#x _ 0
 scoreboard players set #RET#ipsum#dolorSitAmet2#pos#y _ 0
 scoreboard players set #RET#ipsum#dolorSitAmet2#pos#z _ 0
@@ -1146,25 +1163,6 @@ scoreboard players set #compiled:internal/int.operator-add-int32-int32##arg1 _ 2
 function compiled:internal/int.operator-add-int32-int32
 scoreboard players operation #compiled:internal/test.testmethod-int3##arg0#y _ = #RET _
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void StructWrongTest1()
-            => TestCompilationThrows(@"
-using MCMirror;
-internal class Test {
-    static Wrong2 TestMethod(Wrong2 w) {
-        return w;
-    }
-}
-
-struct Wrong1 {
-    float i;
-}
-struct Wrong2 {
-    Wrong1 wrong;
-}
-", CompilationException.ToDatapackStructsMustEventuallyInt,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
         #region run raw tests

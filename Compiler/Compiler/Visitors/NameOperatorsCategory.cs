@@ -68,10 +68,13 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     throw new System.NotImplementedException("TODO: Cast case");
 
                 string fullyQualified;
+                // haha this also needs something better lol
                 if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Int))
                     fullyQualified = MCMirrorTypes.IntFullyQualified;
                 else if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Bool))
                     fullyQualified = MCMirrorTypes.BoolFullyQualified;
+                else if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Float))
+                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
                 else
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 

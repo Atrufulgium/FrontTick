@@ -35,9 +35,14 @@ namespace Atrufulgium.FrontTick.Compiler {
 
         // System.xxx
         public static readonly string Bool = "bool";
+        public static readonly string BoolAltName = "Boolean";
         public static readonly string BoolFullyQualified = "System.Boolean";
         public static readonly string Int = "int";
+        public static readonly string IntAltName = "Int32";
         public static readonly string IntFullyQualified = "System.Int32";
         public static readonly string Int_Equals_PostOperatorsToMethodCalls = "System.Int32." + NameOperatorsCategory.GetMethodName("==");
+        public static readonly string Float = "float";
+        public static readonly string FloatAltName = "Single";
+        public static readonly string FloatFullyQualified = "System.Single";
     }
 }

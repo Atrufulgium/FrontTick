@@ -98,6 +98,8 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
                     continue;
                 if (skipInternal && f.Subpath.Contains("internal/int."))
                     continue;
+                if (skipInternal && f.Subpath.Contains("internal/float."))
+                    continue;
                 if (skipInternal && f.Subpath.Contains("internal/system."))
                     continue;
                 if (skipInternal && f is FunctionTag tag)

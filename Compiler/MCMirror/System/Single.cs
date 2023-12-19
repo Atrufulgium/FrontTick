@@ -23,6 +23,7 @@
     /// ability to access it for free through there.
     /// </para>
     /// </remarks>
+    [MCMirror.Internal.CompilerUsesName]
     public struct Single {
         // Data in mcfunction is comparatively cheap, while calculations are
         // *slow*. So don't do any bit twiddling and instead do the following:

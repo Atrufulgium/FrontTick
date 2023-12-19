@@ -4,8 +4,8 @@ FrontTick gotchas
 - My F5 button builds the thing and runs it with the following command line args:  
   `-c ./IngameTests -m ./MCMirror -w FrontTick`  
   Especially the `FrontTick` part may need to be updated as it needs to be a valid Minecraft world save directory name.
-- FrontTick doesn't use Roslyn too intuitively, it instead builds an abstraction layer above with `XXXWalker` and `XXXRewriter` classes with dependencies that get executed in order.  
-  At this point the order is a mess and I only know it due to the compiler output.
+- FrontTick doesn't use Roslyn too intuitively, it instead builds an abstraction layer above with `XXXWalker` and `XXXRewriter` classes with dependencies that get executed in order. Each phase has access to a `CurrentSemantics` semantic model.  
+  At this point the phase order is a mess and I only know it due to the compiler output.
 - In a lot of places you care about types. Unfortunately, importing them from MCMirror directly is not an option. For that reason, the `MCMirrorTypes.cs` file holds *manual* definitions of stuff *manually* annotated `[CompilerUsesName]` which you can then use in `CurrentSemantics.TypesMatch(node, MCMirrorTypes.Whatever)` or something.
 - You (or rather, I) can't build the `MCMirror` directory manually in VS, see [the batch file](./Compiler/mcmirror_to_dll.bat).
 - Throughout the entire compilation process, less and less c# features become available to you. Keep note.
@@ -13,6 +13,7 @@ FrontTick gotchas
 - Recursion is **not supported**, but it **doesn't throw errors yet**.
 - `const` is **not a thing yet**, but it **doesn't throw errors**.
 - If your in-game tests return `-2122222222`, it means that nothing was returned at all. This may be a sign of malformed `mcfunction` code, check your launcher logs or manually review the generated pack.
+- End-users may think some classes are available while in reality they are part of `_Unimplemented.cs`.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
 
 Roslyn gotchas
@@ -25,6 +26,8 @@ Roslyn gotchas
   For example, visiting a `BinaryOperationExpression` and returning some `StatementSyntax` throws this.
 - Semantic interpretation is a bit obnoxious. For instance, you cannot get the type belonging to some *statement*, instead you need to get it from its corresponding *expression*. It just doesn't walk to the nearest thing returning something non-null, it expects you to know how it works.
 - Returning `null` is a nice deletion, but make sure it doesn't have any weird side effects. 
+- Compiling primitive types unfortunately need special handling all over the place. Look at `MCMirrorTypes.cs` for the definition and then browse where they're used for a full list.
+- Remember to check `Body` versus `ExpressionBody` for method bodies etc.
 - (There was something annoying with `SyntaxKind`, but I forgot.)
   
 Minecraft gotchas

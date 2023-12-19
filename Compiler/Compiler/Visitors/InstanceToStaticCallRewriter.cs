@@ -25,9 +25,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             var name = access.Name;
             var nameSymbol = (IMethodSymbol)CurrentSemantics.GetSymbolInfo(name).Symbol;
             var typeSymbol = nameSymbol.ContainingType;
+            var typeSymbolName = typeSymbol.ToString();
+
+            // aaaaargh
+            if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Bool))
+                typeSymbolName = MCMirrorTypes.BoolAltName;
+            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Float))
+                typeSymbolName = MCMirrorTypes.FloatAltName;
+            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Int))
+                typeSymbolName = MCMirrorTypes.IntAltName;
+            
             return InvocationExpression(
                 MemberAccessExpression(
-                    typeSymbol.ToString(),
+                    typeSymbolName,
                     staticPrefix + name
                 ),
                 node.ArgumentList.WithPrependedArguments(

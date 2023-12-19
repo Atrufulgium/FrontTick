@@ -22,9 +22,10 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         public override string[] CharacteristicString => new[] { "-CONSTRUCT-", "-CONSTRUCTSTATIC-" };
     }
 
-    /// <summary> Removes any constructor. </summary>
+    /// <summary> Removes any constructor, both their declarations and their calls. </summary>
     public class RemoveConstructorsRewriter : AbstractFullRewriter {
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) => null;
         public override SyntaxNode VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) => null;
+        public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node) => null;
     }
 }

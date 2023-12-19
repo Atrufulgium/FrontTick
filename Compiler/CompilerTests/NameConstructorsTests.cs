@@ -9,6 +9,7 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
         // This is Raw because we can't pull a #RET in the to-be-compared code.
         // Also note that this has some useless "set #RET#val 0" commands. This
         // is *currently* correct because I don't check for reads/writes yet.
+        // Ouch it's inefficient lol
         [TestMethod]
         public void NameConstructorTest1Raw()
             => TestCompilationSucceedsRaw(@"
@@ -26,8 +27,10 @@ internal struct Test {
 ", @"
 # (File (functions) compiled:internal/test.-construct-.mcfunction)
 scoreboard players set #RET#val _ 0
+scoreboard players set #RET#val _ 0
 
 # (File (functions) compiled:internal/test.-construct--int32.mcfunction)
+scoreboard players set #RET#val _ 0
 scoreboard players set #RET#val _ 0
 scoreboard players operation #RET#val _ = #compiled:internal/test.-construct--int32##arg0 _
 
@@ -49,6 +52,7 @@ internal struct Test {
 }
 ", @"
 # (File (functions) compiled:internal/test.-construct-.mcfunction)
+scoreboard players set #RET#val _ 0
 scoreboard players set #RET#val _ 3
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 

@@ -574,10 +574,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                     AddCode($"scoreboard players set {lhs} _ 0");
                 else if (!(op == "=" && lhs == rhs))
                     AddCode($"scoreboard players operation {lhs} _ {op} {rhs} _");
-            } else if (type.IsPrimitive()) {
+            } else if (!CurrentSemantics.TypesMatch(type, MCMirrorTypes.Float) && type.IsPrimitive()) {
+                // (Floats are just seen as any ol' struct.)
                 throw CompilationException.ToDatapackStructsMustEventuallyInt;
             } else {
                 foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {
+                    // .. static fields are also fields but don't need to be copied over
+                    if (m.IsStatic)
+                        continue;
+
                     ITypeSymbol fieldType = m.Type;
                     string name = m.Name;
                     if (rhs == "default")

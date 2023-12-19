@@ -117,7 +117,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 if (depth == 0) {
                     // TODO: not initializing anything is correct with structs. Not with classes.
                     node = node.WithPrependedStatement(
-                        LocalDeclarationStatement(type, varName)
+                        LocalDeclarationStatement(type, varName),
+                        // This next one *should* not be needed as a previous phase already put
+                        // `= default` after all uninitialised data which gets copied into the
+                        // constructors. (`MemberInitToConstructors`'s job, to be precise.)
+                        // However, floats disagree and throw CS0165 even when the very first
+                        // thing I do set the members to default.
+                        // So as a temporary bandaid until I fix *that*, just make constructors
+                        // twice as inefficient. Sigh.
+                        SimpleAssignmentStatement(IdentifierName(varName), LiteralExpression(SyntaxKind.DefaultLiteralExpression))
                     );
                     node = node.WithAppendedStatement(
                         ReturnStatement(
