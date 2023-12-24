@@ -101,6 +101,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     fullyQualified = MCMirrorTypes.IntFullyQualified;
                 else if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Bool))
                     fullyQualified = MCMirrorTypes.BoolFullyQualified;
+                else if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Float))
+                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
                 else
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 
@@ -132,6 +134,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     fullyQualified = MCMirrorTypes.IntFullyQualified;
                 else if (model.TypesMatch(op.Target.Type, MCMirrorTypes.Bool))
                     fullyQualified = MCMirrorTypes.BoolFullyQualified;
+                else if (model.TypesMatch(op.Target.Type, MCMirrorTypes.Float))
+                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
                 else
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 

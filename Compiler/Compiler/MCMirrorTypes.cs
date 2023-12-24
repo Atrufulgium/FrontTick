@@ -44,5 +44,6 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static readonly string Float = "float";
         public static readonly string FloatAltName = "Single";
         public static readonly string FloatFullyQualified = "System.Single";
+        public static readonly string Float_PositiveZero = "System.Single.PositiveZero";
     }
 }

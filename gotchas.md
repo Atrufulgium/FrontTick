@@ -28,6 +28,7 @@ Roslyn gotchas
 - Returning `null` is a nice deletion, but make sure it doesn't have any weird side effects. 
 - Compiling primitive types unfortunately need special handling all over the place. Look at `MCMirrorTypes.cs` for the definition and then browse where they're used for a full list.
 - Remember to check `Body` versus `ExpressionBody` for method bodies etc.
+- `The name 'a.b' does not exist in the current context` Roslyn doesn't automatically resolve namespaces and looks for a class/struct called `a.b` which does not exist.
 - (There was something annoying with `SyntaxKind`, but I forgot.)
   
 Minecraft gotchas

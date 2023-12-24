@@ -36,6 +36,14 @@
         // The todo list:
         // https://learn.microsoft.com/en-us/dotnet/api/system.single?view=net-8.0
 
+        // PROPOSAL: Instead of doing floating point, do fixed points.
+        // The extreme ranges of floating point are probably not needed ingame.
+        // (Still with -∞, -0, +0, +∞, NaN.)
+        // This has the following effect on the performance:
+        // MUCH FASTER: float+float
+        // SOMEWHAT FASTER: float*float, 1/float, (float)int
+        // SLOWER: sqrt(float), log(float), pow(float)
+
         /// <summary>
         /// This int represents a factor of
         /// <code>
@@ -61,34 +69,35 @@
         /// <summary>
         /// Represents +∞. Greater than everything, incomparable to NaN.
         /// </summary>
-        public static float PositiveInfinity = new float(0, int.MaxValue);
+        public static float PositiveInfinity => new float(0, int.MaxValue);
         /// <summary>
         /// Represents -∞. Smaller than everything, incomparable to NaN.
         /// </summary>
-        public static float NegativeInfinity = new float(-1, int.MaxValue);
+        public static float NegativeInfinity => new float(-1, int.MaxValue);
         /// <summary>
         /// Not a number, usually the result of an invalid computation.
         /// Incomparable to everything <i>including NaNs</i>. To check for NaN,
         /// use <see cref="IsNan"/>.
         /// </summary>
-        public static float NaN = new float(1, int.MaxValue);
+        public static float NaN => new float(1, int.MaxValue);
         /// <summary>
         /// The greatest float smaller than <see cref="PositiveInfinity"/>.
         /// </summary>
-        public static float MaxValue = new float(int.MaxValue, int.MaxValue - 1);
+        public static float MaxValue => new float(int.MaxValue, int.MaxValue - 1);
         /// <summary>
         /// The smallest float larger than <see cref="NegativeInfinity"/>.
         /// </summary>
-        public static float MinValue = new float(-int.MaxValue, int.MaxValue - 1);
+        public static float MinValue => new float(-int.MaxValue, int.MaxValue - 1);
         /// <summary>
         /// The smallest float larger than 0.
         /// </summary>
-        public static float Epsilon = new float(1, int.MinValue + 1);
+        public static float Epsilon => new float(1, int.MinValue + 1);
         /// <summary>
         /// The value <c>-0</c>, equal to <c>+0</c>.
         /// </summary>
-        public static float NegativeZero = new float(-1, int.MinValue);
-        static float PositiveZero = new float(0, int.MinValue);
+        public static float NegativeZero => new float(-1, int.MinValue);
+        [MCMirror.Internal.CompilerUsesName]
+        public static float PositiveZero => new float(0, int.MinValue);
 
         /// <summary>
         /// <para>
@@ -398,6 +407,8 @@
             return res;
         }
 
+        public static float operator /(float a, float b) => a * Reciprocal(b);
+
         public static bool operator ==(float a, float b) {
             if (IsNan(a) | IsNan(b))
                 return false;
@@ -420,5 +431,37 @@
             // infinities to infinities by how they're defined.
             mantissa = -(mantissa + 1);
         }
+
+        #region the big 'ol NR party
+        // Note: Currently the exponent and mantissa are completely disjoint.
+        // This disallows fast-inverse-sqrt type tricks, and the best we can do
+        // with the initial estimate is "good exponent, trash mantissa".
+        // Note II: These NRs can be integer NRs on just the mantissa instead
+        // of full float NRs, by multiplicativity. It's a bother though.
+        public static float Reciprocal(float f) {
+            // The exceptional cases.
+            if (IsNan(f))
+                return NaN;
+            if (IsPositiveInfinity(f))
+                return PositiveZero;
+            if (IsNegativeInfinity(f))
+                return NegativeZero;
+            if (f == PositiveZero)
+                return PositiveInfinity;
+            if (f == NegativeZero)
+                return NegativeInfinity;
+
+            float res = new(0, -f.exponent);
+            // No need to NR if f's mantissa is 0 because then we're exact.
+            if (f.mantissa == 0)
+                return res;
+
+            int i = 0;
+            for (; i < 6; i += 1)
+                // x_{n+1} = x_n - x_n(x_n f - 1)
+                res *= (2 - f * res);
+            return res;
+        }
+        #endregion
     }
 }

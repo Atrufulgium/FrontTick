@@ -31,9 +31,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 AddCustomDiagnostic(DiagnosticRules.Unsupported, node.GetLocation(), "initializers", "Low priority.");
 
             var methodSymbol = (IMethodSymbol)CurrentSemantics.GetSymbolInfo(node).Symbol;
+            var typeSymbol = methodSymbol.ContainingType;
+            var typeSymbolName = typeSymbol.ToString();
+
+            // blergh
+            if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Bool))
+                typeSymbolName = MCMirrorTypes.BoolFullyQualified;
+            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Float))
+                typeSymbolName = MCMirrorTypes.FloatFullyQualified;
+            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Int))
+                typeSymbolName = MCMirrorTypes.IntFullyQualified;
+
             // ContainingType instead of ReturnType because constructors are void.
             return InvocationExpression(
-                MemberAccessExpression(methodSymbol.ContainingType, "-CONSTRUCT-"),
+                MemberAccessExpression(typeSymbolName + ".-CONSTRUCT-"),
                 node.ArgumentList
             );
         }

@@ -92,6 +92,8 @@ namespace Atrufulgium.FrontTick.Compiler
         /// </summary>
         private readonly HashSet<MetadataReference> references;
 
+        private string PrettyPrintAllSources => string.Join("\r\n", from r in roots select $"// {r.SyntaxTree.FilePath}:\r\n{r.SyntaxTree.GetRoot().NormalizeWhitespace()}\r\n");
+
         /// <summary>
         /// Create a new compiler instance. This instance gets compilation
         /// phases set to the minimum bare-bones to get a working result. For
