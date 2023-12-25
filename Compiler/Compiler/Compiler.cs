@@ -92,6 +92,11 @@ namespace Atrufulgium.FrontTick.Compiler
         /// </summary>
         private readonly HashSet<MetadataReference> references;
 
+        /// <summary>
+        /// Useful for debugging. Prints all current sources back to back.
+        /// When an error diagonstic is reached, you can browse these for a
+        /// pretty printed experience. (Line/col numbers won't match though.0
+        /// </summary>
         private string PrettyPrintAllSources => string.Join("\r\n", from r in roots select $"// {r.SyntaxTree.FilePath}:\r\n{r.SyntaxTree.GetRoot().NormalizeWhitespace()}\r\n");
 
         /// <summary>
@@ -398,14 +403,21 @@ namespace Atrufulgium.FrontTick.Compiler
             roots.Add(newModel);
         }
 
+        readonly HashSet<string> FilteredWarnings = new() {
+            "CS0660", // Type defines operator == or operator != but does not override Object.Equals(object o)
+            "CS0661", // Type defines operator == or operator != but does not override Object.GetHashCode()
+        };
+
         /// <summary>
+        /// <para>
         /// Sorts and appends all diagnostics in the IEnumerable into the
         /// <see cref="WarningDiagnostics"/> and <see cref="ErrorDiagnostics"/>
         /// properties (discarding non-warning non-error information).
+        /// </para>
         /// </summary>
         void AppendDiagnostics(IEnumerable<Diagnostic> diagnostics) {
             foreach(var diagnostic in diagnostics) {
-                if (diagnostic.Severity == DiagnosticSeverity.Warning)
+                if (diagnostic.Severity == DiagnosticSeverity.Warning && !FilteredWarnings.Contains(diagnostic.Id))
                     warningDiagnostics.Add(diagnostic);
                 else if (diagnostic.Severity == DiagnosticSeverity.Error)
                     errorDiagnostics.Add(diagnostic);

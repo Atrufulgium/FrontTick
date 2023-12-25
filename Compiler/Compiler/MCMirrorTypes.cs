@@ -1,4 +1,6 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Visitors;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -33,17 +35,27 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static readonly string UnreachableCodeException = "MCMirror.Internal.UnreachableCodeException";
         public static readonly string UnreachableCodeException_Exception = "MCMirror.Internal.UnreachableCodeException.Exception";
 
-        // System.xxx
+        // System.xxx:
+        // These are (unfortunately) used all over the place as
+        // (unfortunately) Roslyn handles primitives as a special case just
+        // about everywhere, while to me, they're just any old type.
+        // When adding a primitive, be sure to also update all following
+        // locations. (Ctrl-clicky-click the method name.)
+        /// <see cref="SemanticExtensionMethods.GetFullyQualifiedNameIncludingPrimitives(SemanticModel, ITypeSymbol)"/>
+        /// <see cref="RewritePrimitiveLiteralsRewriter.VisitLiteralExpression(LiteralExpressionSyntax)"/>
+        // Also, only tangentially related, but don't forget to update
+        /// <see cref="Datapack.FullDatapack.skipInternalSpecifiers"/>
+
         public static readonly string Bool = "bool";
-        public static readonly string BoolAltName = "Boolean";
         public static readonly string BoolFullyQualified = "System.Boolean";
         public static readonly string Int = "int";
-        public static readonly string IntAltName = "Int32";
         public static readonly string IntFullyQualified = "System.Int32";
         public static readonly string Int_Equals_PostOperatorsToMethodCalls = "System.Int32." + NameOperatorsCategory.GetMethodName("==");
         public static readonly string Float = "float";
-        public static readonly string FloatAltName = "Single";
         public static readonly string FloatFullyQualified = "System.Single";
         public static readonly string Float_PositiveZero = "System.Single.PositiveZero";
+        public static readonly string UInt = "uint";
+        public static readonly string UIntFullyQualified = "System.UInt32";
+        public static readonly string UInt_Zero = "System.UInt32.Zero";
     }
 }

@@ -29,6 +29,7 @@ Roslyn gotchas
 - Compiling primitive types unfortunately need special handling all over the place. Look at `MCMirrorTypes.cs` for the definition and then browse where they're used for a full list.
 - Remember to check `Body` versus `ExpressionBody` for method bodies etc.
 - `The name 'a.b' does not exist in the current context` Roslyn doesn't automatically resolve namespaces and looks for a class/struct called `a.b` which does not exist.
+- Roslyn is very insistent in seeing `-2147483648` as anything but an int. I get it, but it's really annoying.
 - (There was something annoying with `SyntaxKind`, but I forgot.)
   
 Minecraft gotchas
@@ -41,3 +42,7 @@ Known issues that are too low priority to fix
   - The issue is that `SplitDeclarationsRewriter` returns a block implementing the statements which replaces the single statement. This block should encompass the rest of the scope, but it doesn't.
   - Detecting this is fairly non-trivial, unfortunately, so it won't get a FTxxxx.
   - Normal users barely use goto and also barely use multiple declarations, so this won't happen in serious code.
+- Constructors of the form `MyType(args) => expressionStatement;` throws.
+  - The issue is that currently `ArrowRewriter` thinks "hey this has a type it must return a value". Constructors don't return, however.
+  - Detecting this is trivial but I can't be bothered.
+  - Normal users usually won't have a constructor with just one assignment written that way, so this can definitely wait.

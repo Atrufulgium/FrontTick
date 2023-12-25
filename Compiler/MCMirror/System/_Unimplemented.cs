@@ -33,8 +33,6 @@ namespace System {
     }
 
     public class Random { }
-
-    public struct UInt32 { }
 }
 
 namespace System.Collections {

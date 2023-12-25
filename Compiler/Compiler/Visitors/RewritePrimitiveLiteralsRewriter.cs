@@ -40,6 +40,19 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                     ),
                     default
                 );
+            } else if (CurrentSemantics.TypesMatch(node, MCMirrorTypes.UInt)) {
+                uint val = uint.Parse(node.Token.ValueText);
+                // The stupidest edge case
+                if (!(val == 2147483648 && node.Parent is PrefixUnaryExpressionSyntax u && u.OperatorToken.IsKind(SyntaxKind.MinusToken))) {
+                    int asInt = *(int*)(&val);
+                    return ObjectCreationExpression(
+                        PredefinedType(Token(SyntaxKind.UIntKeyword)),
+                        ArgumentList(
+                            NumericLiteralExpression(asInt)
+                        ),
+                        default
+                    );
+                }
             }
             return base.VisitLiteralExpression(node);
         }

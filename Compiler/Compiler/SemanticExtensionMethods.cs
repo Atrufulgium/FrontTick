@@ -239,5 +239,31 @@ namespace Atrufulgium.FrontTick.Compiler {
                 return symbol.Name;
             return $"{FullyQualifiedName(container)}.{symbol.Name}";
         }
+
+        /// <summary>
+        /// <para>
+        /// Gets the fully qualified name of a type symbol.
+        /// </para>
+        /// <para>
+        /// For primitives, this returns the fully qualified name (e.g. `float`
+        /// gives `System.Single`). This is because Roslyn cannot see any
+        /// <c>primitive.member</c> but can see <c>System.Primitive.member</c>
+        /// for whatever reason.
+        /// </para>
+        /// </summary>
+        public static string GetFullyQualifiedNameIncludingPrimitives(this SemanticModel semantics, ITypeSymbol typeSymbol) {
+            var typeSymbolName = typeSymbol.ToString();
+
+            // blergh
+            if (semantics.TypesMatch(typeSymbol, MCMirrorTypes.Bool))
+                typeSymbolName = MCMirrorTypes.BoolFullyQualified;
+            else if (semantics.TypesMatch(typeSymbol, MCMirrorTypes.Float))
+                typeSymbolName = MCMirrorTypes.FloatFullyQualified;
+            else if (semantics.TypesMatch(typeSymbol, MCMirrorTypes.Int))
+                typeSymbolName = MCMirrorTypes.IntFullyQualified;
+            else if (semantics.TypesMatch(typeSymbol, MCMirrorTypes.UInt))
+                typeSymbolName = MCMirrorTypes.UIntFullyQualified;
+            return typeSymbolName;
+        }
     }
 }

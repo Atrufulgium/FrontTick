@@ -21,7 +21,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             var fromType = CurrentSemantics.GetTypeInfo(node.Expression).Type;
             var (type, name) = CopyCastsToNamedRewriter.GetMethodName(fromType, toType);
             return InvocationExpression(
-                MemberAccessExpression(type, name),
+                MemberAccessExpression(type + "." + name),
                 ArgumentList(
                     (ExpressionSyntax)Visit(node.Expression)    
                 )
@@ -39,7 +39,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             var (type, name) = CopyCastsToNamedRewriter.GetMethodName(fromType, toType);
             return InvocationExpression(
-                MemberAccessExpression(type, name),
+                MemberAccessExpression(type + "." + name),
                 ArgumentList(
                     (ExpressionSyntax)base.VisitIdentifierName(node)
                 )

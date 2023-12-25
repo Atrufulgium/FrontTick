@@ -574,8 +574,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                     AddCode($"scoreboard players set {lhs} _ 0");
                 else if (!(op == "=" && lhs == rhs))
                     AddCode($"scoreboard players operation {lhs} _ {op} {rhs} _");
-            } else if (!CurrentSemantics.TypesMatch(type, MCMirrorTypes.Float) && type.IsPrimitive()) {
-                // (Floats are just seen as any ol' struct.)
+            } else if (type.IsPrimitive() && !CurrentSemantics.GetFullyQualifiedNameIncludingPrimitives(type).StartsWith("System")) {
+                // (If GetFullyQualifiedNameIncludingPrimitives finds it, it ought to be implemented properly
+                //  already, in which case we do reduce to ints.)
                 throw CompilationException.ToDatapackStructsMustEventuallyInt;
             } else {
                 foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {

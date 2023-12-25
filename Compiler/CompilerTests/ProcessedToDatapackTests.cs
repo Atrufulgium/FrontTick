@@ -207,20 +207,6 @@ scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 # Method Attributes:
 #   [MCFunction]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
-
-        [TestMethod]
-        public void AssignmentTestWrong5()
-            => TestCompilationThrows(@"
-using MCMirror;
-public class Test {
-    [MCFunction]
-    public static void TestMethod() {
-        float i;
-        i = 3.5f;
-    }
-}
-", CompilationException.ToDatapackLiteralsIntegerOnly,
-                new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 
         #region method call tests
@@ -845,7 +831,7 @@ internal class Test {
 # (File (functions) compiled:internal/test.testmethod.mcfunction)
 scoreboard players set #RET _ 0
 
-# (File (functions) compiled:internal/test.testmethod-0-goto-label-4.mcfunction)
+# (File (functions) compiled:internal/test.testmethod-0-goto-label-7.mcfunction)
 scoreboard players set #RET _ 0
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 

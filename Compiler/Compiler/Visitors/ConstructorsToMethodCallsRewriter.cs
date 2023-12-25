@@ -32,15 +32,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
             var methodSymbol = (IMethodSymbol)CurrentSemantics.GetSymbolInfo(node).Symbol;
             var typeSymbol = methodSymbol.ContainingType;
-            var typeSymbolName = typeSymbol.ToString();
-
-            // blergh
-            if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Bool))
-                typeSymbolName = MCMirrorTypes.BoolFullyQualified;
-            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Float))
-                typeSymbolName = MCMirrorTypes.FloatFullyQualified;
-            else if (CurrentSemantics.TypesMatch(typeSymbol, MCMirrorTypes.Int))
-                typeSymbolName = MCMirrorTypes.IntFullyQualified;
+            var typeSymbolName = CurrentSemantics.GetFullyQualifiedNameIncludingPrimitives(typeSymbol);
 
             // ContainingType instead of ReturnType because constructors are void.
             return InvocationExpression(

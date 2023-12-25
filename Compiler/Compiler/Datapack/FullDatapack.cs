@@ -73,6 +73,7 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
         public override string ToString()
             => ToString(false, false);
 
+        readonly string[] skipInternalSpecifiers = new[] { "--", "bool.", "int.", "float.", "uint.", "system." };
         /// <summary>
         /// <inheritdoc cref="ToString"/>
         /// </summary>
@@ -92,16 +93,17 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
             StringBuilder result = new();
             foreach (var f in files) {
                 // .. i really need a better mechanism for this
-                if (skipInternal && f.Subpath.Contains("internal/--"))
-                    continue;
-                if (skipInternal && f.Subpath.Contains("internal/bool."))
-                    continue;
-                if (skipInternal && f.Subpath.Contains("internal/int."))
-                    continue;
-                if (skipInternal && f.Subpath.Contains("internal/float."))
-                    continue;
-                if (skipInternal && f.Subpath.Contains("internal/system."))
-                    continue;
+                if (skipInternal) {
+                    bool cont = false;
+                    foreach (var ignore in skipInternalSpecifiers) {
+                        if (f.Subpath.Contains("internal/" + ignore)) {
+                            cont = true;
+                            break;
+                        }
+                    }
+                    if (cont)
+                        continue;
+                }
                 if (skipInternal && f is FunctionTag tag)
                     if (tag.Subpath == "test.json"
                         || (tag.Namespace == "minecraft" && tag.Subpath == "load.json")

@@ -4,6 +4,7 @@ using static MCMirror.Internal.RawMCFunction;
 namespace System {
     public struct Int32 {
 
+        // TODO: Readonly "support" (i.e. remove the keyword whenever).
         public static int MaxValue = 2147483647;
         public static int MinValue = -2147483648; // Trivia: if there's no UInt32 definition anywhere, this throws a CS0518. The same does *not* hold for -2147483647. WHy.
 

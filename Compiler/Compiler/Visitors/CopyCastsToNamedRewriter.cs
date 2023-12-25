@@ -44,14 +44,14 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
         public override SyntaxNode VisitStructDeclarationRespectingNoCompile(StructDeclarationSyntax node) {
             ops.Clear();
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
+            currentTypeName = CurrentSemantics.GetFullyQualifiedNameIncludingPrimitives((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node));
             node = (StructDeclarationSyntax)base.VisitStructDeclarationRespectingNoCompile(node);
             return AddCasts(node);
         }
 
         public override SyntaxNode VisitClassDeclarationRespectingNoCompile(ClassDeclarationSyntax node) {
             ops.Clear();
-            currentTypeName = ((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node)).ToString();
+            currentTypeName = CurrentSemantics.GetFullyQualifiedNameIncludingPrimitives((INamedTypeSymbol)CurrentSemantics.GetDeclaredSymbol(node));
             node = (ClassDeclarationSyntax)base.VisitClassDeclarationRespectingNoCompile(node);
             return AddCasts(node);
         }

@@ -46,6 +46,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static LiteralExpressionSyntax NumericLiteralExpression(int value)
             => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
 
+        public static LiteralExpressionSyntax NumericLiteralExpression(uint value)
+            => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(value));
+
         public static LiteralExpressionSyntax StringLiteralExpression(string str)
             => SyntaxFactory.LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(str));
 

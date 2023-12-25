@@ -67,15 +67,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 if (!model.TypesMatch(op.LeftOperand.Type, op.RightOperand.Type))
                     throw new System.NotImplementedException("TODO: Cast case");
 
-                string fullyQualified;
-                // haha this also needs something better lol
-                if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Int))
-                    fullyQualified = MCMirrorTypes.IntFullyQualified;
-                else if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Bool))
-                    fullyQualified = MCMirrorTypes.BoolFullyQualified;
-                else if (model.TypesMatch(op.LeftOperand.Type, MCMirrorTypes.Float))
-                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
-                else
+                string fullyQualified = model.GetFullyQualifiedNameIncludingPrimitives(op.LeftOperand.Type);
+                if (!fullyQualified.StartsWith("System")) // no primitive shortcut
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 
                 // Guaranteed primitive.
@@ -96,14 +89,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 return (containingType, methodName);
             } else {
                 // Primitive or nonexistent.
-                string fullyQualified;
-                if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Int))
-                    fullyQualified = MCMirrorTypes.IntFullyQualified;
-                else if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Bool))
-                    fullyQualified = MCMirrorTypes.BoolFullyQualified;
-                else if (model.TypesMatch(op.Operand.Type, MCMirrorTypes.Float))
-                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
-                else
+                string fullyQualified = model.GetFullyQualifiedNameIncludingPrimitives(op.Operand.Type);
+                if (!fullyQualified.StartsWith("System")) // no primitive shortcut
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 
                 // Guaranteed primitive.
@@ -129,14 +116,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 if (!model.TypesMatch(op.Target.Type, op.Value.Type))
                     throw new System.NotImplementedException("TODO: Cast case");
 
-                string fullyQualified;
-                if (model.TypesMatch(op.Target.Type, MCMirrorTypes.Int))
-                    fullyQualified = MCMirrorTypes.IntFullyQualified;
-                else if (model.TypesMatch(op.Target.Type, MCMirrorTypes.Bool))
-                    fullyQualified = MCMirrorTypes.BoolFullyQualified;
-                else if (model.TypesMatch(op.Target.Type, MCMirrorTypes.Float))
-                    fullyQualified = MCMirrorTypes.FloatFullyQualified;
-                else
+                string fullyQualified = model.GetFullyQualifiedNameIncludingPrimitives(op.Target.Type);
+                if (!fullyQualified.StartsWith("System")) // no primitive shortcut
                     throw CompilationException.OperatorsRequireUnderlyingMethod;
 
                 // Guaranteed primitive
