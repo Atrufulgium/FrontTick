@@ -319,7 +319,7 @@ namespace Atrufulgium.FrontTick.Compiler
                         if (d.Severity == DiagnosticSeverity.Error && !allowedErrors.Contains(d.Id))
                             errors.AppendLine(CSharpDiagnosticFormatter.Instance.Format(d));
                 if (errors.Length > 0)
-                    throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{phaseID}/{compilationPhases.Length}):\n{errors}");
+                    throw new CompilationException($"Error(s) after phase {phase.GetType().Name} (#{--phaseID}/{compilationPhases.Length}):\n{errors}");
             }
 
             // Now add the setup file with constants and such

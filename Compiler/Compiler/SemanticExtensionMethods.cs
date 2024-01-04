@@ -114,6 +114,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// </remarks>
         public static bool TypesMatch(this SemanticModel semantics, SyntaxNode node, string typeName) {
             var typeSymbol = semantics.GetTypeInfo(node).Type;
+            typeSymbol ??= (ITypeSymbol)semantics.GetDeclaredSymbol(node);
             return semantics.TypesMatch(typeSymbol, typeName);
         }
 
@@ -125,7 +126,9 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <inheritdoc cref="TypesMatch(SemanticModel, SyntaxNode, string)"/>
         public static bool TypesMatch(this SemanticModel semantics, SyntaxNode node, SyntaxNode other) {
             var typeSymbol = semantics.GetTypeInfo(node).Type;
+            typeSymbol ??= (ITypeSymbol)semantics.GetDeclaredSymbol(node);
             var otherTypeSymbol = semantics.GetTypeInfo(other).Type;
+            otherTypeSymbol ??= (ITypeSymbol)semantics.GetDeclaredSymbol(other);
             return semantics.TypesMatch(typeSymbol, otherTypeSymbol);
         }
 

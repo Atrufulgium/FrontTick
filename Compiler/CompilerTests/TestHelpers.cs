@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Atrufulgium.FrontTick.Compiler.Visitors;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Atrufulgium.FrontTick.Compiler.Tests {
     /// <summary>
@@ -89,9 +90,11 @@ namespace Atrufulgium.FrontTick.Compiler.Tests {
             string failTitle = "There were compilation errors:",
             INameManagerPostProcessor? post = null
         ) {
+            compilationPhases ??= CompilationPhases.BasicCompilationPhases;
+            compilationPhases = compilationPhases.Prepend(new MakeCompilerTestingEasierRewriter());
+
             compiler = new(nameManagerPostProcessor: post);
-            if (compilationPhases != null)
-                compiler.SetCompilationPhases(compilationPhases);
+            compiler.SetCompilationPhases(compilationPhases);
             compiler.Compile(sources.Concat(GetMCMirrorCode()));
             try {
                 Assert.IsTrue(compiler.CompilationSucceeded);

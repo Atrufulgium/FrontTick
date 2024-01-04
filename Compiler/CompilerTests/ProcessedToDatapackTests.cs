@@ -158,9 +158,9 @@ scoreboard players set #RET _ 3
 # (File (functions) compiled:test.testmethod.mcfunction)
 scoreboard players set #compiled:test.testmethod#i _ 3
 function compiled:internal/test.getthree
-scoreboard players operation #compiled:test.testmethod##CALLTEMP0 _ = #RET _
+scoreboard players operation #compiled:test.testmethod##calltemp0 _ = #RET _
 scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg0 _ = #compiled:test.testmethod#i _
-scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg1 _ = #compiled:test.testmethod##CALLTEMP0 _
+scoreboard players operation #compiled:internal/int.operator-sub-int32-int32##arg1 _ = #compiled:test.testmethod##calltemp0 _
 function compiled:internal/int.operator-sub-int32-int32
 scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
@@ -186,21 +186,21 @@ public class Test {
 scoreboard players set #compiled:test.testmethod#i _ 3
 scoreboard players set #compiled:internal/int.operator-add-int32##arg0 _ -3
 function compiled:internal/int.operator-add-int32
-scoreboard players operation #compiled:test.testmethod##CALLTEMP0 _ = #RET _
-scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP0 _
+scoreboard players operation #compiled:test.testmethod##calltemp0 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##calltemp0 _
 function compiled:internal/int.operator-sub-int32
-scoreboard players operation #compiled:test.testmethod##CALLTEMP1 _ = #RET _
-scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP1 _
+scoreboard players operation #compiled:test.testmethod##calltemp1 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##calltemp1 _
 function compiled:internal/int.operator-add-int32
-scoreboard players operation #compiled:test.testmethod##CALLTEMP2 _ = #RET _
-scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP2 _
+scoreboard players operation #compiled:test.testmethod##calltemp2 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-add-int32##arg0 _ = #compiled:test.testmethod##calltemp2 _
 function compiled:internal/int.operator-add-int32
-scoreboard players operation #compiled:test.testmethod##CALLTEMP3 _ = #RET _
-scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##CALLTEMP3 _
+scoreboard players operation #compiled:test.testmethod##calltemp3 _ = #RET _
+scoreboard players operation #compiled:internal/int.operator-sub-int32##arg0 _ = #compiled:test.testmethod##calltemp3 _
 function compiled:internal/int.operator-sub-int32
-scoreboard players operation #compiled:test.testmethod##CALLTEMP4 _ = #RET _
+scoreboard players operation #compiled:test.testmethod##calltemp4 _ = #RET _
 scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg0 _ = #compiled:test.testmethod#i _
-scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg1 _ = #compiled:test.testmethod##CALLTEMP4 _
+scoreboard players operation #compiled:internal/int.operator-add-int32-int32##arg1 _ = #compiled:test.testmethod##calltemp4 _
 function compiled:internal/int.operator-add-int32-int32
 scoreboard players operation #compiled:test.testmethod#i _ = #RET _
 
@@ -339,8 +339,8 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 
 # Method Attributes:
 #   [MCFunction]
@@ -367,8 +367,8 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-eq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-eq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-eq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 
 # Method Attributes:
 #   [MCFunction]
@@ -396,8 +396,8 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run function compiled:test.testmethod-0-if-branch
 
 # Method Attributes:
 #   [MCFunction]
@@ -432,9 +432,9 @@ scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 1
-execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 2
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 1
+execute unless score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#j _ 2
 
 # Method Attributes:
 #   [MCFunction]
@@ -464,9 +464,9 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
-execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-1-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
+execute unless score #compiled:test.testmethod##iftemp0 _ matches 1 run function compiled:test.testmethod-1-if-branch
 
 # Method Attributes:
 #   [MCFunction]
@@ -496,9 +496,9 @@ internal class Test {
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod-int32-int32##arg0 _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ = #RET _
-execute if score #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ matches 1 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
-execute unless score #compiled:internal/test.testmethod-int32-int32##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-int32-int32-1-if-branch
+scoreboard players operation #compiled:internal/test.testmethod-int32-int32##iftemp0 _ = #RET _
+execute if score #compiled:internal/test.testmethod-int32-int32##iftemp0 _ matches 1 run scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 1
+execute unless score #compiled:internal/test.testmethod-int32-int32##iftemp0 _ matches 1 run function compiled:internal/test.testmethod-int32-int32-1-if-branch
 
 # (File (functions) compiled:internal/test.testmethod-int32-int32-1-if-branch.mcfunction)
 scoreboard players set #compiled:internal/test.testmethod-int32-int32##arg1 _ 2
@@ -548,9 +548,9 @@ scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
-execute unless score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-3-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run function compiled:test.testmethod-0-if-branch
+execute unless score #compiled:test.testmethod##iftemp0 _ matches 1 run function compiled:test.testmethod-3-if-branch
 
 # Method Attributes:
 #   [MCFunction]
@@ -560,9 +560,9 @@ scoreboard players set #compiled:test.testmethod#j _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP1 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-1-if-branch
-execute unless score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-2-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp1 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp1 _ matches 1 run function compiled:test.testmethod-1-if-branch
+execute unless score #compiled:test.testmethod##iftemp1 _ matches 1 run function compiled:test.testmethod-2-if-branch
 scoreboard players set #compiled:test.testmethod#j _ 0
 
 # (File (functions) compiled:test.testmethod-1-if-branch.mcfunction)
@@ -578,9 +578,9 @@ scoreboard players set #compiled:test.testmethod#j _ 1
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP2 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP2 _ matches 1 run function compiled:test.testmethod-4-if-branch
-execute unless score #compiled:test.testmethod##IFTEMP2 _ matches 1 run function compiled:test.testmethod-5-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp2 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp2 _ matches 1 run function compiled:test.testmethod-4-if-branch
+execute unless score #compiled:test.testmethod##iftemp2 _ matches 1 run function compiled:test.testmethod-5-if-branch
 scoreboard players set #compiled:test.testmethod#j _ 1
 
 # (File (functions) compiled:test.testmethod-4-if-branch.mcfunction)
@@ -621,8 +621,8 @@ scoreboard players set #compiled:test.testmethod#k _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function compiled:test.testmethod-0-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run function compiled:test.testmethod-0-if-branch
 
 # Method Attributes:
 #   [MCFunction]
@@ -631,15 +631,15 @@ execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run function com
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#j _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP1 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP1 _ matches 1 run function compiled:test.testmethod-1-if-branch
+scoreboard players operation #compiled:test.testmethod##iftemp1 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp1 _ matches 1 run function compiled:test.testmethod-1-if-branch
 
 # (File (functions) compiled:test.testmethod-1-if-branch.mcfunction)
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#k _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP2 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP2 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
+scoreboard players operation #compiled:test.testmethod##iftemp2 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp2 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 1
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
         // Raw to test a non-1 variable???'s !=
@@ -663,8 +663,8 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 10
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
 
 # Method Attributes:
 #   [MCFunction]
@@ -691,8 +691,8 @@ scoreboard players set #compiled:test.testmethod#i _ 0
 scoreboard players operation #compiled:internal/int.operator-eq-int32-int32##arg0 _ = #compiled:test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-eq-int32-int32##arg1 _ 10
 function compiled:internal/int.operator-eq-int32-int32
-scoreboard players operation #compiled:test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:test.testmethod##IFTEMP0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
+scoreboard players operation #compiled:test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:test.testmethod##iftemp0 _ matches 1 run scoreboard players set #compiled:test.testmethod#i _ 10
 
 # Method Attributes:
 #   [MCFunction]
@@ -784,8 +784,8 @@ scoreboard players set #compiled:internal/test.testmethod#j _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod#i _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:internal/test.testmethod##IFTEMP0 _ = #RET _
-execute if score #compiled:internal/test.testmethod##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-0-if-branch
+scoreboard players operation #compiled:internal/test.testmethod##iftemp0 _ = #RET _
+execute if score #compiled:internal/test.testmethod##iftemp0 _ matches 1 run function compiled:internal/test.testmethod-0-if-branch
 execute if score #GOTOFLAG _ matches 0 run function compiled:internal/test.testmethod-4-if-branch
 execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 
@@ -793,9 +793,9 @@ execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 scoreboard players operation #compiled:internal/int.operator-neq-int32-int32##arg0 _ = #compiled:internal/test.testmethod#j _
 scoreboard players set #compiled:internal/int.operator-neq-int32-int32##arg1 _ 0
 function compiled:internal/int.operator-neq-int32-int32
-scoreboard players operation #compiled:internal/test.testmethod##IFTEMP1 _ = #RET _
-execute if score #compiled:internal/test.testmethod##IFTEMP1 _ matches 1 run function compiled:internal/test.testmethod-1-if-branch
-execute if score #GOTOFLAG _ matches 0 unless score #compiled:internal/test.testmethod##IFTEMP1 _ matches 1 run function compiled:internal/test.testmethod-3-if-branch
+scoreboard players operation #compiled:internal/test.testmethod##iftemp1 _ = #RET _
+execute if score #compiled:internal/test.testmethod##iftemp1 _ matches 1 run function compiled:internal/test.testmethod-1-if-branch
+execute if score #GOTOFLAG _ matches 0 unless score #compiled:internal/test.testmethod##iftemp1 _ matches 1 run function compiled:internal/test.testmethod-3-if-branch
 
 # (File (functions) compiled:internal/test.testmethod-1-if-branch.mcfunction)
 scoreboard players set #RET _ 1
@@ -806,7 +806,7 @@ scoreboard players set #RET _ 2
 scoreboard players set #GOTOFLAG _ 1
 
 # (File (functions) compiled:internal/test.testmethod-4-if-branch.mcfunction)
-execute unless score #compiled:internal/test.testmethod##IFTEMP0 _ matches 1 run function compiled:internal/test.testmethod-5-if-branch
+execute unless score #compiled:internal/test.testmethod##iftemp0 _ matches 1 run function compiled:internal/test.testmethod-5-if-branch
 execute if score #GOTOFLAG _ matches 1 run scoreboard players set #GOTOFLAG _ 0
 
 # (File (functions) compiled:internal/test.testmethod-5-if-branch.mcfunction)
@@ -954,6 +954,66 @@ function compiled:internal/test.testmethod2-int32
 
 # (File (functions) compiled:internal/test.testmethod2-int32.mcfunction)
 scoreboard players set #RET _ 3
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        // There was a bug where I just didn't consider MemberAccessExpressions
+        // could poke outside the current class. Whoops. The following tests
+        // test the fix for that.
+        [TestMethod]
+        public void TestNames5Raw()
+            => TestCompilationSucceedsRaw(@"
+namespace A1 {
+    public static class A2 {
+        public static s A3;
+    }
+    public struct s {
+        public int A4;
+    }
+}
+namespace B1 {
+    public static class B2 {
+        public static void B3() {
+            A1.A2.A3.A4 = 23;
+        }
+    }
+}
+", @"
+# (File (functions) compiled:internal/a1.a2.-constructstatic-.mcfunction)
+scoreboard players set #compiled:a1.a2#A3#A4 _ 0
+
+# Method Attributes:
+#   [MCMirror.TrueLoad]
+
+# (File (functions) compiled:internal/a1.s.-construct-.mcfunction)
+scoreboard players set #RET#A4 _ 0
+scoreboard players set #RET#A4 _ 0
+
+# (File (functions) compiled:internal/b1.b2.b3.mcfunction)
+scoreboard players set #compiled:a1.a2#A3#A4 _ 23
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
+        // This one is semantically busted but classes are explicitely not
+        // supported yet so it lacking a constructor is no biggie here.
+        [TestMethod]
+        public void TestNames6Raw()
+            => TestCompilationSucceedsRaw(@"
+namespace A1 {
+    public static class A2 {
+        public class A3 {
+            public static int A4;
+        }
+    }
+}
+namespace B1 {
+    public static class B2 {
+        public static void B3() {
+            A1.A2.A3.A4 = 23;
+        }
+    }
+}
+", @"
+# (File (functions) compiled:internal/b1.b2.b3.mcfunction)
+scoreboard players set #compiled:a1.a2.a3#A4 _ 23
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
         #endregion
 

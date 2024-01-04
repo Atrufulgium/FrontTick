@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using Atrufulgium.FrontTick.Compiler.Datapack;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
@@ -7,7 +8,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Atrufulgium.FrontTick.Compiler {
     public class NameManager {
@@ -163,6 +163,12 @@ namespace Atrufulgium.FrontTick.Compiler {
             return name;
         }
 
+        public bool MethodNameIsRegistered(SemanticModel semantics, SyntaxNode method) {
+            var methodSymbol = (IMethodSymbol)semantics.GetSymbolInfo(method).Symbol;
+            methodSymbol ??= (IMethodSymbol)semantics.GetDeclaredSymbol(method);
+            return methodNames.ContainsKey(methodSymbol);
+        }
+
         /// <summary>
         /// <inheritdoc cref="GetMethodName(SemanticModel, SyntaxNode, ICustomDiagnosable, string)"/>
         /// <para>
@@ -184,42 +190,18 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <summary>
         /// <para>
         /// Transform a c# variable to a .mcfunction variable name of the form
-        /// <tt>#fully_qualified_context#name</tt>, where the context can be
-        /// for instance the fully qualified class name if it is a field, or
-        /// a fully qualified method name if it is a local.
+        /// <tt>#datapack-namespace:fully_qualified_context#name</tt>, where
+        /// the context can be for instance the fully qualified class name if
+        /// it is a field, or a fully qualified method name if it is a local.
         /// </para>
         /// <para>
         /// One exception to this are the method's arguments, which lose their
         /// name and instead become <tt>#fully_qualified_method##arg0</tt>, etc.
         /// </para>
         /// <para>
-        /// Another exception to this are variables <tt>#ALLCAPS</tt>, which
-        /// instead return <tt>#ALLCAPS</tt> without full qualification.
+        /// Another exception to this are local variables <tt>#ALLCAPS</tt>,
+        /// which instead return <tt>#ALLCAPS</tt> without full qualification.
         /// </para>
-        /// </summary>
-        /// <remarks>
-        /// For this method to work, the containing context method must have
-        /// been registered already.
-        /// </remarks>
-        private string GetVariableName(
-            SemanticModel semantics,
-            IdentifierNameSyntax identifier,
-            ICustomDiagnosable diagnosticsOutput
-        ) {
-            string varName = GetVariableNameIgnoringInternals(semantics, identifier, diagnosticsOutput);
-            var match = afterFinalPoundAllcapsRegex.Match(varName);
-            if (match.Success) {
-                // So apparantly c#'s regex API is hilariously weird -- a regex
-                // `some (group)` that captures "some group" has a Groups
-                // property ["some group", "group"], even though I only have
-                // one capturing group. Ew.
-                return match.Groups[1].Value;
-            }
-            return varName;
-        }
-
-        /// <summary>
-        /// <inheritdoc cref="GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>
         /// <para>
         /// Member accesses are transformed in the most direct way possible: a
         /// <tt>lorem.ipsum</tt> gets turned into <tt>#fully_qualified_method#lorem#ipsum</tt>.
@@ -227,110 +209,158 @@ namespace Atrufulgium.FrontTick.Compiler {
         /// <tt>#RET#x</tt> may occur.
         /// </para>
         /// </summary>
-        private string GetVariableName(
-            SemanticModel semantics,
-            MemberAccessExpressionSyntax access,
-            ICustomDiagnosable diagnosticsOutput
-        ) {
-            // Note that a.b.c is stored in the syntax tree as (a.b).c!
-            // Also note that the two types are "simple" and "pointer".
-            // lol pointers imagine that.
-            List<string> accesses = new();
-            while (access.Expression is MemberAccessExpressionSyntax a) {
-                if (access.Kind() == SyntaxKind.PointerMemberAccessExpression)
-                    diagnosticsOutput.AddCustomDiagnostic(DiagnosticRules.NoUnsafe, access);
-
-                accesses.Add(access.Name.Identifier.Text);
-                access = a;
-            }
-            accesses.Add(access.Name.Identifier.Text);
-
-            string prefix;
-            if (access.Expression is IdentifierNameSyntax identifier) {
-                prefix = GetVariableName(semantics, identifier, diagnosticsOutput);
-            } else if (access.Expression is PredefinedTypeSyntax predef) {
-                prefix = $"#{manespace}:{predef.Keyword}";
-            } else {
-                throw new ArgumentException("Malformed namemanager variable name access in the syntax tree, not an identifier!");
-            }
-
-            // No datapack-normalisation necessary as ingame scoreboards handle like everything.
-            string suffix = string.Join('#', ((IEnumerable<string>)accesses).Reverse().ToArray());
-            return $"{prefix}#{suffix}";
-        }
-
-        /// <inheritdoc cref="GetVariableName(SemanticModel, MemberAccessExpressionSyntax, ICustomDiagnosable)"/>
+        /// <remarks>
+        /// For this method to work, the containing context method, if any,
+        /// must have been registered already.
+        /// </remarks>
         public string GetVariableName(
             SemanticModel semantics,
-            ExpressionSyntax variable,
+            ExpressionSyntax node,
             ICustomDiagnosable diagnosticsOutput
         ) {
-            if (variable is IdentifierNameSyntax id)
-                return postProcessor.PostProcessVariable(GetVariableName(semantics, id, diagnosticsOutput));
-            else if (variable is MemberAccessExpressionSyntax member)
-                return postProcessor.PostProcessVariable(GetVariableName(semantics, member, diagnosticsOutput));
-            throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
-        }
+            bool isMethodLocal = false;
 
-        public string GetCombinedName(string prefix, string suffix)
-            => postProcessor.PostProcessVariable($"{prefix}#{suffix}");
+            if (!(node is IdentifierNameSyntax or MemberAccessExpressionSyntax))
+                throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
+            // Format: datapack-namespace:Fully.Qualified.TypeOrMethod#var#sub#part
+            // For consistency with method handling, the prefix component parts
+            // need to be mangled by NormalizeFunctionName.
 
-        /// <summary>
-        /// This regex matches all strings ending in <tt>##ALLCAPS</tt>, and
-        /// captures <tt>#ALLCAPS</tt> (without the first #).
-        /// In particular, this matches:
-        /// <code>
-        ///   lorem#ipsum##ALLCAPS
-        ///   ##EMPTYQUALIFIER       (this will never happen)
-        /// </code>
-        /// but not
-        /// <code>
-        ///   lorem#ipsum##nocaps
-        ///   lorem#ipsum##
-        ///   lorem#ipsum#ALLCAPS
-        ///   lorem#ipsum##finalCAPS
-        ///   #NOQUALIFIER
-        /// </code>
-        /// </summary>
-        static readonly Regex afterFinalPoundAllcapsRegex
-            = new(@"#(#[A-Z]+)$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+            // Store front to back fine to coarse.
+            LinkedList<ISymbol> symbols = new();
+            ExpressionSyntax currentPart = node;
+            // Note that a.b.c.d is stored in the syntax tree as ((a.b).c).d,
+            // so we're working from fine-grained fields/locals/etc up to
+            // coarse classes/namespaces/etc.
+            while (true) {
+                var symbol = semantics.GetSymbolInfo(currentPart).Symbol;
+                symbols.AddLast(symbol);
+                if (symbol is ILocalSymbol)
+                    isMethodLocal = true;
 
-        /// <summary>
-        /// Does the same as
-        /// <see cref="GetVariableName(SemanticModel, IdentifierNameSyntax, ICustomDiagnosable)"/>
-        /// except for the <tt>#ALLCAPS</tt> variables part.
-        /// </summary>
-        private string GetVariableNameIgnoringInternals(
-            SemanticModel semantics,
-            IdentifierNameSyntax identifier,
-            ICustomDiagnosable diagnosticsOutput
-        ) {
-            var symbolInfo = semantics.GetSymbolInfo(identifier).Symbol;
-            // This part is a bit ugly, but everything is just different enough
-            // to require a bunch of annoying branches. The copypasta of those
-            // two two lines is nicer than going through the effort to get it
-            // outside.
-            SyntaxNode containingMethod = identifier;
-            while (containingMethod != null) {
-                containingMethod = containingMethod.Parent;
-                if (containingMethod is MethodDeclarationSyntax)
+                if (currentPart is MemberAccessExpressionSyntax mae) {
+                    currentPart = mae.Expression;
+                } else {
                     break;
+                }
             }
-            if (symbolInfo is IFieldSymbol fieldSymbol) {
-                string context = NormalizeFunctionName(fieldSymbol.ContainingType.ToString());
-                // *Want* to manually mirror the way MCFunctions look for some
-                // consistency. Note that the context is always datapack-valid,
-                // but the name after that can be anything.
-                return $"#{manespace}:{context}#{fieldSymbol.Name}";
-            } else if (symbolInfo is ILocalSymbol localSymbol) {
-                MCFunctionName context = GetMethodName(semantics, containingMethod, diagnosticsOutput);
-                return $"#{context}#{localSymbol.Name}";
-            } else if (symbolInfo is IParameterSymbol paramSymbol) {
-                MCFunctionName context = GetMethodName(semantics, containingMethod, diagnosticsOutput);
-                return GetArgumentName(context, paramSymbol.Ordinal);
-            } else {
-                throw CompilationException.ToDatapackVariablesFieldLocalOrParams;
+
+            /* Now we may have ended the chain too early. Expand it.
+               (E.g. this was called on a `Class.member` instead of
+               `Namespace.Class.member`, or `functionLocal.part` instead of
+               `NameSpace.Class.Method.functionLocal.part`.)
+               Symbols going into the prefix:
+               - ITypeSymbol
+                 (This includes IArrayTypeSymbol, ITypeParameterSymbol, which
+                  will be supported later.)
+                 (This includes IDynamicTypeSymbol, IErrorTypeSymbol,
+                  IFunctionPointerTypeSymbol, IPointerTypeSymbol, which will
+                  not be supported and should've thrown by now.)
+               - INamespaceSymbol
+               - IMethodSymbol (note: not actually in user written qualifications)
+               which are conveniently enclosed in `INamespaceOrTypeSymbol`.
+               Symbols going into the suffix:
+               - IFieldSymbol
+               - ILocalSymbol
+               - IParameterSymbol (which have custom names)
+               Other symbols are ignored. These are:
+               - Due to irrelevancy: IDiscardSymbol, ILabelSymbol, IPreprocessingSymbol, IRangeVariableSymbol
+               - Due to being rewritten: IPropertySymbol, IEventSymbol in the future
+               - By choise: IAssemblySymbol (→ISourceAssemblySymbol), IModuleSymbol
+               - IAliasSymbol (for using aliases, relevant but unsupported)
+            */
+            while (true) {
+                var lastSymbol = symbols.Last.Value;
+                // Find the first supported containing symbol
+                var parentSymbol = lastSymbol;
+                while (true) {
+                    parentSymbol = parentSymbol.ContainingSymbol;
+                    if (parentSymbol == null)
+                        break;
+                    // Note handle the global namespace symbol separately.
+                    if (parentSymbol is ITypeSymbol
+                        or IMethodSymbol
+                        or IFieldSymbol or ILocalSymbol or IParameterSymbol)
+                        break;
+                    if (parentSymbol is INamespaceSymbol ns && !ns.IsGlobalNamespace)
+                        break;
+                }
+                if (parentSymbol == null)
+                    break;
+                symbols.AddLast(parentSymbol);
             }
+
+            // "symbols" now contains the full qualification.
+            // The first is the most fine-grained. The last is the most coarse
+            // grained (and probably the global namespace).
+            // First, the local part. These are delimited by "#".
+            string suffix = "";
+            while (!(symbols.First.Value is INamespaceOrTypeSymbol or IMethodSymbol)) {
+                var symbol = symbols.PopFirst();
+                string add;
+                if (symbol is IParameterSymbol param) {
+                    add = $"#arg{param.Ordinal}";
+                } else if (symbol is IFieldSymbol or ILocalSymbol) {
+                    add = symbol.Name;
+                } else {
+                    throw new InvalidOperationException("Aught-to-be-impossible branch.");
+                }
+                if (suffix == "")
+                    suffix = add;
+                else
+                    suffix = add + "#" + suffix;
+            }
+
+            // Handle the exception of "#ALLCAPS" locals here.
+            if (isMethodLocal) {
+                var parts = suffix.Split('#');
+                if (parts.Length >= 2 && parts[0] == "" && parts[1] == parts[1].ToUpperInvariant())
+                    return postProcessor.PostProcessVariable(suffix);
+            }
+
+            // Now we're at the broad part. These are delimited by ".".
+            string prefix = "";
+            while (true) {
+                var symbol = symbols.PopFirst();
+                string add;
+                bool didMethodSymbol = false;
+                if (symbol is INamespaceOrTypeSymbol) {
+                    // Note: Primitives' names in method registration etc are
+                    // the shorthands. As such, using `symbol.Name` here is
+                    // fine.
+                    add = symbol.Name;
+                    add = NormalizeFunctionName(add);
+                } else if (symbol is IMethodSymbol method) {
+                    // Methods have special handling!
+                    // (Also they don't need normalization as method
+                    //  registration does that already.)
+                    didMethodSymbol = true;
+                    add = GetMethodName(semantics, method, diagnosticsOutput);
+                } else {
+                    throw new InvalidOperationException("Aught-to-be-impossible branch.");
+                }
+                if (prefix == "")
+                    prefix = add;
+                else
+                    prefix = add + "." + prefix;
+
+                // Grabbing the namespace:
+                // - If we were a method symbol we are done because GetMethodName
+                //   does all the work for us.
+                // - If we are the final symbol, we need to grab the namespace
+                //   manually.
+                // Otherwise, there's still stuff to do and don't grab it.
+                if (didMethodSymbol) {
+                    prefix = $"#{prefix}";
+                    break;
+                }
+                if (symbols.Count == 0) {
+                    prefix = $"#{manespace}:{prefix}";
+                    break;
+                }
+            }
+            
+            return postProcessor.PostProcessVariable($"{prefix}#{suffix}");
         }
 
         /// <summary>
@@ -347,6 +377,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             return postProcessor.PostProcessVariable($"#CONST#{value}");
         }
 
+        // TODO: Also handle this as just VariableName.
         public string GetArgumentName(MCFunctionName mcfunctionname, int index) {
             return postProcessor.PostProcessVariable($"#{mcfunctionname}##arg{index}");
         }

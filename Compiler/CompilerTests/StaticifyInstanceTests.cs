@@ -23,10 +23,10 @@ internal struct Test {
     int val;
 
     static void TestMethod(Test t) {
-        StaticInstanceMethod(ref t);
+        STATICーInstanceMethod(ref t);
     }
 
-    static void StaticInstanceMethod(ref Test t) {}
+    static void STATICーInstanceMethod(ref Test t) {}
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -44,7 +44,7 @@ internal struct Test {
 internal struct Test {
     int val;
 
-    static int StaticInstanceMethod(ref Test t) {
+    static int STATICーInstanceMethod(ref Test t) {
         return t.val;
     }
 }
@@ -64,8 +64,8 @@ internal struct Test {
 internal struct Test {
     int val;
 
-    static int StaticInstanceMethod(ref Test t) {
-        return Test.StaticInstanceMethod(ref t);
+    static int STATICーInstanceMethod(ref Test t) {
+        return Test.STATICーInstanceMethod(ref t);
     }
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
@@ -82,8 +82,8 @@ internal struct Test {
 internal struct Test {
     int val;
     
-    static int StaticGetInstanceProperty(ref Test t) => t.val;
-    static void StaticSetInstanceProperty(ref Test t, int value) => t.val = value;
+    static int STATICーGetーInstanceProperty(ref Test t) => t.val;
+    static void STATICーSetーInstanceProperty(ref Test t, int value) => t.val = value;
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 

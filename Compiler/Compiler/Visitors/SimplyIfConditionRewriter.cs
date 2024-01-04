@@ -35,7 +35,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     /// </remarks>
     public class SimplifyIfConditionRewriter : AbstractFullRewriter<LoopsToGotoCategory> {
         int tempCounter = 0;
-        string GetTempName() => $"#IFTEMP{tempCounter++}";
+        string GetTempName() => $"#iftemp{tempCounter++}";
 
         public override SyntaxNode VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             if (node.IsExtern())

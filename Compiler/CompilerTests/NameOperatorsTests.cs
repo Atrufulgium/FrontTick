@@ -26,13 +26,13 @@ public struct Struct {
 public class Test {
     public static void TestMethod(Struct a, Struct b) {
         Struct c;
-        c = Struct.OPERATORADD(a, b);
+        c = Struct.OPERATORーADD(a, b);
     }
 }
 
 public struct Struct {
     public int val;
-    public static Struct OPERATORADD(Struct a, Struct b) {
+    public static Struct OPERATORーADD(Struct a, Struct b) {
         a.val += b.val;
         return a;
     }

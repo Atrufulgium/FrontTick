@@ -120,7 +120,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             return ((BlockSyntax)base.VisitBlock(node)).Flattened();
         }
 
-        string GetTempName() => $"#CALLTEMP{tempCounter++}";
+        string GetTempName() => $"#calltemp{tempCounter++}";
         
         // From here on out the list of possible call-containers.
         // First: the easy ones

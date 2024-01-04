@@ -20,12 +20,12 @@ public class Test {
 ", @"
 public class Test {
     static int val;
-    public static int GETVal() { return val; }
-    public static void SETVal(int value) { val = value; }
+    public static int GETーVal() { return val; }
+    public static void SETーVal(int value) { val = value; }
 
     public static void TestMethod(int i) {
-        i = GETVal();
-        SETVal(4);
+        i = GETーVal();
+        SETーVal(4);
     }
 }
 ");
@@ -44,11 +44,11 @@ public class Test {
 ", @"
 public class Test {
     static int val;
-    public static int GETVal() { return val; }
-    public static void SETVal(int value) { val = value; }
+    public static int GETーVal() { return val; }
+    public static void SETーVal(int value) { val = value; }
 
     public static void TestMethod(int i) {
-        SETVal(GETVal() + i);
+        SETーVal(GETーVal() + i);
     }
 }
 ");
@@ -69,14 +69,14 @@ public class Other {
 ", @"
 public class Test {
     public static void TestMethod(int i) {
-        i = Other.GETVal();
-        Other.SETVal(4);
+        i = Other.GETーVal();
+        Other.SETーVal(4);
     }
 }
 public class Other {
     static int val;
-    public static int GETVal() { return val; }
-    public static void SETVal(int value) { val = value; }
+    public static int GETーVal() { return val; }
+    public static void SETーVal(int value) { val = value; }
 }
 ");
 
@@ -93,8 +93,8 @@ public class Test {
 }
 ", @"
 public class Test {
-    static int AUTOPROPERTYVal;
-    public static int Val { get => AUTOPROPERTYVal; set => AUTOPROPERTYVal = value; }
+    static int ⵌAUTOPROPERTYⵌVal;
+    public static int Val { get => ⵌAUTOPROPERTYⵌVal; set => ⵌAUTOPROPERTYⵌVal = value; }
 
     public static void TestMethod(int i) {
         i = Val;
@@ -118,8 +118,8 @@ public struct Test {
 }
 ", @"
 public struct Test {
-    int AUTOPROPERTYVal;
-    public int Val { get => AUTOPROPERTYVal; set => AUTOPROPERTYVal = value; }
+    int ⵌAUTOPROPERTYⵌVal;
+    public int Val { get => ⵌAUTOPROPERTYⵌVal; set => ⵌAUTOPROPERTYⵌVal = value; }
 
     public void TestMethod(int i) {
         i = Val;

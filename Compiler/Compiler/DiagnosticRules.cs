@@ -32,11 +32,14 @@ namespace Atrufulgium.FrontTick.Compiler {
                 messageFormat: "Method '{0}' has an MCFunction name which uses a non-[a-z0-9/._-] character or is empty. Please only use those characters in the MCFunction attribute, or only [a-zA-Z0-9_] in the c# method names."
             );
 
+        // If you get here during testing but not during regular compilation,
+        // you may have been bitten by the
+        /// <see cref="Visitors.MakeCompilerTestingEasierRewriter"/>
         public static DiagnosticDescriptor MCFunctionMethodNameClash
             => Error(
                 id: "FT0003",
                 title: "Two different methods ended up with the same MCFunction name.",
-                messageFormat: "Two different methods\n  '{0}'; and\n  '{1}'\ncompiled to the same MCFunction name:\n  '{2}'.\nNote that uppercase gets converted to lower case, and a lot of characters gt stripped, so try are more significant difference.."
+                messageFormat: "Two different methods\n  '{0}'; and\n  '{1}'\ncompiled to the same MCFunction name:\n  '{2}'.\nNote that uppercase gets converted to lower case, and a lot of characters get stripped, so try a more significant difference."
             );
 
         public static DiagnosticDescriptor MCFunctionMethodNameNotRegistered

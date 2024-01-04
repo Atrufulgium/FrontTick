@@ -17,6 +17,15 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         string trueLoadValue = null;
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node) {
+            // In exceptional cases the name may not exist.
+            // (E.g. the rewrites of
+            /// <see cref="MakeCompilerTestingEasierRewriter"/>
+            //  break the "everything is registered" invariant.)
+            // However, in those cases it will definitely not be a built-in
+            // like this, so it's fine to ignore those cases.
+            if (!nameManager.MethodNameIsRegistered(CurrentSemantics, node))
+                return base.VisitInvocationExpression(node);
+
             MCFunctionName methodName = nameManager.GetMethodName(CurrentSemantics, node, this);
             ExpressionSyntax arg = null;
             if (node.ArgumentList?.Arguments.Count > 0)

@@ -587,9 +587,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                     ITypeSymbol fieldType = m.Type;
                     string name = m.Name;
                     if (rhs == "default")
-                        AddAssignment(nameManager.GetCombinedName(lhs, name), rhs, op, fieldType);
+                        AddAssignment($"{lhs}#{name}", rhs, op, fieldType);
                     else if (!(op == "=" && lhs == rhs))
-                        AddAssignment(nameManager.GetCombinedName(lhs, name), nameManager.GetCombinedName(rhs, name), op, fieldType);
+                        AddAssignment($"{lhs}#{name}", $"{rhs}#{name}", op, fieldType);
                 }
             }
         }

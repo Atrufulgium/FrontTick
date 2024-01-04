@@ -27,11 +27,11 @@ public struct Struct {
 public class Test {
     public static void TestMethod(Struct a, Struct b) {
         Struct c;
-        Struct CALLTEMP0;
-        Struct CALLTEMP1;
-        CALLTEMP0 = a + b;
-        CALLTEMP1 = CALLTEMP0 + b;
-        c = CALLTEMP1 + a;
+        Struct ⵌcalltemp0;
+        Struct ⵌcalltemp1;
+        ⵌcalltemp0 = a + b;
+        ⵌcalltemp1 = ⵌcalltemp0 + b;
+        c = ⵌcalltemp1 + a;
     }
 }
 
@@ -57,11 +57,11 @@ public class Test {
 ", @"
 public class Test {
     public static int TestMethod(int i) {
-        int CALLTEMP0;
-        int CALLTEMP1;
-        CALLTEMP0 = Identity(i);
-        CALLTEMP1 = Identity(CALLTEMP0);
-        return Identity(CALLTEMP1);
+        int ⵌcalltemp0;
+        int ⵌcalltemp1;
+        ⵌcalltemp0 = Identity(i);
+        ⵌcalltemp1 = Identity(ⵌcalltemp0);
+        return Identity(ⵌcalltemp1);
     }
 
     public static int Identity(int i) { return i; }
@@ -84,11 +84,11 @@ public class Test {
 public class Test {
     public static void TestMethod(int i) {
         label:
-            int CALLTEMP0;
-            int CALLTEMP1;
-            CALLTEMP0 = Identity(i);
-            CALLTEMP1 = Identity(CALLTEMP0);
-            Identity(CALLTEMP1);
+            int ⵌcalltemp0;
+            int ⵌcalltemp1;
+            ⵌcalltemp0 = Identity(i);
+            ⵌcalltemp1 = Identity(ⵌcalltemp0);
+            Identity(ⵌcalltemp1);
             if (i == 3)
                 goto label;
     }
@@ -113,12 +113,12 @@ public class Test {
 ", @"
 public class Test {
     public static void TestMethod(int i) {
-        int temp, temp2, temp3;
+        int ⵌcalltemp0, ⵌcalltemp1, ⵌcalltemp2;
         while(true) {
-            temp = Identity(i);
-            temp2 = Identity(temp);
-            temp3 = Identity(temp2);
-            if (temp3 != 0)
+            ⵌcalltemp0 = Identity(i);
+            ⵌcalltemp1 = Identity(ⵌcalltemp0);
+            ⵌcalltemp2 = Identity(ⵌcalltemp1);
+            if (ⵌcalltemp2 != 0)
                 break;
             i = i;
         }

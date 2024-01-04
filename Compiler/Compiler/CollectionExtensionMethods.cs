@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Atrufulgium.FrontTick.Compiler {
@@ -37,6 +38,24 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static IEnumerable<T> EnumerateCopy<T>(this IEnumerable<T> collection) {
             var copy = collection.ToList();
             return copy;
+        }
+
+        public static T PopFirst<T>(this LinkedList<T> list) {
+            if (list.Count == 0)
+                throw new InvalidOperationException("The linked list is empty.");
+
+            T res = list.First.Value;
+            list.RemoveFirst();
+            return res;
+        }
+
+        public static T PopLast<T>(this LinkedList<T> list) {
+            if (list.Count == 0)
+                throw new InvalidOperationException("The linked list is empty.");
+
+            T res = list.Last.Value;
+            list.RemoveLast();
+            return res;
         }
     }
 }

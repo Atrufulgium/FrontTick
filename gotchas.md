@@ -14,6 +14,9 @@ FrontTick gotchas
 - `const` is **not a thing yet**, but it **doesn't throw errors**.
 - If your in-game tests return `-2122222222`, it means that nothing was returned at all. This may be a sign of malformed `mcfunction` code, check your launcher logs or manually review the generated pack.
 - End-users may think some classes are available while in reality they are part of `_Unimplemented.cs`.
+- Testing has an extra phase that replaces a `ー` with `-` and `ⵌ` with `#` in order to be able to test methods that introduce invalid characters into methods (while these alternatives are valid).  
+  This also makes it so not all methods are registered (even though they *will* be in the future if correct).  
+  This usually won't form a problem, but if it does, you can test for existence with `nameManager.MethodNameIsRegistered()`.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
 
 Roslyn gotchas

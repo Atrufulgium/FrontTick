@@ -23,9 +23,9 @@ internal struct Test {
 ", @"
 internal struct Test {
     static void TestMethod(int i, int j) {
-        bool IFTEMP0;
-        IFTEMP0 = Sum(i,j) == 3;
-        if (IFTEMP0) {
+        bool ⵌiftemp0;
+        ⵌiftemp0 = Sum(i,j) == 3;
+        if (ⵌiftemp0) {
             i = 4;
         }
     }

@@ -23,10 +23,10 @@ internal struct Test {
     int val;
 
     static void TestMethod(Test t, int i) {
-        i = CASTEXPLICITInt32Test(t);
+        i = CASTーEXPLICITーInt32ーTest(t);
     }
 
-    public static int CASTEXPLICITInt32Test(Test t) { return t.val; }
+    public static int CASTーEXPLICITーInt32ーTest(Test t) { return t.val; }
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
@@ -47,10 +47,10 @@ internal struct Test {
     int val;
 
     static void TestMethod(Test t, int i) {
-        i = CASTIMPLICITInt32Test(t);
+        i = CASTーIMPLICITーInt32ーTest(t);
     }
 
-    public static int CASTIMPLICITInt32Test(Test t) { return t.val; }
+    public static int CASTーIMPLICITーInt32ーTest(Test t) { return t.val; }
 }
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
