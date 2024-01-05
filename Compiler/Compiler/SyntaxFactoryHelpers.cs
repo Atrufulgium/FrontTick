@@ -41,6 +41,24 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static StatementSyntax SimpleAssignmentStatement(ExpressionSyntax left, ExpressionSyntax right)
             => AssignmentStatement(SyntaxKind.SimpleAssignmentExpression, left, right);
 
+        public static StatementSyntax AddAssignmentStatement(ExpressionSyntax left, ExpressionSyntax right)
+            => ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.AddAssignmentExpression,
+                    left,
+                    right
+                )
+            );
+
+        public static StatementSyntax SubtractAssignmentStatement(ExpressionSyntax left, ExpressionSyntax right)
+            => ExpressionStatement(
+                AssignmentExpression(
+                    SyntaxKind.SubtractAssignmentExpression,
+                    left,
+                    right
+                )
+            );
+
         // Also, literals are ew
 
         public static LiteralExpressionSyntax NumericLiteralExpression(int value)
@@ -202,5 +220,27 @@ namespace Atrufulgium.FrontTick.Compiler {
                 ),
                 List(contents)
             );
+
+        public static ElseClauseSyntax ElseClause(IEnumerable<StatementSyntax> statements)
+            => SyntaxFactory.ElseClause(
+                Block(statements)
+            );
+
+        public static ElseClauseSyntax ElseClause(params StatementSyntax[] statements)
+            => SyntaxFactory.ElseClause(
+                Block(statements)
+            );
+
+        public static ExpressionSyntax InvocationExpression(ExpressionSyntax expression, ExpressionSyntax oneArgument)
+            => SyntaxFactory.InvocationExpression(expression, ArgumentList(oneArgument));
+
+        public static StatementSyntax InvocationStatement(ExpressionSyntax expression)
+            => SyntaxFactory.ExpressionStatement(SyntaxFactory.InvocationExpression(expression));
+
+        public static StatementSyntax InvocationStatement(ExpressionSyntax expression, ArgumentListSyntax argumentList)
+            => SyntaxFactory.ExpressionStatement(SyntaxFactory.InvocationExpression(expression, argumentList));
+
+        public static StatementSyntax InvocationStatement(ExpressionSyntax expression, ExpressionSyntax oneArgument)
+            => SyntaxFactory.ExpressionStatement(InvocationExpression(expression, oneArgument));
     }
 }

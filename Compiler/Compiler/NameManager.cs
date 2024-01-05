@@ -170,6 +170,15 @@ namespace Atrufulgium.FrontTick.Compiler {
         }
 
         /// <summary>
+        /// Given a function tag, returns what to call it ingame with.
+        /// </summary>
+        public MCFunctionName GetFunctionTagName(FunctionTag tag) {
+            string name = tag.Namespace + ":" + tag.Subpath.Replace(".json", "");
+            name = postProcessor.PostProcessFunction(name);
+            return new MCFunctionName("#" + name);
+        }
+
+        /// <summary>
         /// <inheritdoc cref="GetMethodName(SemanticModel, SyntaxNode, ICustomDiagnosable, string)"/>
         /// <para>
         /// TODO: This method is a bunch slower because we call the other

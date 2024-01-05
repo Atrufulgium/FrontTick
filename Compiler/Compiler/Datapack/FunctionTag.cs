@@ -29,6 +29,18 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
             taggedFunctions.Add(function);
         }
 
+        /// <summary>
+        /// Adds a function to the tag. In addition, if this is a sorted tag,
+        /// it will be inserted before all others.
+        /// </summary>
+        public void PrependToTag(MCFunctionName function) {
+            // ew
+            if (taggedFunctions is List<MCFunctionName> l)
+                l.Insert(0, function);
+            else
+                AddToTag(function);
+        }
+
         public DatapackLocation DatapackLocation => DatapackLocation.FunctionTags;
 
         public string Namespace { get; init; }

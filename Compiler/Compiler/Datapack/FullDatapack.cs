@@ -93,6 +93,8 @@ namespace Atrufulgium.FrontTick.Compiler.Datapack {
             StringBuilder result = new();
             foreach (var f in files) {
                 // .. i really need a better mechanism for this
+                if (skipInternal && f.Subpath.Contains("testrunner"))
+                    continue;
                 if (skipInternal) {
                     bool cont = false;
                     foreach (var ignore in skipInternalSpecifiers) {

@@ -20,9 +20,9 @@ namespace MCMirror.Internal {
     [NoCompile]
     public class MCTestAttribute : Attribute {
 
-        public readonly int value;
+        public readonly object value;
 
-        public MCTestAttribute(int value) {
+        public MCTestAttribute(object value) {
             this.value = value;
         }
     }

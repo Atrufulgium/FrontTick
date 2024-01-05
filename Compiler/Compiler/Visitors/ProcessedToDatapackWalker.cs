@@ -71,18 +71,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         int branchCounter;
         Dictionary<int, MCFunctionName> gotoFunctionNames;
 
-        /// <summary>
-        /// All methods with a [MCTest(int)] attribute.
-        /// </summary>
-        public FunctionTag testFunctions;
-
-        public override void GlobalPreProcess() {
-            testFunctions = new(nameManager.manespace, "test.json", sorted: false);
-        }
-        public override void GlobalPostProcess() {
-            testFunctions.AddToTag(nameManager.TestPostProcessName);
-        }
-
         public override void VisitMethodDeclarationRespectingNoCompile(MethodDeclarationSyntax node) {
             // Don't do methods that aren't meant to be compiled.
             if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.CustomCompiledAttribute, out _))
@@ -98,11 +86,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             MCFunctionName path = nameManager.GetMethodName(CurrentSemantics, node, this);
 
             HandleBlock(node.Body, path, pop: false);
-
-            // If this method is a test, we need to add some post processing to
-            // the mcfunction.
-            if (CurrentSemantics.TryGetSemanticAttributeOfType(node, MCMirrorTypes.MCTestAttribute, out var attrib))
-                HandleMCTestMethod(node, attrib);
 
             // Add some debug stats
             List<string> attributes = new();
@@ -447,37 +430,6 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
             if (code.StartsWith('/'))
                 code = code[1..];
             AddCode(code);
-        }
-
-        private void HandleMCTestMethod(MethodDeclarationSyntax node, AttributeData attrib) {
-            // Check correctness
-            bool hasStatic = node.Modifiers.Any(SyntaxKind.StaticKeyword);
-            bool hasNoArguments = node.ArityOfArguments() == 0;
-            bool returnsInt = node.ReturnType.ChildTokensContain(SyntaxKind.IntKeyword);
-            if (!hasStatic || !hasNoArguments || !returnsInt) {
-                AddCustomDiagnostic(DiagnosticRules.MCTestAttributeIncorrect, node.GetLocation(), node.Identifier.Text);
-                return;
-            }
-
-            int expected = (int)attrib.ConstructorArguments[0].Value;
-            string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, node);
-            // As at this point, the actual method is done, it should have
-            // assigned to #RET already. We can just freely read that here.
-            // To also check for not-completely run methods, we should keep
-            // track fo a "skipped" variable, incremented at the start, and
-            // decremented at the end.
-            wipFiles.Peek().code.Insert(0, "scoreboard players add #TESTSSKIPPED _ 1");
-            wipFiles.Peek().code.Insert(0, "scoreboard players set #RET _ -2122222222");
-            var pos = node.GetLocation().GetLineSpan();
-            string path = System.IO.Path.GetFileName(pos.Path);
-            string hover = $"\"hoverEvent\":{{\"action\":\"show_text\",\"contents\":[{{\"text\":\"File \",\"color\":\"gray\"}},{{\"text\":\"{path}\",\"color\":\"white\"}},{{\"text\":\"\\nLine \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Line}\",\"color\":\"white\"}},{{\"text\":\" Col \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Character}\",\"color\":\"white\"}}]}}";
-            AddCode($"execute if score #RET _ matches {expected} unless score #FAILSONLY _ matches 1 run tellraw @a [{{\"text\":\"Test \",\"color\":\"green\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_green\",{hover}}},{{\"text\":\" passed.\",\"color\":\"green\"}}]");
-            AddCode($"execute if score #RET _ matches {expected} run scoreboard players add #TESTSUCCESSES _ 1");
-            AddCode($"execute unless score #RET _ matches {expected} run tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\",{hover}}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expected}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\", but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]");
-            AddCode($"execute unless score #RET _ matches {expected} run scoreboard players add #TESTFAILURES _ 1");
-            AddCode("scoreboard players remove #TESTSSKIPPED _ 1");
-
-            testFunctions.AddToTag(nameManager.GetMethodName(CurrentSemantics, node, this));
         }
 
         /// <summary>

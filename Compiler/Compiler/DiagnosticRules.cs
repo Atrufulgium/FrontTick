@@ -59,8 +59,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static DiagnosticDescriptor MCTestAttributeIncorrect
             => Error(
                 id: "FT0006",
-                title: "Methods attributed [MCTest(int)] must have signature static int(void).",
-                messageFormat: "Make sure that [MCTest(int)]-attributed '{0}' is static, returns an int, and has no arguments."
+                title: "Methods attributed [MCTest(AnyType)] must have signature static AnyType(void).",
+                messageFormat: "Make sure that [MCTest(AnyType)]-attributed '{0}' is static and has no arguments."
             );
 
         public static DiagnosticDescriptor NoUnsafe

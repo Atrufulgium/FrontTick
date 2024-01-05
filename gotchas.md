@@ -17,6 +17,7 @@ FrontTick gotchas
 - Testing has an extra phase that replaces a `ー` with `-` and `ⵌ` with `#` in order to be able to test methods that introduce invalid characters into methods (while these alternatives are valid).  
   This also makes it so not all methods are registered (even though they *will* be in the future if correct).  
   This usually won't form a problem, but if it does, you can test for existence with `nameManager.MethodNameIsRegistered()`.
+- Attributes may have *any* expression as argument if the user didn't write them.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
 
 Roslyn gotchas
@@ -33,6 +34,7 @@ Roslyn gotchas
 - Remember to check `Body` versus `ExpressionBody` for method bodies etc.
 - `The name 'a.b' does not exist in the current context` Roslyn doesn't automatically resolve namespaces and looks for a class/struct called `a.b` which does not exist.
 - Roslyn is very insistent in seeing `-2147483648` as anything but an int. I get it, but it's really annoying.
+- In general, *numeric types are cursed*. It just interprets everything as *exactly what I don't want it to be*.
 - (There was something annoying with `SyntaxKind`, but I forgot.)
   
 Minecraft gotchas

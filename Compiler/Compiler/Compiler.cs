@@ -48,7 +48,6 @@ namespace Atrufulgium.FrontTick.Compiler
 
         public FullDatapack CompiledDatapack => new(
             finishedCompilation,
-            new[] { appliedWalkers.Get<ProcessedToDatapackWalker>().testFunctions },
             appliedWalkers.Get<LoadTickWalker>().GeneratedFiles
         );
 
@@ -73,7 +72,7 @@ namespace Atrufulgium.FrontTick.Compiler
         /// <summary>
         /// All work that is done so far.
         /// </summary>
-        internal readonly List<MCFunctionFile> finishedCompilation = new();
+        internal readonly List<IDatapackFile> finishedCompilation = new();
         /// <summary>
         /// All applied transformations on the syntax tree so far.
         /// </summary>
@@ -264,7 +263,17 @@ namespace Atrufulgium.FrontTick.Compiler
                 return false;
 
             int phaseID = 1;
-            string[] allowedErrors = new[] { "CS0159" };
+            // All errors allowed *to be introduced by the compiler*.
+            // User code must still satisfy vanilla c#.
+            string[] allowedErrors = new[] { 
+                // "No such label 'label' within the scope of the goto statement"
+                // We introduce this in GotoFlagifyRewriter and manage this in ProcessedToDatapackWalker.
+                "CS0159",
+                // "An attribute argument must be a constant expression, [etc]"
+                // We introduce this in general as rewrites also touch attributes' expressions.
+                // This is just a slightly more general thing to keep in mind.
+                "CS0182",
+            };
             bool incorrectTreeAllowed = false;
             StringBuilder errors = new();
             int prevDepth = -1;
@@ -347,18 +356,6 @@ namespace Atrufulgium.FrontTick.Compiler
             setupFile.code.Add("gamerule maxCommandChainLength 5000000");
             finishedCompilation.Add(setupFile);
 
-            // Also the test post processing file.
-            MCFunctionFile postTestFile = new(nameManager.TestPostProcessName);
-            postTestFile.code.Add("tellraw @a [{\"text\":\"Testing complete.\",\"color\":\"white\"},{\"text\":\"\\n  Successes: \",\"color\":\"green\"},{\"score\":{\"name\":\"#TESTSUCCESSES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_green\"},{\"text\":\"\\n  Failures: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTFAILURES\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
-            postTestFile.code.Add("execute unless score #TESTSSKIPPED _ matches 0 run tellraw @a [{\"text\":\"  Skipped: \",\"color\":\"red\"},{\"score\":{\"name\":\"#TESTSSKIPPED\",\"objective\":\"_\"},\"bold\":true,\"color\":\"dark_red\"}]");
-            postTestFile.code.Add($"tellraw @a {{\"text\":\"(Tests compiled {DateTime.Now} local time.)\",\"color\":\"gray\"}}");
-            postTestFile.code.Add("execute if score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To hide subsequent successes, click here.)\",\"color\":\"gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 1\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display off.\"]}}");
-            postTestFile.code.Add("execute unless score #FAILSONLY _ matches 0 run tellraw @a {\"text\":\"(To show subsequent successes, click here.)\",\"color\":\"gray\",\"clickEvent\":{\"action\":\"run_command\",\"value\":\"/scoreboard players set #FAILSONLY _ 0\"},\"hoverEvent\":{\"action\":\"show_text\",\"contents\":[\"Turn successes display on.\"]}}");
-            postTestFile.code.Add("scoreboard players set #TESTSUCCESSES _ 0");
-            postTestFile.code.Add("scoreboard players set #TESTFAILURES _ 0");
-            postTestFile.code.Add("scoreboard players set #TESTSSKIPPED _ 0");
-            finishedCompilation.Add(postTestFile);
-
             // Also (as mentioned in LoadTickWalker.cs), add all "reschedule
             // own tick" methods that already exist in the tag.
             foreach(var (tickrate, index) in appliedWalkers.Get<LoadTickWalker>().ActiveLongerTickPairs) {
@@ -401,6 +398,15 @@ namespace Atrufulgium.FrontTick.Compiler
             var newModel = compilation.GetSemanticModel(correctPathTree);
             roots.Remove(oldModel);
             roots.Add(newModel);
+        }
+
+        /// <summary>
+        /// An unsafe method that manually adds a datapack file to the
+        /// finalized list. Modifications after this to this file are not
+        /// supported.
+        /// </summary>
+        public void ManuallyFinalizeDatapackFile(IDatapackFile file) {
+            finishedCompilation.Add(file);
         }
 
         readonly HashSet<string> FilteredWarnings = new() {

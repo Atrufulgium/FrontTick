@@ -1,6 +1,4 @@
 ﻿using Atrufulgium.FrontTick.Compiler.Visitors;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Atrufulgium.FrontTick.Compiler {
     /// <summary>
@@ -30,6 +28,14 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static readonly string MCTestAttribute = "MCMirror.Internal.MCTestAttribute";
         public static readonly string NoCompileAttribute = "MCMirror.Internal.NoCompileAttribute";
         public static readonly string RawMCFunction_Run = "MCMirror.Internal.RawMCFunction.Run";
+        public static readonly string Testrunner = "MCMirror.Internal.Testrunner";
+        public static readonly string Testrunner_TestsSucceeded = "MCMirror.Internal.Testrunner.TestsSucceeded";
+        public static readonly string Testrunner_TestsFailed = "MCMirror.Internal.Testrunner.TestsFailed";
+        public static readonly string Testrunner_TestsSkipped = "MCMirror.Internal.Testrunner.TestsSkipped";
+        public static readonly string Testrunner_OnlyPrintFails = "MCMirror.Internal.Testrunner.OnlyPrintFails";
+        public static readonly string Testrunner_TestrunnerMenu_Unqualified = "TestrunnerMenu";
+        public static readonly string Testrunner_PreprocessTestrunner_Unqualified = "PreprocessTestrunner";
+        public static readonly string Testrunner_PostprocessTestrunner_Unqualified = "PostprocessTestrunner";
         public static readonly string TrueLoadManager = "MCMirror.Internal.TrueLoadManager";
         public static readonly string TrueLoadManager_TrueLoadTagname = "internal/--trueload--";
         public static readonly string UnreachableCodeException = "MCMirror.Internal.UnreachableCodeException";
