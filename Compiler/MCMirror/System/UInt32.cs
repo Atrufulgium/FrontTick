@@ -1,6 +1,6 @@
 ﻿namespace System {
     // Note to self: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/numeric-conversions
-    // TODO: Those conversions seem implicit *even in Roslyn*. The cast methods don't trigger if you write `uint a = 123 You must write `uint a = 123u`...
+    // TODO: Those conversions seem implicit *even in Roslyn*. The cast methods don't trigger if you write `uint a = 123`. You must write `uint a = 123u`...
     [MCMirror.Internal.CompilerUsesName]
     public struct UInt32 {
         /// <summary>
@@ -126,89 +126,20 @@
         // in vanilla c#.
         public static explicit operator uint(int value) => new uint(value);
         public static explicit operator int(uint value) => value.val;
-
+        
+        /// <inheritdoc cref="int.Clamp(int, int, int)"/>
         public static uint Clamp(uint value, uint min, uint max) => Min(Max(value, min), max);
+        /// <inheritdoc cref="int.Min(int, int)"/>
         public static uint Min(uint a, uint b) {
             if (a <= b)
                 return a;
             return b;
         }
+        /// <inheritdoc cref="int.Max(int, int)"/>
         public static uint Max(uint a, uint b) {
             if (a <= b)
                 return b;
             return a;
-        }
-        
-        public static bool IsPow2(uint value) {
-            if (value.val == 1) return true;
-            if (value.val == 2) return true;
-            if (value.val == 4) return true;
-            if (value.val == 8) return true;
-            if (value.val == 16) return true;
-            if (value.val == 32) return true;
-            if (value.val == 64) return true;
-            if (value.val == 128) return true;
-            if (value.val == 256) return true;
-            if (value.val == 512) return true;
-            if (value.val == 1024) return true;
-            if (value.val == 2048) return true;
-            if (value.val == 4096) return true;
-            if (value.val == 8192) return true;
-            if (value.val == 16384) return true;
-            if (value.val == 32768) return true;
-            if (value.val == 65536) return true;
-            if (value.val == 131072) return true;
-            if (value.val == 262144) return true;
-            if (value.val == 524288) return true;
-            if (value.val == 1048576) return true;
-            if (value.val == 2097152) return true;
-            if (value.val == 4194304) return true;
-            if (value.val == 8388608) return true;
-            if (value.val == 16777216) return true;
-            if (value.val == 33554432) return true;
-            if (value.val == 67108864) return true;
-            if (value.val == 134217728) return true;
-            if (value.val == 268435456) return true;
-            if (value.val == 536870912) return true;
-            if (value.val == 1073741824) return true;
-            if (value.val == -2147483648) return true;
-            return false;
-        }
-
-        public static uint Log2(uint value) {
-            if (value.val < 0) return new uint(31);
-            // Note that Log2(0u) = 0 in c#.
-            if (value.val < 2) return new uint(0);
-            if (value.val < 4) return new uint(1);
-            if (value.val < 8) return new uint(2);
-            if (value.val < 16) return new uint(3);
-            if (value.val < 32) return new uint(4);
-            if (value.val < 64) return new uint(5);
-            if (value.val < 128) return new uint(6);
-            if (value.val < 256) return new uint(7);
-            if (value.val < 512) return new uint(8);
-            if (value.val < 1024) return new uint(9);
-            if (value.val < 2048) return new uint(10);
-            if (value.val < 4096) return new uint(11);
-            if (value.val < 8192) return new uint(12);
-            if (value.val < 16384) return new uint(13);
-            if (value.val < 32768) return new uint(14);
-            if (value.val < 65536) return new uint(15);
-            if (value.val < 131072) return new uint(16);
-            if (value.val < 262144) return new uint(17);
-            if (value.val < 524288) return new uint(18);
-            if (value.val < 1048576) return new uint(19);
-            if (value.val < 2097152) return new uint(20);
-            if (value.val < 4194304) return new uint(21);
-            if (value.val < 8388608) return new uint(22);
-            if (value.val < 16777216) return new uint(23);
-            if (value.val < 33554432) return new uint(24);
-            if (value.val < 67108864) return new uint(25);
-            if (value.val < 134217728) return new uint(26);
-            if (value.val < 268435456) return new uint(27);
-            if (value.val < 536870912) return new uint(28);
-            if (value.val < 1073741824) return new uint(29);
-            return new uint(30);
         }
 
         /// <summary>
@@ -217,5 +148,310 @@
         static int Complement(int value) => value - int.MinValue;
         /// <inheritdoc cref="Complement(int)"/>
         static uint Complement(uint value) => new(Complement(value.val));
+
+        /// <summary>
+        /// <para>
+        /// Computes the number of trailing zeroes in a value's binary
+        /// representation.
+        /// </para>
+        /// <para>
+        /// "Trailing" as in "from the LSB".
+        /// 0 returns 32, 1 returns 0, 7 returns 0, 8 returns 3, etc.
+        /// </para>
+        /// </summary>
+        public static uint TrailingZeroCount(uint value) {
+            if (value.val == 0)
+                return 32u;
+
+            int res = 0;
+            if (value >= 65536u) {
+                res += 16;
+                value /= 65536u;
+            }
+            if (value.val >= 256) {
+                res += 8;
+                value.val = int.FloorDiv(value.val, 256);
+            }
+            if (value.val >= 16) {
+                res += 4;
+                value.val = int.FloorDiv(value.val, 16);
+            }
+            if (value.val >= 4) {
+                res += 2;
+                value.val = int.FloorDiv(value.val, 4);
+            }
+            if (value.val >= 1) {
+                res += 1;
+            }
+            return new uint(res);
+        }
+
+        // This region contains "IsPow2", "Log2", "LeadingZeroCount".
+        #region binary search extravaganza
+        // Not testing these in this project, just plop them into linqpad and
+        // go over all possible values.
+        // These are simple (handwritten, ew) binary searches on the uint's
+        // underlying int.
+        // Use "generate_binary_search.py" to generate these.
+        /// <summary>
+        /// Whether a number is a power of two.
+        /// </summary>
+        public static bool IsPow2(uint value) {
+            if (value.val < 32768) {
+                if (value.val < 128) {
+                    if (value.val < 8) {
+                        // (Irregular case that saves one branch.)
+                        if (value.val < 1) {
+                            return value.val == int.MinValue;
+                        } else {
+                            if (value.val < 5) return value.val != 3;
+                            return false;
+                        }
+                    } else {
+                        if (value.val < 32) {
+                            if (value.val < 16) return value.val == 8;
+                            return value.val == 16;
+                        } else {
+                            if (value.val < 64) return value.val == 32;
+                            return value.val == 64;
+                        }
+                    }
+                } else {
+                    if (value.val < 2048) {
+                        if (value.val < 512) {
+                            if (value.val < 256) return value.val == 128;
+                            return value.val == 256;
+                        } else {
+                            if (value.val < 1024) return value.val == 512;
+                            return value.val == 1024;
+                        }
+                    } else {
+                        if (value.val < 8192) {
+                            if (value.val < 4096) return value.val == 2048;
+                            return value.val == 4096;
+                        } else {
+                            if (value.val < 16384) return value.val == 8192;
+                            return value.val == 16384;
+                        }
+                    }
+                }
+            } else {
+                if (value.val < 8388608) {
+                    if (value.val < 524288) {
+                        if (value.val < 131072) {
+                            if (value.val < 65536) return value.val == 32768;
+                            return value.val == 65536;
+                        } else {
+                            if (value.val < 262144) return value.val == 131072;
+                            return value.val == 262144;
+                        }
+                    } else {
+                        if (value.val < 2097152) {
+                            if (value.val < 1048576) return value.val == 524288;
+                            return value.val == 1048576;
+                        } else {
+                            if (value.val < 4194304) return value.val == 2097152;
+                            return value.val == 4194304;
+                        }
+                    }
+                } else {
+                    if (value.val < 134217728) {
+                        if (value.val < 33554432) {
+                            if (value.val < 16777216) return value.val == 8388608;
+                            return value.val == 16777216;
+                        } else {
+                            if (value.val < 67108864) return value.val == 33554432;
+                            return value.val == 67108864;
+                        }
+                    } else {
+                        if (value.val < 536870912) {
+                            if (value.val < 268435456) return value.val == 134217728;
+                            return value.val == 268435456;
+                        } else {
+                            if (value.val < 1073741824) return value.val == 536870912;
+                            return value.val == 1073741824;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Computes the `floor(log( ))` of a value. 0 maps to 0.
+        /// </summary>
+        public static uint Log2(uint value) {
+            if (value.val < 32768) {
+                if (value.val < 128) {
+                    if (value.val < 8) {
+                        if (value.val < 2) {
+                            if (value.val < 0) return new uint(31);
+                            return new uint(0);
+                        } else {
+                            if (value.val < 4) return new uint(1);
+                            return new uint(2);
+                        }
+                    } else {
+                        if (value.val < 32) {
+                            if (value.val < 16) return new uint(3);
+                            return new uint(4);
+                        } else {
+                            if (value.val < 64) return new uint(5);
+                            return new uint(6);
+                        }
+                    }
+                } else {
+                    if (value.val < 2048) {
+                        if (value.val < 512) {
+                            if (value.val < 256) return new uint(7);
+                            return new uint(8);
+                        } else {
+                            if (value.val < 1024) return new uint(9);
+                            return new uint(10);
+                        }
+                    } else {
+                        if (value.val < 8192) {
+                            if (value.val < 4096) return new uint(11);
+                            return new uint(12);
+                        } else {
+                            if (value.val < 16384) return new uint(13);
+                            return new uint(14);
+                        }
+                    }
+                }
+            } else {
+                if (value.val < 8388608) {
+                    if (value.val < 524288) {
+                        if (value.val < 131072) {
+                            if (value.val < 65536) return new uint(15);
+                            return new uint(16);
+                        } else {
+                            if (value.val < 262144) return new uint(17);
+                            return new uint(18);
+                        }
+                    } else {
+                        if (value.val < 2097152) {
+                            if (value.val < 1048576) return new uint(19);
+                            return new uint(20);
+                        } else {
+                            if (value.val < 4194304) return new uint(21);
+                            return new uint(22);
+                        }
+                    }
+                } else {
+                    if (value.val < 134217728) {
+                        if (value.val < 33554432) {
+                            if (value.val < 16777216) return new uint(23);
+                            return new uint(24);
+                        } else {
+                            if (value.val < 67108864) return new uint(25);
+                            return new uint(26);
+                        }
+                    } else {
+                        if (value.val < 536870912) {
+                            if (value.val < 268435456) return new uint(27);
+                            return new uint(28);
+                        } else {
+                            if (value.val < 1073741824) return new uint(29);
+                            return new uint(30);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// <para>
+        /// Computes the number of leading zeroes in a value's binary
+        /// representation.
+        /// </para>
+        /// <para>
+        /// "Leading" as in "from the MSB".
+        /// 0 returns 32, 1 returns 31, 7 returns 28, 8 returns 27, etc.
+        /// </para>
+        /// </summary>
+        public static uint LeadingZeroCount(uint value) {
+            if (value.val < 0) {
+                return new uint(0);
+            } else {
+                if (value.val < 32768) {
+                    if (value.val < 128) {
+                        if (value.val < 8) {
+                            if (value.val < 2) {
+                                if (value.val < 1) return new uint(32);
+                                return new uint(31);
+                            } else {
+                                if (value.val < 4) return new uint(30);
+                                return new uint(29);
+                            }
+                        } else {
+                            if (value.val < 32) {
+                                if (value.val < 16) return new uint(28);
+                                return new uint(27);
+                            } else {
+                                if (value.val < 64) return new uint(26);
+                                return new uint(25);
+                            }
+                        }
+                    } else {
+                        if (value.val < 2048) {
+                            if (value.val < 512) {
+                                if (value.val < 256) return new uint(24);
+                                return new uint(23);
+                            } else {
+                                if (value.val < 1024) return new uint(22);
+                                return new uint(21);
+                            }
+                        } else {
+                            if (value.val < 8192) {
+                                if (value.val < 4096) return new uint(20);
+                                return new uint(19);
+                            } else {
+                                if (value.val < 16384) return new uint(18);
+                                return new uint(17);
+                            }
+                        }
+                    }
+                } else {
+                    if (value.val < 8388608) {
+                        if (value.val < 524288) {
+                            if (value.val < 131072) {
+                                if (value.val < 65536) return new uint(16);
+                                return new uint(15);
+                            } else {
+                                if (value.val < 262144) return new uint(14);
+                                return new uint(13);
+                            }
+                        } else {
+                            if (value.val < 2097152) {
+                                if (value.val < 1048576) return new uint(12);
+                                return new uint(11);
+                            } else {
+                                if (value.val < 4194304) return new uint(10);
+                                return new uint(9);
+                            }
+                        }
+                    } else {
+                        if (value.val < 134217728) {
+                            if (value.val < 33554432) {
+                                if (value.val < 16777216) return new uint(8);
+                                return new uint(7);
+                            } else {
+                                if (value.val < 67108864) return new uint(6);
+                                return new uint(5);
+                            }
+                        } else {
+                            if (value.val < 536870912) {
+                                if (value.val < 268435456) return new uint(4);
+                                return new uint(3);
+                            } else {
+                                if (value.val < 1073741824) return new uint(2);
+                                return new uint(1);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
     }
 }
