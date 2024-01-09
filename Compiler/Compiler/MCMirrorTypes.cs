@@ -24,6 +24,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         // MCMirror.Internal.xxx
         public static readonly string CompilerUsesNameAttribute = "MCMirror.Internal.CompilerUsesNameAttribute"; // not yet
         public static readonly string CompileTime_VarName = "MCMirror.Internal.CompileTime.VarName";
+        public static readonly string CompileTime_Print = "MCMirror.Internal.CompileTime.Print";
         public static readonly string CustomCompiledAttribute = "MCMirror.Internal.CustomCompiledAttribute";
         public static readonly string MCTestAttribute = "MCMirror.Internal.MCTestAttribute";
         public static readonly string NoCompileAttribute = "MCMirror.Internal.NoCompileAttribute";
@@ -60,6 +61,7 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static readonly string Float = "float";
         public static readonly string FloatFullyQualified = "System.Single";
         public static readonly string Float_PositiveZero = "System.Single.PositiveZero";
+        public static readonly string Object = "object";
         public static readonly string UInt = "uint";
         public static readonly string UIntFullyQualified = "System.UInt32";
         public static readonly string UInt_Zero = "System.UInt32.Zero";

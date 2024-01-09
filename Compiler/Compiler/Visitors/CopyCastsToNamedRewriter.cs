@@ -59,10 +59,16 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
         SyntaxNode AddCasts(TypeDeclarationSyntax node) {
             List<MethodDeclarationSyntax> newMethods = new();
             foreach(var op in ops) {
-                var returnType = CurrentSemantics.GetTypeInfo(op.Type).Type.Name;
-                var inType = CurrentSemantics.GetTypeInfo(op.ParameterList.Parameters[0].Type).Type.Name;
+                var returnType = CurrentSemantics.GetTypeInfo(op.Type).Type;
+                var returnTypeName = returnType.Name;
+                var inTypeName = CurrentSemantics.GetTypeInfo(op.ParameterList.Parameters[0].Type).Type.Name;
                 var plicity = op.IsImplicitConversion() ? "IMPLICIT" : "EXPLICIT";
-                string methodName = $"CAST-{plicity}-{returnType}-{inType}";
+                string methodName = $"CAST-{plicity}-{returnTypeName}-{inTypeName}";
+
+                // See CastsToMethodCallsRewriter.
+                if (op.IsImplicitConversion() && CurrentSemantics.TypesMatch(returnType, MCMirrorTypes.Object))
+                    throw CompilationException.ImplicitCastsToObjectDisallowed;
+
                 var methodDeclaration =
                     MethodDeclaration(
                         op.Type, Identifier(methodName)
@@ -76,7 +82,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 // This is a fully qualified name but we need the type and method
                 // separately.
                 castMethodNames.Add(
-                    (returnType, inType),
+                    (returnTypeName, inTypeName),
                     (type: currentTypeName, name: methodName)
                 );
             }

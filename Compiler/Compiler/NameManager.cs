@@ -227,8 +227,6 @@ namespace Atrufulgium.FrontTick.Compiler {
             ExpressionSyntax node,
             ICustomDiagnosable diagnosticsOutput
         ) {
-            bool isMethodLocal = false;
-
             if (!(node is IdentifierNameSyntax or MemberAccessExpressionSyntax))
                 throw CompilationException.ToDatapackVariableNamesAreFromIdentifiersOrAccesses;
             // Format: datapack-namespace:Fully.Qualified.TypeOrMethod#var#sub#part
@@ -244,9 +242,6 @@ namespace Atrufulgium.FrontTick.Compiler {
             while (true) {
                 var symbol = semantics.GetSymbolInfo(currentPart).Symbol;
                 symbols.AddLast(symbol);
-                if (symbol is ILocalSymbol)
-                    isMethodLocal = true;
-
                 if (currentPart is MemberAccessExpressionSyntax mae) {
                     currentPart = mae.Expression;
                 } else {
@@ -254,6 +249,30 @@ namespace Atrufulgium.FrontTick.Compiler {
                 }
             }
 
+            return GetVariableNameFromSymbolsSoFar(semantics, symbols, diagnosticsOutput);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="GetVariableName(SemanticModel, ExpressionSyntax, ICustomDiagnosable)"/>
+        /// </summary>
+        /// <remarks>
+        /// <inheritdoc cref="GetVariableName(SemanticModel, ExpressionSyntax, ICustomDiagnosable)"/>
+        /// <para>
+        /// With symbols it's a lot less clear what you print, so be careful.
+        /// You'll go to the wrong definition easier than you think.
+        /// </para>
+        /// </remarks>
+        public string GetVariableName(
+            SemanticModel semantics,
+            ISymbol symbol,
+            ICustomDiagnosable diagnosticsOutput
+        ) => GetVariableNameFromSymbolsSoFar(semantics, new LinkedList<ISymbol>(new[] { symbol }), diagnosticsOutput);
+
+        string GetVariableNameFromSymbolsSoFar(
+            SemanticModel semantics,
+            LinkedList<ISymbol> symbols,
+            ICustomDiagnosable diagnosticsOutput
+        ) {
             /* Now we may have ended the chain too early. Expand it.
                (E.g. this was called on a `Class.member` instead of
                `Namespace.Class.member`, or `functionLocal.part` instead of
@@ -298,6 +317,8 @@ namespace Atrufulgium.FrontTick.Compiler {
                     break;
                 symbols.AddLast(parentSymbol);
             }
+
+            bool isMethodLocal = symbols.Any(s => s is ILocalSymbol);
 
             // "symbols" now contains the full qualification.
             // The first is the most fine-grained. The last is the most coarse

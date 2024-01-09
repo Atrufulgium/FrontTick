@@ -24,8 +24,8 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
 
     /// <summary> Removes any constructor, both their declarations and their calls. </summary>
     public class RemoveConstructorsRewriter : AbstractFullRewriter {
-        public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) => null;
-        public override SyntaxNode VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) => null;
+        public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node) => throw new System.InvalidOperationException("All `new T()`s should be gone already.");
+        public override SyntaxNode VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node) => throw new System.InvalidOperationException("All `new()`s should be gone already.");
         public override SyntaxNode VisitConstructorDeclaration(ConstructorDeclarationSyntax node) => null;
     }
 }

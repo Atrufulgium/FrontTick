@@ -515,6 +515,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
         /// </para>
         /// </summary>
         private void AddAssignment(string lhs, string rhs, string op, ITypeSymbol type) {
+            // This code somewhat copied to
+            /// <see cref="CompiletimeClassRewriter.GetPrintComplexRunrawArgs(ITypeSymbol, List{string}, string, int)"/>
+
             // Note that `default` has special handling.
             if (rhs == "default" && op != "=")
                 throw new ArgumentException("Only =default is allowed, no other ops.");
@@ -531,11 +534,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors
                 //  already, in which case we do reduce to ints.)
                 throw CompilationException.ToDatapackStructsMustEventuallyInt;
             } else {
-                foreach (var m in type.GetMembers().OfType<IFieldSymbol>()) {
-                    // .. static fields are also fields but don't need to be copied over
-                    if (m.IsStatic)
-                        continue;
-
+                foreach (var m in type.GetNonstaticFields()) {
                     ITypeSymbol fieldType = m.Type;
                     string name = m.Name;
                     if (rhs == "default")

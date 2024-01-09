@@ -16,6 +16,8 @@ namespace Atrufulgium.FrontTick.Compiler {
     public class CompilationException : Exception {
         public CompilationException(string message) : base(message) { }
 
+        public static CompilationException ImplicitCastsToObjectDisallowed
+            => new("[Casts to Methods] Implicit casts from any type to System.Object are disallowed. Allow this in the future.");
         public static CompilationException LoopsToGotoForInitNoDeclarationsAllowed
             => new("[Loops To Goto] A for loop may not contain a declaration in its initializer.");
         public static CompilationException LoopsToGotoOnlyWhileInWhileProcessing

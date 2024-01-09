@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System;
 using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -21,18 +22,20 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     public class ConstructorsToMethodCallsRewriter : AbstractFullRewriter {
 
         public override SyntaxNode VisitObjectCreationExpression(ObjectCreationExpressionSyntax node)
-            => VisitBaseObjectCreationExpression(node);
+            => VisitBaseObjectCreationExpression(node, base.VisitObjectCreationExpression);
 
         public override SyntaxNode VisitImplicitObjectCreationExpression(ImplicitObjectCreationExpressionSyntax node)
-            => VisitBaseObjectCreationExpression(node);
+            => VisitBaseObjectCreationExpression(node, base.VisitImplicitObjectCreationExpression);
 
-        SyntaxNode VisitBaseObjectCreationExpression(BaseObjectCreationExpressionSyntax node) {
+        SyntaxNode VisitBaseObjectCreationExpression<T>(T node, Func<T, SyntaxNode> basecall) where T : BaseObjectCreationExpressionSyntax {
             if (node.Initializer != null)
                 AddCustomDiagnostic(DiagnosticRules.Unsupported, node.GetLocation(), "initializers", "Low priority.");
 
             var methodSymbol = (IMethodSymbol)CurrentSemantics.GetSymbolInfo(node).Symbol;
             var typeSymbol = methodSymbol.ContainingType;
             var typeSymbolName = CurrentSemantics.GetFullyQualifiedNameIncludingPrimitives(typeSymbol);
+
+            node = (T)basecall(node);
 
             // ContainingType instead of ReturnType because constructors are void.
             return InvocationExpression(

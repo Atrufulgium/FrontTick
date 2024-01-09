@@ -45,8 +45,16 @@
         /// candidate -- isn't that in any case sufficient when all that's
         /// asked for is a delegate?
         /// </remarks>
+        // TODO: Fix, apparantly.
         [CustomCompiled("CompileTime/MethodName")]
         public static extern string MethodName(System.Delegate method);
+
+        /// <summary>
+        /// Gives a "<c>DD/MM/YYYY hh:mm:ss</c>" string generated during
+        /// compilation.
+        /// </summary>
+        [CustomCompiled("CompileTime/Timestamp")]
+        public static extern string ApproximateCompilationTimestamp();
 
         /// <summary>
         /// Returns the current compiling mcfunction namespace.
@@ -71,6 +79,12 @@
         /// </para>
         /// </summary>
         [CustomCompiled("CompileTime/Print")]
+        [CompilerUsesName]
         public static extern string Print(int value);
+
+        /// <inheritdoc cref="Print(int)"/>
+        [CustomCompiled("CompileTime/PrintComplex")]
+        [CompilerUsesName]
+        public static extern string Print(object value);
     }
 }

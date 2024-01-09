@@ -2,6 +2,9 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Xml.Linq;
 using static Atrufulgium.FrontTick.Compiler.SyntaxFactoryHelpers;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -15,6 +18,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     public class CompiletimeClassRewriter : AbstractFullRewriter {
 
         string trueLoadValue = null;
+        string consistentTimestamp = null;
 
         public override SyntaxNode VisitInvocationExpression(InvocationExpressionSyntax node) {
             // In exceptional cases the name may not exist.
@@ -50,28 +54,96 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                 trueLoadValue ??= ((int)(DateTime.UtcNow.Ticks / 10_000_000)).ToString();
                 return StringLiteralExpression(trueLoadValue);
             } else if (methodName == "CompileTime/Print") {
-                if (arg is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)) {
-                    AddCustomDiagnostic(DiagnosticRules.PrintArgMustBeIdentifier, node.GetLocation());
-                    return null;
-                }
-
-                string varnameMCFunction = nameManager.GetVariableName(CurrentSemantics, arg, this);
-                string varnameCSharp = node.ArgumentList.Arguments[0].ToString();
-                node = node.WithExpression(MemberAccessExpression(MCMirrorTypes.RawMCFunction_Run));
-                return node.WithArgumentList(
-                    ArgumentList(
-                        StringLiteralExpression(
-                            "tellraw @a [\"§7[Value of §r"
-                            + varnameCSharp
-                            + "§7: §r\",{\"score\":{\"name\":\""
-                            + varnameMCFunction
-                            + "\",\"objective\":\"_\"}},\"§7]\"]"
-                        )
-                    )
-                );
+                return HandlePrint(node, arg);
+            } else if (methodName == "CompileTime/PrintComplex") {
+                return HandlePrintComplex(node, arg);
+            } else if (methodName == "CompileTime/Timestamp") {
+                consistentTimestamp ??= DateTime.Now.ToString();
+                return StringLiteralExpression(consistentTimestamp);
             }
 
             return base.VisitInvocationExpression(node);
+        }
+
+        // Print a basic int.
+        SyntaxNode HandlePrint(InvocationExpressionSyntax node, ExpressionSyntax arg) {
+            if (arg is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)) {
+                AddCustomDiagnostic(DiagnosticRules.PrintArgMustBeIdentifier, node.GetLocation());
+                return null;
+            }
+
+            string varnameMCFunction = nameManager.GetVariableName(CurrentSemantics, arg, this);
+            string varnameCSharp = arg.ToString();
+
+            // Compiler generated varnames are coloured gray+italicised in chat.
+            string initialColor = varnameCSharp.StartsWith('#') ? "§7§o" : "§f";
+
+            return node.WithExpression(MemberAccessExpression(MCMirrorTypes.RawMCFunction_Run))
+                .WithArgumentList(
+                ArgumentList(
+                    StringLiteralExpression(
+                        "tellraw @a [\"§7[Value of " + initialColor
+                        + varnameCSharp
+                        + "§r§7: §r\",{\"score\":{\"name\":\""
+                        + varnameMCFunction
+                        + "\",\"objective\":\"_\"},\"color\":\"yellow\"},\"§7]\"]"
+                    )
+                )
+            );
+        }
+
+        // Turns `Print(object)` into a `RunRaw(..)`s in tree-form that prints
+        // everything, nested however deeply.
+        // Includes compiler-generated values.
+        SyntaxNode HandlePrintComplex(InvocationExpressionSyntax node, ExpressionSyntax arg) {
+            if (arg is not (IdentifierNameSyntax or MemberAccessExpressionSyntax)) {
+                AddCustomDiagnostic(DiagnosticRules.PrintArgMustBeIdentifier, node.GetLocation());
+                return null;
+            }
+
+            string varnameMCFunction = nameManager.GetVariableName(CurrentSemantics, arg, this);
+            string varnameCSharp = arg.ToString();
+            var type = CurrentSemantics.GetTypeInfo(arg).Type;
+
+            // Compiler generated varnames are coloured gray+italicised in chat.
+            string initialColor = varnameCSharp.StartsWith('#') ? "§7§o" : "§f";
+
+            List<string> tellrawParts = new() {
+                $"\"§7[Value of {initialColor}{varnameCSharp}§r§7 (complex type §r{type.Name}§7)]\""
+            };
+
+            GetPrintComplexRunrawArgs(type, tellrawParts, varnameMCFunction, 1);
+
+            return node.WithExpression(MemberAccessExpression(MCMirrorTypes.RawMCFunction_Run))
+                .WithArgumentList(
+                ArgumentList(
+                    StringLiteralExpression(
+                        $"tellraw @a [{string.Join(',', tellrawParts)}]"
+                    )
+                )
+            );
+        }
+
+        // This code somewhat copied from
+        /// <see cref="ProcessedToDatapackWalker.AddAssignment(string, string, string, ITypeSymbol)"/>
+        void GetPrintComplexRunrawArgs(ITypeSymbol symbol, List<string> tellrawParts, string nameSoFar, int depth) {
+            string indent = new(' ', depth);
+
+            // Fields are fine because by this point all tomethod rewriters are done.
+            // Compiler generated varnames are coloured gray+italicised in chat.
+            foreach (var m in symbol.GetNonstaticFields()) {
+                var fieldType = m.Type;
+                var name = m.Name;
+                var typeName = fieldType.Name;
+                string initialColor = name.StartsWith('#') ? "§7§o" : "§f";
+                var varnameMCFunction = $"{nameSoFar}#{name}";
+                tellrawParts.Add($"\"\\n{indent}{initialColor}{name} §r§7(§f{typeName}§7):\"");
+                if (CurrentSemantics.TypesMatch(fieldType, MCMirrorTypes.Int)) {
+                    tellrawParts.Add($"\"\\n  {indent}\",{{\"score\":{{\"name\":\"{varnameMCFunction}\",\"objective\":\"_\"}},\"color\":\"yellow\"}}");
+                } else {
+                    GetPrintComplexRunrawArgs(fieldType, tellrawParts, varnameMCFunction, depth + 2);
+                }
+            }
         }
     }
 }

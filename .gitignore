@@ -351,6 +351,7 @@ MigrationBackup/
 
 # Custom ignore files
 Compiler/CompilerTests/Playground.cs
+Compiler/IngameTests/Playground.cs
 # In my case this file contains the commandline args and working directory to
 # test compilation. Depending on what Minecraft world you want to test this in,
 # or where you store the project, this is different.

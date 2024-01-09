@@ -116,6 +116,53 @@ scoreboard players set #compiled:test#val2 _ 20
 #   [MCMirror.TrueLoad]
 ", new IFullVisitor[] { new ProcessedToDatapackWalker() });
 
+        [TestMethod]
+        public void NestedConstructorCreationTest1Raw()
+            => TestCompilationSucceedsRaw(@"
+internal struct S1 {
+    int x;
+    public S1(int x) { this.x = x; }
+}
+internal struct S2 {
+    S1 x;
+    public S2(S1 x) { this.x = x; }
+}
+internal struct Test {
+    static Test() {
+        S2 x = new S2(new S1(230));
+    }
+}
+", @"
+# (File (functions) compiled:internal/s1.-construct-.mcfunction)
+scoreboard players set #RET#x _ 0
+scoreboard players set #RET#x _ 0
+
+# (File (functions) compiled:internal/s1.-construct--int32.mcfunction)
+scoreboard players set #RET#x _ 0
+scoreboard players set #RET#x _ 0
+scoreboard players operation #RET#x _ = #compiled:internal/s1.-construct--int32##arg0 _
+
+# (File (functions) compiled:internal/s2.-construct-.mcfunction)
+scoreboard players set #RET#x#x _ 0
+scoreboard players set #RET#x#x _ 0
+
+# (File (functions) compiled:internal/s2.-construct--s1.mcfunction)
+scoreboard players set #RET#x#x _ 0
+scoreboard players set #RET#x#x _ 0
+scoreboard players operation #RET#x#x _ = #compiled:internal/s2.-construct--s1##arg0#x _
+
+# (File (functions) compiled:internal/test.-constructstatic-.mcfunction)
+scoreboard players set #compiled:internal/s1.-construct--int32##arg0 _ 230
+function compiled:internal/s1.-construct--int32
+scoreboard players operation #compiled:internal/test.-constructstatic-##calltemp0#x _ = #RET#x _
+scoreboard players operation #compiled:internal/s2.-construct--s1##arg0#x _ = #compiled:internal/test.-constructstatic-##calltemp0#x _
+function compiled:internal/s2.-construct--s1
+scoreboard players operation #compiled:internal/test.-constructstatic-#x#x#x _ = #RET#x#x _
+
+# Method Attributes:
+#   [MCMirror.TrueLoad]
+", new IFullVisitor[] { new ProcessedToDatapackWalker() });
+
         // Requires properly handled initialization.
 //        [TestMethod]
 //        public void NameStaticAndNormalConstructorTest1()

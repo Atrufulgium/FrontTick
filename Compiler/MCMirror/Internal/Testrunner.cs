@@ -64,6 +64,7 @@ namespace MCMirror.Internal {
                     }
                 }
             }
+            Run($"tellraw @a [\"§7§o(Tests compiled {ApproximateCompilationTimestamp()} local time.)\"]");
         }
 
         [CompilerUsesName]

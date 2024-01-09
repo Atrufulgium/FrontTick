@@ -37,6 +37,9 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
     ///         } else {
     ///             MCMirror.Internal.TestVariables.TestsFailed += 1;
     ///             MCMirror.Internal.RawMCFunction.Run(/*negative result info*/);
+    ///             MCMirror.Internal.CompileTime.Print(#expected);
+    ///             MCMirror.Internal.CompileTime.Print(#actual);
+    ///             MCMirror.Internal.RawMCFunction.Run("tellraw @a [\"\"]");
     ///         }
     ///         MCMirror.Internal.TestVariables.TestsSkipped -= 1;
     ///     }
@@ -184,10 +187,7 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
             string fullyQualifiedName = NameManager.GetFullyQualifiedMethodName(CurrentSemantics, node);
             string hover = $"\"hoverEvent\":{{\"action\":\"show_text\",\"contents\":[{{\"text\":\"File \",\"color\":\"gray\"}},{{\"text\":\"{path}\",\"color\":\"white\"}},{{\"text\":\"\\nLine \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Line}\",\"color\":\"white\"}},{{\"text\":\" Col \",\"color\":\"gray\"}},{{\"text\":\"{pos.StartLinePosition.Character}\",\"color\":\"white\"}}]}}";
             string successCommand = $"tellraw @a [{{\"text\":\"Test \",\"color\":\"green\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_green\",{hover}}},{{\"text\":\" passed.\",\"color\":\"green\"}}]";
-            var expectedValue = "<todo>";
-            var failureCommand = $"tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\",{hover}}},{{\"text\":\" failed.\\n  Expected \",\"color\":\"red\"}},{{\"text\":\"{expectedValue}\",\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\", but got \",\"color\":\"red\"}},{{\"score\":{{\"name\":\"#RET\",\"objective\":\"_\"}},\"bold\":true,\"color\":\"dark_red\"}},{{\"text\":\" instead.\",\"color\":\"red\"}}]";
-            // TODO: Proper "expected" vs "actual" view
-            // TODO: Rerun button
+            var failureCommand = $"tellraw @a [{{\"text\":\"Test \",\"color\":\"red\"}},{{\"text\":\"{fullyQualifiedName}\",\"color\":\"dark_red\",{hover}}},{{\"text\":\" failed.\",\"color\":\"red\"}}]";
 
             return node.WithReturnType(PredefinedType(Token(SyntaxKind.VoidKeyword)))
                 .WithExpressionBody(null)
@@ -250,10 +250,25 @@ namespace Atrufulgium.FrontTick.Compiler.Visitors {
                                 MemberAccessExpression(MCMirrorTypes.Testrunner_TestsFailed),
                                 NumericLiteralExpression(1)
                             ),
-                            // failure handling
+                            // Show failure header
                             InvocationStatement(
                                 MemberAccessExpression(MCMirrorTypes.RawMCFunction_Run),
                                 StringLiteralExpression(failureCommand)
+                            ),
+                            // MCMirror.Internal.CompileTime.Print(#expected)
+                            InvocationStatement(
+                                MemberAccessExpression(MCMirrorTypes.CompileTime_Print),
+                                IdentifierName("#expected")
+                            ),
+                            // MCMirror.Internal.CompileTime.Print(#actual)
+                            InvocationStatement(
+                                MemberAccessExpression(MCMirrorTypes.CompileTime_Print),
+                                IdentifierName("#actual")
+                            ),
+                            // MCMirror.Internal.CompileTime.RunRaw("tellraw @a [\"\"]")
+                            InvocationStatement(
+                                MemberAccessExpression(MCMirrorTypes.RawMCFunction_Run),
+                                StringLiteralExpression("tellraw @a [\"\"]")
                             )
                         )
                     ),

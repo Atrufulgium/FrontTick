@@ -268,5 +268,8 @@ namespace Atrufulgium.FrontTick.Compiler {
                 typeSymbolName = MCMirrorTypes.UIntFullyQualified;
             return typeSymbolName;
         }
+
+        public static IEnumerable<IFieldSymbol> GetNonstaticFields(this ITypeSymbol symbol)
+            => symbol.GetMembers().OfType<IFieldSymbol>().Where(m => !m.IsStatic);
     }
 }

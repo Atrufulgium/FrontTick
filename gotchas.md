@@ -18,6 +18,7 @@ FrontTick gotchas
   This also makes it so not all methods are registered (even though they *will* be in the future if correct).  
   This usually won't form a problem, but if it does, you can test for existence with `nameManager.MethodNameIsRegistered()`.
 - Attributes may have *any* expression as argument if the user didn't write them.
+- `CastsToMethodCallsRewriter` does not do any implicit casts towards `object`.
 - Do a little prayer if you need to touch `GotoFlagifyRewriter.cs`.
 
 Roslyn gotchas
@@ -26,7 +27,7 @@ Roslyn gotchas
 - Creating a compilation requires you to reference *all* dlls you need, including the basic stuff that defines `System` etc, it doesn't do it for you.  
   (For me this is an upside because I don't need them.)
 - *All* Roslyn syntax factory methods are the name of the thing without the word `Syntax`. This is usually obvious, but this convention also holds for things like `SeparatedSyntaxList` → `SeparatedList()`.
-- Getting an `InvalidCastException` during tree traversal means that some of the other `VisitXXX` methods returned something unexpected.  
+- Getting an `InvalidCastException` during tree traversal means that some of the other `VisitXXX` methods returned something unexpected. Other exceptions (`null`, etc) can behave similarly.  
   For example, visiting a `BinaryOperationExpression` and returning some `StatementSyntax` throws this.
 - Semantic interpretation is a bit obnoxious. For instance, you cannot get the type belonging to some *statement*, instead you need to get it from its corresponding *expression*. It just doesn't walk to the nearest thing returning something non-null, it expects you to know how it works.
 - Returning `null` is a nice deletion, but make sure it doesn't have any weird side effects. 
@@ -35,6 +36,7 @@ Roslyn gotchas
 - `The name 'a.b' does not exist in the current context` Roslyn doesn't automatically resolve namespaces and looks for a class/struct called `a.b` which does not exist.
 - Roslyn is very insistent in seeing `-2147483648` as anything but an int. I get it, but it's really annoying.
 - In general, *numeric types are cursed*. It just interprets everything as *exactly what I don't want it to be*.
+- No, no matter how often you try this, you can't just replace an `Invocation`*`Expression`* with a `Block`*`Statement`*.
 - (There was something annoying with `SyntaxKind`, but I forgot.)
   
 Minecraft gotchas

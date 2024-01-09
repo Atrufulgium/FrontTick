@@ -29,7 +29,7 @@ namespace Atrufulgium.FrontTick.Compiler {
             => Error(
                 id: "FT0002",
                 title: "MCFunction names must only use [a-z0-9/._-] characters and not be empty.",
-                messageFormat: "Method '{0}' has an MCFunction name which uses a non-[a-z0-9/._-] character or is empty. Please only use those characters in the MCFunction attribute, or only [a-zA-Z0-9_] in the c# method names."
+                messageFormat: "Method '{0}' has an MCFunction name which uses a non-[a-z0-9/._-] character or is empty. Please only use those characters in the MCFunction attribute, or only [a-zA-Z0-9_] in the c# method names. (In particular, uppercase letters are not allowed in the attribute argument.)"
             );
 
         // If you get here during testing but not during regular compilation,
@@ -117,8 +117,8 @@ namespace Atrufulgium.FrontTick.Compiler {
         public static DiagnosticDescriptor PrintArgMustBeIdentifier
             => Error(
                 id: "FT0014",
-                title: "Print(int) arguments must be identifiers.",
-                messageFormat: "Calling 'MCMirror.Internal.CompileTime.Print(int)' requires an argument that is just an identifier. No arithmetic, method calls etc."
+                title: "Print(int) and Print(object) arguments must be identifiers.",
+                messageFormat: "Calling 'MCMirror.Internal.CompileTime.Print()' requires an argument that is just an identifier. No arithmetic, method calls etc."
             );
     }
 }
